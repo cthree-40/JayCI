@@ -1,0 +1,98 @@
+# Makefile for Det_CI
+
+SOURCE =/home/cmalbon/workspace/Det-CI-4.1.0/src
+
+# Preprocessing flags
+PREPROCS = -DDEBUG=2 -DDSYEV=1 -DORTHVEC -DGSDEBUG -DPREDIAG
+ 
+# Objects
+# run_level1.x
+OBJS1   = detci1.o detci2.o detci3new.o run_level1.o 
+
+# run_level2.x
+#OBJS2   = detci1.o detci2.o detci5.o iwfmt.o cannon.o possex1.o hvdiag.o \
+          hvsingrepb.o hvsingrepa.o hvsingrepab.o hvdblrepb.o hvdblrepa.o \
+          acthv1.o acthv2.o acthv3.o acthv4.o acthv5.o acthv6.o acthv.o \
+
+OBJS2    = detci1.o detci2.o detci5.o iwfmt.o cannon.o possex1.o \
+           singrepinfo.o doublerepinfo.o hvdiag.o acthv.o
+
+DAVID   = initdavid.o residgen.o orthogroutines.o construct.o spacetrunc.o subdiag1.o \
+          cannonreal.o lowdiags.o davidson.o
+
+OBJS3 = $(OBJS2) dacthv.o $(DAVID) run_level2.o
+
+
+# test of Hv
+OBJS4   = $(OBJS2) $(DAVID) run_testing.o
+
+# Locations
+NAME    := $(shell hostname)
+JDIR    := $(shell pwd)
+
+# Building on archx1
+COMPILER        := ifort -i8
+PREFIX          := sh -c
+AR              := xiar -rv
+
+# Location of LAPACK and BLAS
+LIBS    := -L$(MKLROOT)/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm
+
+# Location of colib.a and blaswrapper.a
+LIB2    := $(JDIR)/colib.a $(JDIR)/blaswrapper.a
+
+# Compile options
+CPOPT   := -auto -c -assume byterecl -O3 -g -traceback -CB -check all -lpthread
+
+# Link options
+LKOPT   := -auto -lpthread
+
+# Executables
+EXEC1   := runlev1.x
+EXEC2   := runlev2.x
+EXEC3   := testinghv.x
+
+# Clean
+RM      := rm -f
+
+# Build
+run1:$(OBJS1)
+	@echo "Building Run_Level1 Tester on $(NAME) with: $(PREPROCS)"
+	@echo "Building $@"
+	$(PREFIX) "$(COMPILER) -o $(EXEC1) $(OBJS1) $(LIB2) $(LIBS) $(DEBUGFLAG)"
+	@echo "Finished building $@"
+
+run2:$(OBJS3)
+	@echo "Building Run_Level2 Tester on $(NAME) with $(PREPROCS)"
+	@echo "Building $@"
+	$(PREFIX) "$(COMPILER) -o $(EXEC2) $(OBJS3) $(LIB2) $(LIBS) $(DEBUGFLAG)"
+	@echo "Finished building $@"
+
+testhv:$(OBJS4)
+	@echo "Building the test program for H on v on $(NAME)"
+	@echo "Building $@"
+	$(PREFIX) "$(COMPILER) -o $(EXEC3) $(OBJS4) $(LIB2) $(LIBS) $(DEBUGFLAG)"
+	@echo "Finished building $@"
+
+%.o:$(SOURCE)/%.f
+	@echo "Building $<"
+	@echo "Invoking $(COMPILER)"
+	$(PREFIX) "$(COMPILER) -o $@ $< $(CPOPT) $(DEBUGFLAG)"
+	@echo "Finished building $<"
+
+%.o:$(SOURCE)/%.f90
+	@echo "Building $<"
+	@echo "Invoking $(COMPILER)"
+	$(PREFIX) "$(COMPILER) -cpp -o $@ $< $(CPOPT) $(DEBUGFLAG) $(PREPROCS)"
+	@echo "Finished building $<"
+
+%.o:$(SOURCE)/%.f95
+	@echo "Building $<"
+	@echo "Invoking $(COMPILER)"
+	$(PREFIX) "$(COMPILER) -cpp -o $@ $< $(CPOPT) $(DEBUGFLAG) $(PREPROCS)"
+	@echo "Finished building $<"
+
+clean:
+	$(RM) $(OBJS) ./*.o ./*.mod
+	@echo "Finished cleaning."
+
