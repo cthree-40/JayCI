@@ -465,6 +465,9 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   end do
 
 
+! ...Form determinant-cross reference list...
+
+
   deallocate(modalpha)
   deallocate(modbeta)
   return
