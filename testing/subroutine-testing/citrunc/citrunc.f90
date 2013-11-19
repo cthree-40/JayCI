@@ -58,7 +58,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
                                           refdpairs
   integer, dimension(:), allocatable :: plocate, qlocate, pstep, qstep
 
-  integer, dimension(adets*bdets) :: fnldets
+  integer, dimension(:), allocatable :: fnldets
   integer :: fnldetslen, remdet
   
   integer :: step
@@ -104,20 +104,8 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 
 
 ! Get lengths of modalpha and modbeta
-! Alpha strings
-  modalphalen = 0
-  do i=1, adets
-    if ( alphastrings(i) .ne. 0 ) then
-      modalphalen = modalphalen + 1
-    end if
-  end do
-  
-  modbetalen = 0
-  do i=1, bdets
-    if ( betastrings(i) .ne. 0 ) then
-      modbetalen = modbetalen + 1
-    end if
-  end do
+  call modspstrlen( alphastrings, adets, modalphalen )
+  call modspstrlen( betastrings,  bdets, modbetalen  )
 
 ! Allocate modalpha and modbeta
   if ( allocated(modalpha)) deallocate(modalpha)
@@ -136,90 +124,31 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   read(unit=3, fmt=9) ( modbeta(i), i=1, modbetalen )
   close(unit=3)
 
-
-  fnldets=0
-  fnldetslen = modalphalen*modbetalen
+  fnldetslen=modalphalen*modbetalen
+  allocate( fnldets(fnldetslen) )
 ! Generate determinant list
-  do i=1, modalphalen
-    do j=1, modbetalen
-      k = (i-1)*modbetalen + j
-      fnldets(k) = indxk(modalpha(i),modbeta(j),belec,orbitals)
-    end do
-  end do
-  remdet=0
-! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
-  call strfnd( adets, aelec, orbitals, adets, alphmat )
-  call strfnd( bdets, belec, orbitals, adets, betamat )
-
-! Loop over determinants
-  do i=1, fnldetslen      
-    call k2indc( fnldets(i), belec, orbitals, p, q )
-! Find strings
-    do j=1, aelec
-      astring1(j) = alphmat(p, j)
-    end do
-    do j=1, belec
-      bstring1(j) = betamat(q, j)
-    end do
-
-    test = 0
-! Check alpha string    
-    do j=1,aelec
-      if ( astring1(j) > nfrozen+ndocc ) then
-        test = test + 1
-      end if
-    end do
-! Check beta string
-    do j=1,belec
-      if ( bstring1(j) > nfrozen+ndocc ) then
-        test = test + 1
-      end if
-    end do
-
-! If test > xlevel, throw determinant away
-    if ( test > xlevel ) then
-      fnldets(i) = 0
-      remdet = remdet + 1
-    end if
-  end do
-
-! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
-! Loop over determinants
+  call gendetlist( modalpha, modbeta, modalphalen, modbetalen, belec,&
+                   orbitals, fnldets )
+  print *, "FNLDETS() BEFORE ANY TRUNCATION-------------------------"
   do i=1, fnldetslen
-! Test if determinant is in expansion
-    if ( fnldets(i) .eq. 0 ) then
-      cycle
-    end if
-    call k2indc( fnldets(i), belec, orbitals, p, q )
-! Find strings
-    do j=1, aelec
-      astring1(j) = alphmat(p,j)
-    end do
-    do j=1, belec
-      bstring1(j) = betamat(p,j)
-    end do
-
-    test = 0
-! Check alpha string
-    do j=1, aelec
-      if ( astring1(j) > nfrozen+ndocc+nactive ) then
-        test = test + 1
-      end if
-    end do
-! Check beta string
-    do j=1, belec
-      if ( bstring1(j) > nfrozen+ndocc+nactive ) then
-        test = test + 1
-      end if
-    end do
-
-! If test > xlevel, throw determinant away
-    if ( test > xlevel ) then
-      fnldets(i) = 0
-      remdet = remdet + 1 
-    end if
+    print *, fnldets(i)
   end do
-
+! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
+  remdet=0
+  call enfdoccdet( fnldets, fnldetslen, aelec, adets, belec, bdets, &
+                   orbitals, nfrozen, ndocc, xlevel, remdet )
+  print *, "FNLDETS() AFTER DOCC TRUCATION--------------------------"
+  do i=1, fnldetslen
+    print *, fnldets(i)
+  end do
+  print *, "DETERMINANTS REMOVED :    ", remdet
+! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
+  call enfactivedet( fnldets, fnldetslen, aelec, adets, belec, bdets,&
+                     orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
+  print *, "FNLDETS() AFTER ACTIVE TRUNCATION------------------------"
+  do i=1, fnldetslen
+    print *, fnldets(i)
+  end do
 
 ! Write determinant list to file
   open( unit=4, file='det.list', status='new', position='rewind' )
@@ -229,12 +158,17 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
     end if
   end do
   close(unit=4)
-
+! Deallocate fnldets
+  deallocate( fnldets )
 
 ! Compute number of determinants in ci expansion
   cidimension = (modalphalen*modbetalen) - remdet
-   
-
+! Allocate fnldets, but with adjusted size
+  allocate(fnldets(cidimension))
+! Read in determinant list from file
+  open( unit=4, file='det.list', status='old', position='rewind' )
+  read( unit=4, fmt=9 ) ( fnldets(i), i=1, cidimension )
+  close(unit=4)
 ! ...FORM STRING PAIRS...
 ! String pairs (p,q)
 
@@ -249,11 +183,12 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! Loop over beta strings
     do j=1, modbetalen
     
-      index1 = indxk( i, j, belec, orbitals ) 
+      index1 = indxk( modalpha(i), modbeta(j), belec, orbitals ) 
 
 ! Test if index1 is in expansion fnldets()
       do k=1, cidimension
         if ( index1 .eq. fnldets(k) ) then
+          print *, index1
           strngpr1(l,1) = i
           strngpr1(l,2) = j
           l=l+1
@@ -270,8 +205,8 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
     print *, pstep(i)
   end do
   print *, "Printing string pairings..."
-  do i=1, modalphalen
-    print *, strngpr1(i,1), strngpr1(i,2)
+  do i=1, cidimension
+    print *, strngpr1(i,1), strngpr1(i,2), indxk( strngpr1(i,1),strngpr1(i,2),belec,orbitals)
   end do
 
   allocate(qstep(modbetalen))
@@ -298,16 +233,16 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
     qstep(i) = step
   end do
 
-
+  print *, "cidimension: ", cidimension
 ! ...WRITE strings to respective files...
-  open(unit=5,file='pstring.list',status='new',position='rewind')
+  open(unit=5,file='pstring.list',status='new')
   do i=1,cidimension
-    write(unit=5,fmt=10) strngpr1(l,1), strngpr1(l,2)
+    write(unit=5,fmt=10) strngpr1(i,1), strngpr1(i,2)
   end do
   close(unit=5)
-  open(unit=6,file='qstring.list',status='new',position='rewind')
+  open(unit=6,file='qstring.list',status='new')
   do i=1,cidimension
-    write(unit=6,fmt=10) strngpr2(l,1), strngpr2(l,2)
+    write(unit=6,fmt=10) strngpr2(i,1), strngpr2(i,2)
   end do
   close(unit=6)
 10 format(1x,I10,I10)

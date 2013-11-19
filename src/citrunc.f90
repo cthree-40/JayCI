@@ -23,6 +23,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   ndocc, nactive, xlevel, modalphalen, modbetalen, cidimension )
 
   use detci2
+  use truncation
 
   implicit none
 
@@ -51,226 +52,35 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
  
   integer, dimension(:), allocatable   :: modalpha, modbeta
 
+  integer, dimension(:), allocatable   :: pstrdetlist, crssreflist
+
   integer, dimension(:,:), allocatable :: strngpr1, strngpr2, &
                                           refdpairs
   integer, dimension(:), allocatable :: plocate, qlocate, pstep, qstep
 
-  integer, dimension(adets*bdets) :: fnldets
+  integer, dimension(:), allocatable :: fnldets
   integer :: fnldetslen, remdet
   
   integer :: step
 !--------------------------------------------------------------------
 
 ! Generate alpha and beta string lists
-  do i=1, adets
-    alphastrings(i) = i
-  end do
-  do i=1, bdets
-    betastrings(i) = i
-  end do
-
-
+  call genstrings( alphastrings, betastrings, adets, bdets )
 ! ...ENFORCE FROZEN ORBITAL RESTRICTIONS...
-
-! Loop through alpha string list removing all determinants without an
-!  alpha electron in the frozen core orbitals
-
-  lpa: do i=1, adets
-
-    if ( i .eq. 1 ) then
-      do j=1, aelec
-        astring1(j) = j
-      end do
-    else
-      call nstrfnd( astring2, aelec, orbitals, adets, astring1 )
-    end if
-    
-! Test if the first nfrozen orbitals are occupied
-    test = 0
-    lpb: do j= 1, nfrozen
-      if ( astring1(j) .eq. j ) then
-        cycle lpb
-      else
-        test = test + 1
-      end if
-      if ( test .ne. 0 ) then
-        alphastrings(i) = 0
-        exit lpb
-      end if
-    end do lpb
-    astring2 = astring1
-    astring1 = 0
-  end do lpa
-        
-
-! Loop through beta string list removing all determinants without a
-!  beta electron in the forzen core orbitals
-
-  lpc: do i=1, bdets
-    
-    if (i .eq. 1) then
-      do j=1, belec
-        bstring1(j) = j
-      end do
-    else
-      call nstrfnd( bstring2, belec, orbitals, bdets, bstring1 )
-    end if
-
-! Test if the first nfrozen orbitals are occupied
-    test = 0
-    lpd: do j=1, nfrozen
-      if ( bstring1(j) .eq. j ) then
-        cycle lpd
-      else
-        test = test + 1
-      end if
-      if ( test .ne. 0 ) then
-        betastrings(i) = 0
-        exit lpd
-      end if
-    end do lpd
-    bstring2 = bstring1
-    bstring1 = 0
-  end do lpc
-
-
-
- 
+! alpha strings
+  call enffrozen( alphastrings, nfrozen, aelec, orbitals, adets )
+! beta strings
+  call enffrozen( betastrings, nfrozen, belec, orbitals, bdets )
 ! ...ENFORCE DOCC RESTRICTIONS...
-
-! Loop through alpha strings
-  lpe: do i=1, adets
-! Test if string is in expansion
-    if ( alphastrings(i) .eq. 0 ) then
-      cycle lpe
-    end if
-   
-    if ( alphastrings(i) .eq. 1 ) then
-      do j=1, aelec
-        astring1(j) = j
-      end do
-    else
-      call nstrfnd( astring2, aelec, orbitals, adets, astring1 )
-    end if
-
-    testa=0
-! Count excitations in astring1
-    do j=1, aelec
-      if ( astring1(j) > nfrozen+ndocc ) then
-        testa = testa + 1
-      end if
-    end do
-    
-    if ( testa > xlevel ) then
-      alphastrings(i) = 0         ! String is not in expansion
-    end if
-
-! Close loop over alpha strings
-    astring2 = astring1
-    astring1 = 0
-  end do lpe
-
-! Loop through beta strings
-  lpf: do i=1, bdets
-! Test if string is in expansion
-    if ( betastrings(i) .eq. 0 ) then
-      cycle lpf
-    end if
-
-    if ( betastrings(i) .eq. 1 ) then
-      do j=1, belec
-        bstring1(j) = j
-      end do
-    else
-      call nstrfnd( bstring2, belec, orbitals, bdets, bstring1 )
-    end if
-
-
-    testb=0
-! Count excitations in bstring1
-    do j=1, belec
-      if ( bstring1(j) > nfrozen+ndocc ) then
-        testb = testb + 1
-      end if
-    end do
-
-    if ( testb > xlevel ) then
-      betastrings(i) = 0             ! String is not in expansion
-    end if
-
-! Close loop over betastrings
-    bstring2 = bstring1
-    bstring1 = 0
-  end do lpf
-
-
+  call enfdocc( alphastrings, adets, aelec, orbitals, nfrozen, &
+                ndocc, xlevel )
+  call enfdocc( betastrings, bdets, belec, orbitals, nfrozen, &
+                ndocc, xlevel )
 ! ...ENFORCE CAS RESTRICTIONS
-! Loop over alpha determinants
-  lpg: do i=1, adets
-! Test if string is in expansion
-    if ( alphastrings(i) .eq. 0 ) then
-      cycle lpg
-    end if
-
-    if ( alphastrings(i) .eq. 1 ) then
-      do j=1, aelec
-        astring1(j) = j
-      end do
-    else
-      call nstrfnd( astring2, aelec, orbitals, aelec, astring1 )
-    end if
-
-
-    testa=0
-! Count excitations in astring1
-    do j=1, aelec
-      if ( astring1(j) > nfrozen+ndocc+nactive ) then
-        testa = testa + 1
-      end if
-    end do
-
-    if ( testa > xlevel ) then
-      alphastrings(i) = 0
-    end if
-
-! Close loop over alpha strings
-    astring2 = astring1
-    astring1 = 0
-  end do lpg
-
-! Loop over beta determinants
-  lph: do i=1, bdets
-! Test if string is in expansion
-    if ( betastrings(i) .eq. 0 ) then
-      cycle lph
-    end if
-
-    if ( betastrings(i) .eq. 1 ) then
-      do j=1, belec
-        bstring1(j) = j
-      end do
-    else
-      call nstrfnd( bstring2, belec, orbitals, belec, bstring1 )
-    end if
-
-
-    testb=0
-! Count excitations in bstring1
-    do j=1, belec
-      if ( bstring1(j) > nfrozen+ndocc+nactive ) then
-        testb = testb + 1
-      end if
-    end do
-
-    if ( testb > xlevel ) then
-      betastrings(i) = 0
-    end if
-
-! Close loop over beta strings
-    bstring2 = bstring1
-    bstring1 = 0
-  end do lph
-
+  call enfactive( alphastrings, adets, orbitals, aelec, nfrozen,&
+                  ndocc, nactive, xlevel )
+  call enfactive( betastrings, bdets, orbitals, belec, nfrozen, &
+                  ndocc, nactive, xlevel )
   
 ! Write out the alpha string indices
   open( unit=2, file='alpha.dets', status='new' )
@@ -294,20 +104,8 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 
 
 ! Get lengths of modalpha and modbeta
-! Alpha strings
-  modalphalen = 0
-  do i=1, adets
-    if ( alphastrings(i) .ne. 0 ) then
-      modalphalen = modalphalen + 1
-    end if
-  end do
-  
-  modbetalen = 0
-  do i=1, bdets
-    if ( betastrings(i) .ne. 0 ) then
-      modbetalen = modbetalen + 1
-    end if
-  end do
+  call modspstrlen( alphastrings, adets, modalphalen )
+  call modspstrlen( betastrings,  bdets, modbetalen  )
 
 ! Allocate modalpha and modbeta
   if ( allocated(modalpha)) deallocate(modalpha)
@@ -326,90 +124,31 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   read(unit=3, fmt=9) ( modbeta(i), i=1, modbetalen )
   close(unit=3)
 
-
-  fnldets=0
-  fnldetslen = modalphalen*modbetalen
+  fnldetslen=modalphalen*modbetalen
+  allocate( fnldets(fnldetslen) )
 ! Generate determinant list
-  do i=1, modalphalen
-    do j=1, modbetalen
-      k = (i-1)*modbetalen + j
-      fnldets(k) = indxk(modalpha(i),modbeta(j),belec,orbitals)
-    end do
-  end do
-  remdet=0
-! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
-  call strfnd( adets, aelec, orbitals, adets, alphmat )
-  call strfnd( bdets, belec, orbitals, adets, betamat )
-
-! Loop over determinants
-  do i=1, fnldetslen      
-    call k2indc( fnldets(i), belec, orbitals, p, q )
-! Find strings
-    do j=1, aelec
-      astring1(j) = alphmat(p, j)
-    end do
-    do j=1, belec
-      bstring1(j) = betamat(q, j)
-    end do
-
-    test = 0
-! Check alpha string    
-    do j=1,aelec
-      if ( astring1(j) > nfrozen+ndocc ) then
-        test = test + 1
-      end if
-    end do
-! Check beta string
-    do j=1,belec
-      if ( bstring1(j) > nfrozen+ndocc ) then
-        test = test + 1
-      end if
-    end do
-
-! If test > xlevel, throw determinant away
-    if ( test > xlevel ) then
-      fnldets(i) = 0
-      remdet = remdet + 1
-    end if
-  end do
-
-! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
-! Loop over determinants
+  call gendetlist( modalpha, modbeta, modalphalen, modbetalen, belec,&
+                   orbitals, fnldets )
+  print *, "FNLDETS() BEFORE ANY TRUNCATION-------------------------"
   do i=1, fnldetslen
-! Test if determinant is in expansion
-    if ( fnldets(i) .eq. 0 ) then
-      cycle
-    end if
-    call k2indc( fnldets(i), belec, orbitals, p, q )
-! Find strings
-    do j=1, aelec
-      astring1(j) = alphmat(p,j)
-    end do
-    do j=1, belec
-      bstring1(j) = betamat(p,j)
-    end do
-
-    test = 0
-! Check alpha string
-    do j=1, aelec
-      if ( astring1(j) > nfrozen+ndocc+nactive ) then
-        test = test + 1
-      end if
-    end do
-! Check beta string
-    do j=1, belec
-      if ( bstring1(j) > nfrozen+ndocc+nactive ) then
-        test = test + 1
-      end if
-    end do
-
-! If test > xlevel, throw determinant away
-    if ( test > xlevel ) then
-      fnldets(i) = 0
-      remdet = remdet + 1 
-    end if
+    print *, fnldets(i)
   end do
-
+! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
+  remdet=0
+  call enfdoccdet( fnldets, fnldetslen, aelec, adets, belec, bdets, &
+                   orbitals, nfrozen, ndocc, xlevel, remdet )
+  print *, "FNLDETS() AFTER DOCC TRUCATION--------------------------"
+  do i=1, fnldetslen
+    print *, fnldets(i)
+  end do
+  print *, "DETERMINANTS REMOVED :    ", remdet
+! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
+  call enfactivedet( fnldets, fnldetslen, aelec, adets, belec, bdets,&
+                     orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
+  print *, "FNLDETS() AFTER ACTIVE TRUNCATION------------------------"
+  do i=1, fnldetslen
+    print *, fnldets(i)
+  end do
 
 ! Write determinant list to file
   open( unit=4, file='det.list', status='new', position='rewind' )
@@ -419,12 +158,17 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
     end if
   end do
   close(unit=4)
-
+! Deallocate fnldets
+  deallocate( fnldets )
 
 ! Compute number of determinants in ci expansion
   cidimension = (modalphalen*modbetalen) - remdet
-   
-
+! Allocate fnldets, but with adjusted size
+  allocate(fnldets(cidimension))
+! Read in determinant list from file
+  open( unit=4, file='det.list', status='old', position='rewind' )
+  read( unit=4, fmt=9 ) ( fnldets(i), i=1, cidimension )
+  close(unit=4)
 ! ...FORM STRING PAIRS...
 ! String pairs (p,q)
 
@@ -439,11 +183,12 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! Loop over beta strings
     do j=1, modbetalen
     
-      index1 = indxk( i, j, belec, orbitals ) 
+      index1 = indxk( modalpha(i), modbeta(j), belec, orbitals ) 
 
 ! Test if index1 is in expansion fnldets()
       do k=1, cidimension
         if ( index1 .eq. fnldets(k) ) then
+          print *, index1
           strngpr1(l,1) = i
           strngpr1(l,2) = j
           l=l+1
@@ -460,13 +205,61 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
     print *, pstep(i)
   end do
   print *, "Printing string pairings..."
-  do i=1, modalphalen
-    print *, strngpr1(i,1), strngpr1(i,2)
+  do i=1, cidimension
+    print *, strngpr1(i,1), strngpr1(i,2), indxk( strngpr1(i,1),strngpr1(i,2),belec,orbitals)
   end do
 
+  allocate(qstep(modbetalen))
+! Loop over beta strings
+  l=1
+  do i=1, modbetalen
+    step=0
+! Loop over alpha strings
+    do j=1, modalphalen
+    
+      index1 = indxk( j, i, belec, orbitals )
 
-! ...Form determinant-cross reference list...
+! Test if index1 is in expansion fnldets()
+      do k=1, cidimension
+        if ( index1 .eq. fnldets(k) ) then
+          strngpr2(l,1) = i
+          strngpr2(l,2) = j
+          l=l+1
+          step=step+1
+          exit
+        end if
+      end do
+    end do
+    qstep(i) = step
+  end do
 
+  print *, "cidimension: ", cidimension
+! ...WRITE strings to respective files...
+  open(unit=5,file='pstring.list',status='new')
+  do i=1,cidimension
+    write(unit=5,fmt=10) strngpr1(i,1), strngpr1(i,2)
+  end do
+  close(unit=5)
+  open(unit=6,file='qstring.list',status='new')
+  do i=1,cidimension
+    write(unit=6,fmt=10) strngpr2(i,1), strngpr2(i,2)
+  end do
+  close(unit=6)
+10 format(1x,I10,I10)
+
+
+! ...FORM DETERMINANT CROSS REFERENCE LIST...
+! the 'p' list is the cannonical ordering of determinants, so this list
+!  will list K'(K(p))
+
+! Generate determinant list of determinants in stringpr1 list
+  allocate( pstrdetlist(cidimension) )
+
+  do i=1, cidimension
+    pstrdetlist(i) = indxk( strngpr1(i,1),strngpr1(i,2), belec, orbitals ) 
+  end do
+
+  
 
   deallocate(modalpha)
   deallocate(modbeta)

@@ -208,4 +208,197 @@ contains
   end subroutine enfactive
 !====================================================================
 !====================================================================
+! Subroutine to return number of 'active' alpha/beta strings
+!--------------------------------------------------------------------
+  subroutine modspstrlen( string, length, modlength )
+! Input:
+!  string    = alpha/beta string idices              integer array  1-d
+!  length    = number of alpha/beta determinants     integer scalar
+! Output:
+!  modlength = length of active strings              integer scalar
+    implicit none
+! ...input integer scalars...
+    integer, intent(in) :: length
+! ...input integer arrays...
+    integer, dimension(length), intent(in) :: string
+! ...output integer scalars...
+    integer, intent(out) :: modlength
+! ...loop integer scalars...
+    integer :: i, j
+!--------------------------------------------------------------------
+    modlength = 0
+    do i=1, length
+      if ( string(i) .ne. 0 ) then
+        modlength = modlength + 1
+      end if
+    end do
+    return
+  end subroutine modspstrlen
+!====================================================================
+!====================================================================
+! Subroutine to generate list of determinants from the 'active'
+!  alpha and beta strings
+!--------------------------------------------------------------------
+  subroutine gendetlist( alphastring, betastring, alphalen, betalen, &
+                         belec, orbitals, determlist )
+! Input:
+!  alphastring  = 'active' alpha strings            integer array  1-d
+!  betastring   = 'active' beta strings             integer array  1-d
+!  alphalen     = length of alphastrings()          integer scalar
+!  betalen      = length of betastrings()           integer scalar
+!  belec        = number of beta electrons          integer scalar
+!  orbitals     = number of MO's                    integer scalar
+! Output:
+!  determlist   = list of determinants              integer array 1-d
+!--------------------------------------------------------------------
+    implicit none
+! ...input integer scalars...
+    integer, intent(in) :: alphalen, betalen, belec, orbitals
+! ...input integer arrays...
+    integer, dimension(alphalen), intent(in) :: alphastring
+    integer, dimension(betalen ), intent(in) :: betastring
+! ...output integer arrays...
+    integer, dimension(alphalen*betalen), intent(inout) :: determlist
+! ...loop integer scalars...
+    integer :: i, j, k
+!--------------------------------------------------------------------
+! loop over alpha strings
+    do i=1, alphalen
+! loop over beta strings
+      do j=1, betalen
+        k = ( i-1 )*betalen + j
+        determlist(k) = indxk( alphastring(i), betastring(j), belec, orbitals )
+      end do
+    end do
+    return
+  end subroutine gendetlist
+!====================================================================
+!====================================================================
+! Subroutine to enforce docc restrictions on determinants
+!--------------------------------------------------------------------
+  subroutine enfdoccdet( detlist, detlistlen, aelec, adets, belec, &
+    bdets, orbitals, nfrozen, ndocc, xlevel, remdet )
+! Input:
+!  detlist     = list of determinants                integer array  1-d
+!  detlistlen  = length of detlist()                 integer scalar
+!  aelec       = alpha electrons                     integer scalar
+!  adets       = alpha strings ( non-truncated )     integer scalar
+!  belec       = beta electrons                      integer scalar
+!  bdets       = beta strings ( non-truncated )      integer scalar
+!  orbitals    = number of MO's                      integer scalar
+!  nfrozen     = number of frozen orbitals           integer scalar
+!  ndocc       = number of DOCC orbitals             integer scalar
+!  xlevel      = excitation level                    integer scalar
+!  remdet      = removed determinants                integer scalar
+!--------------------------------------------------------------------
+    implicit none
+! ...input integer scalars...
+    integer, intent(in) :: detlistlen, aelec, belec, adets, bdets, &
+                           orbitals, nfrozen, ndocc, xlevel
+! ...input/output integer scalars...
+    integer, intent(inout) :: remdet
+! ...input/output integer arrays...
+    integer, dimension(detlistlen), intent(inout) :: detlist
+! ...loop integer scalars...
+    integer :: i, j
+! ...integer arrays...
+    integer, dimension(adets, aelec) :: alphamat
+    integer, dimension(bdets, belec) :: betamat
+! ...integer scalars...
+    integer :: p, q, test
+!--------------------------------------------------------------------
+! Generate string lists
+    call strfnd( adets, aelec, orbitals, adets, alphamat )
+    call strfnd( bdets, belec, orbitals, bdets, betamat  )
+! Loop over determinants
+    do i=1, detlistlen
+      call k2indc( detlist(i), belec, orbitals, p, q )
+      test=0
+! Check alpha string
+      do j=1, aelec
+        if ( alphamat(p,j) > nfrozen + ndocc ) then
+          test = test + 1
+        end if
+      end do
+! Check beta string
+      do j=1, belec
+        if ( betamat(q, j) > nfrozen + ndocc ) then
+          test = test + 1
+        end if
+      end do
+! If test > xlevel, throw determinant away
+      if ( test > xlevel ) then
+        detlist(i) = 0
+        remdet = remdet + 1
+      end if
+    end do
+    return
+  end subroutine enfdoccdet
+!====================================================================
+!====================================================================
+! Subroutine to enforce CAS restrictions on determinants
+!--------------------------------------------------------------------
+  subroutine enfactivedet( detlist, detlistlen, aelec, adets, belec, &
+    bdets, orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
+! Input:
+!  detlist    = determinant list
+!  detlistlen = determinant list length
+!  aelec      = alpha electrons
+!  adets      = alpha strings (non-truncated)
+!  belec      = beta electrons
+!  bdets      = beta strings  (non-truncated)
+!  orbitals   = number of MO's
+!  nfrozen    = frozen orbitals
+!  ndocc      = number of DOCC orbitals
+!  nactive    = active orbitals
+!  xlevel     = excitation level
+!  remdet     = removed determinants
+!--------------------------------------------------------------------
+    implicit none
+! ...input integer scalars...
+    integer, intent(in) :: detlistlen, aelec, adets, belec, bdets, &
+                           orbitals, nfrozen, ndocc, nactive,      &
+                           xlevel
+! ...input/output integer scalars...
+    integer, intent(inout) :: remdet
+! ...input/output integer arrays...
+    integer, dimension(detlistlen), intent(inout) :: detlist
+! ...loop integer scalars...
+    integer :: i, j
+! ...integer arrays...
+    integer, dimension(adets,aelec) :: alphamat
+    integer, dimension(bdets,belec) :: betamat 
+! ...integer scalars...
+    integer :: p, q, test
+!--------------------------------------------------------------------
+! Generate spin string arrays
+    call strfnd( adets, aelec, orbitals, adets, alphamat)
+    call strfnd( bdets, belec, orbitals, bdets, betamat )
+! Loop over determinants
+    do i=1, detlistlen
+      if ( detlist(i) .eq. 0 ) then
+        cycle
+      end if
+      call k2indc( detlist(i), belec, orbitals, p, q )
+      test=0
+! Check alpha string
+      do j=1, aelec
+        if ( alphamat(p,j) > nfrozen + ndocc + nactive ) then
+          test = test + 1
+        end if
+      end do
+! Check beta string
+      do j=1, belec
+        if ( betamat(q,j) > nfrozen + ndocc + nactive ) then
+          test = test + 1
+        end if
+      end do
+! Test if test > xlevel
+      if ( test > xlevel ) then
+        detlist(i) = 0
+      end if
+    end do
+    return
+  end subroutine enfactivedet
+!====================================================================
 end module
