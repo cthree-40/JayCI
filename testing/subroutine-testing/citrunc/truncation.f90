@@ -401,4 +401,114 @@ contains
     return
   end subroutine enfactivedet
 !====================================================================
+!====================================================================
+! Subroutine to form string pairs
+!--------------------------------------------------------------------
+  subroutine genstrpairs( leadspinstr, leadspinstrlen, secondspinstr,  &
+    secondspinstrlen, determlist, determlistlen, belec, orbitals,      &
+    leadspin, stringpairs, stringpairslen, stringsteps, stringstepslen,&
+    stringdets )
+! Input:
+!  leadspinstr     = alpha/beta strings                integer array  1-d
+!  leadspinstrlen  = $spinstr length                   integer scalar
+!  secondspinstr   = beta/alpha  strings               integer array  1-d
+!  secondspinstrlen= $spinstr  length                  integer scalar
+!  determlist      = determinants                      integer array  1-d
+!  determlistlen   = length of determlist              integer scalar
+!  belec           = beta electrons                    integer scalar
+!  orbitals        = orbitals                          integer scalar
+!  leadspin        = leading sping    
+! Output:
+!  stringpairs     = string pairings                   integer array  2-d
+!  stringpairslen  = rows of string pairings           integer scalar
+!  stringsteps     = step array for stringpairs        integer array  1-d
+!  stringstepslen  = length of stringsteps             integer scalar
+!  stringdets      = determinant list from pairs
+!--------------------------------------------------------------------
+    implicit none
+    character*1, intent(in) :: leadspin
+! ...input integer scalars...
+    integer, intent(in) :: leadspinstrlen, secondspinstrlen, determlistlen,&
+                           belec, orbitals, stringpairslen, stringstepslen
+! ...input integer arrays...
+    integer, dimension( leadspinstrlen    ), intent(in) :: leadspinstr
+    integer, dimension( secondspinstrlen  ), intent(in) :: secondspinstr
+    integer, dimension( determlistlen     ), intent(in) :: determlist
+! ...output integer arrays...
+    integer, dimension( stringpairslen, 2 ), intent(inout) :: stringpairs
+    integer, dimension( stringstepslen), intent(inout)     :: stringsteps
+    integer, dimension( determlistlen ), intent(inout)     :: stringdets
+! ...loop integer scalars...
+    integer :: i, j, k, l
+! ...integer scalars...
+    integer :: step, index1
+!--------------------------------------------------------------------
+    l=1
+! Loop over leading string
+    do i=1, leadspinstrlen
+      step=0
+! Loop over second string
+      do j=1, secondspinstrlen
+! Find the index of the determinant composed of the two strings
+        if ( leadspin .eq. 'a' ) then
+          index1 = indxk( leadspinstr(i), secondspinstr(j), belec, orbitals )
+        else if ( leadspin .eq. 'b' ) then
+          index1 = indxk( secondspinstr(j), leadspinstr(i), belec, orbitals )
+        else
+          STOP " NO SPIN SPECFIED. EXITING."
+        end if
+! Test if index1 is in expansion
+        do k=1, determlistlen
+          if ( index1 .eq. determlist(k) ) then
+            stringpairs(l,1) = i
+            stringpairs(l,2) = j
+            stringdets(l) = index1
+            l=l+1
+            step=step+1
+            exit
+          end if
+        end do
+      end do
+      stringsteps(i) = step
+    end do
+    return
+  end subroutine genstrpairs
+!====================================================================
+!====================================================================
+! Subroutine to generate the determinant cross refernce list
+!--------------------------------------------------------------------
+  subroutine detcrossref( pdeterms, qdeterms, length, crossreflist ) 
+! Input:
+!  pdeterms     = determinants ordered by p           integer array  1-d
+!  qdeterms     = determinants ordered by q           integer array  1-d
+!  length       = number of determinants              integer scalar
+! Output:
+!  crossreflist = cross reference list                integer scalar 1-d
+!--------------------------------------------------------------------
+    implicit none
+! ...input integer scalars...
+    integer, intent(in) :: length
+! ...input integer arrays...
+    integer, dimension( length ), intent(in) :: pdeterms, qdeterms
+! ...output itneger arrays...
+    integer, dimension( length ), intent(inout) :: crossreflist
+! ...loop integer scalars...
+    integer :: i, j
+! ...integer scalars...
+    integer :: l
+!--------------------------------------------------------------------
+! Loop over q list
+    l = 1
+    do i=1, length
+      do j=1, length
+        if ( qdeterms(i) .eq. pdeterms(j) ) then
+          crossreflist(l) = j
+          l=l+1
+          exit
+        end if
+      end do
+    end do
+    return
+  end subroutine detcrossref
+!====================================================================
 end module

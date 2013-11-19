@@ -10,3 +10,4 @@ ifort -o test.x detci1.o detci2.o truncation.o citrunc.o test.o
 
 rm ./*.o ./*.mod
 rm ./*.dets ./*.list
+rm ./*.ref

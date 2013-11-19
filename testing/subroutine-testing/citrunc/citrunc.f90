@@ -59,6 +59,11 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   integer, dimension(:), allocatable :: plocate, qlocate, pstep, qstep
 
   integer, dimension(:), allocatable :: fnldets
+  
+  integer, dimension(:), allocatable :: crossreflist
+  
+  integer, dimension(:), allocatable :: qdeterms, pdeterms
+
   integer :: fnldetslen, remdet
   
   integer :: step
@@ -129,26 +134,14 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! Generate determinant list
   call gendetlist( modalpha, modbeta, modalphalen, modbetalen, belec,&
                    orbitals, fnldets )
-  print *, "FNLDETS() BEFORE ANY TRUNCATION-------------------------"
-  do i=1, fnldetslen
-    print *, fnldets(i)
-  end do
 ! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
   remdet=0
   call enfdoccdet( fnldets, fnldetslen, aelec, adets, belec, bdets, &
                    orbitals, nfrozen, ndocc, xlevel, remdet )
-  print *, "FNLDETS() AFTER DOCC TRUCATION--------------------------"
-  do i=1, fnldetslen
-    print *, fnldets(i)
-  end do
-  print *, "DETERMINANTS REMOVED :    ", remdet
+
 ! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
   call enfactivedet( fnldets, fnldetslen, aelec, adets, belec, bdets,&
                      orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
-  print *, "FNLDETS() AFTER ACTIVE TRUNCATION------------------------"
-  do i=1, fnldetslen
-    print *, fnldets(i)
-  end do
 
 ! Write determinant list to file
   open( unit=4, file='det.list', status='new', position='rewind' )
@@ -176,75 +169,40 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   allocate( strngpr2(cidimension,2))
 
   allocate( pstep(modalphalen))
-! Loop over alpha strings
-  l=1
-  do i=1, modalphalen
-    step=0
-! Loop over beta strings
-    do j=1, modbetalen
-    
-      index1 = indxk( modalpha(i), modbeta(j), belec, orbitals ) 
+  allocate( qstep(modbetalen))
+  allocate( pdeterms(cidimension))
+  allocate( qdeterms(cidimension))
+! Generate alpha string pairs
+  call genstrpairs( modalpha, modalphalen, modbeta, modbetalen, &
+                    fnldets, cidimension, belec, orbitals, 'a', &
+                    strngpr1, cidimension, pstep, modalphalen,  &
+                    pdeterms )
+  call genstrpairs( modbeta, modbetalen, modalpha, modalphalen, &
+                    fnldets, cidimension, belec, orbitals, 'b', &
+                    strngpr2, cidimension, qstep, modbetalen,   &
+                    qdeterms )
 
-! Test if index1 is in expansion fnldets()
-      do k=1, cidimension
-        if ( index1 .eq. fnldets(k) ) then
-          print *, index1
-          strngpr1(l,1) = i
-          strngpr1(l,2) = j
-          l=l+1
-          step=step+1
-          exit
-        end if
-      end do
-    end do
-    pstep(i) = step
-  end do
-
-  print *, "Printing step information..."
-  do i=1, modalphalen
-    print *, pstep(i)
-  end do
-  print *, "Printing string pairings..."
-  do i=1, cidimension
-    print *, strngpr1(i,1), strngpr1(i,2), indxk( strngpr1(i,1),strngpr1(i,2),belec,orbitals)
-  end do
-
-  allocate(qstep(modbetalen))
-! Loop over beta strings
-  l=1
-  do i=1, modbetalen
-    step=0
-! Loop over alpha strings
-    do j=1, modalphalen
-    
-      index1 = indxk( j, i, belec, orbitals )
-
-! Test if index1 is in expansion fnldets()
-      do k=1, cidimension
-        if ( index1 .eq. fnldets(k) ) then
-          strngpr2(l,1) = i
-          strngpr2(l,2) = j
-          l=l+1
-          step=step+1
-          exit
-        end if
-      end do
-    end do
-    qstep(i) = step
-  end do
-
-  print *, "cidimension: ", cidimension
 ! ...WRITE strings to respective files...
   open(unit=5,file='pstring.list',status='new')
   do i=1,cidimension
     write(unit=5,fmt=10) strngpr1(i,1), strngpr1(i,2)
   end do
   close(unit=5)
+  open(unit=7,file='pstep.list',status='new')
+  do i=1,modalphalen
+    write(unit=7,fmt=9) pstep(i)
+  end do
+  close(unit=7)
   open(unit=6,file='qstring.list',status='new')
   do i=1,cidimension
     write(unit=6,fmt=10) strngpr2(i,1), strngpr2(i,2)
   end do
   close(unit=6)
+  open(unit=8,file='qstep.list',status='new')
+  do i=1,modbetalen
+    write(unit=8,fmt=9) qstep(i)
+  end do
+  close(unit=8)
 10 format(1x,I10,I10)
 
 
@@ -253,16 +211,18 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !  will list K'(K(p))
 
 ! Generate determinant list of determinants in stringpr1 list
-  allocate( pstrdetlist(cidimension) )
+  allocate(crossreflist(cidimension))
+  call detcrossref( pdeterms, qdeterms,cidimension, crossreflist )
 
+! Write cross reference list to file
+  open(unit=9,file='cross.ref',status='new')
   do i=1, cidimension
-    pstrdetlist(i) = indxk( strngpr1(i,1),strngpr1(i,2), belec, orbitals ) 
+    write(unit=9,fmt=9) crossreflist(i)
   end do
-
-  
-
-  deallocate(modalpha)
-  deallocate(modbeta)
+  close(unit=9)
+! Deallocate all arrays
+  deallocate(crossreflist,qstep,pstep,strngpr1,strngpr2,modalpha,&
+             modbeta,qdeterms,pdeterms)
   return
 
 end subroutine
