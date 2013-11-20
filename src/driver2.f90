@@ -48,7 +48,8 @@ program driver2
 
 ! ...file names...
   character*20 :: inputfl1, inputfl2, outputfl, astringfl, bstringfl, &
-                  determfl
+                  determfl, xreffile, pstepfl, qstepfl, pstringfl, &
+                  qstringfl
 
 ! .....................
 ! ...NAMELIST INPUTS...
@@ -78,6 +79,9 @@ program driver2
 ! ...driver integer arrays...
   integer, dimension(:), allocatable :: tdets
   integer, dimension(:), allocatable :: tadets, tbdets
+  integer, dimension(:), allocatable :: pstep, qstep
+  integer, dimension(:), allocatable :: pstring, qstring
+  integer, dimension(:), allocatable :: crossref
   
 ! ...driver real*8 arrays...
   real*8, dimension(:), allocatable :: diagonals
@@ -107,6 +111,11 @@ program driver2
   astringfl= 'alpha.dets'
   bstringfl= 'beta.dets'
   determfl = 'dets.list'
+  xreffile = 'cross.ref'
+  pstepfl  = 'pstep.list'
+  qstepfl  = 'qstep.list'
+  pstringfl= 'pstring.list'
+  qstringfl= 'qstring.list'
   
 ! Read input file 1
   open(unit=1,file=inputfl1,status='old',iostat=openstat)
@@ -158,6 +167,7 @@ program driver2
 11 format(1x,A,A)
 12 format(1x,A,ES10.1)
 13 format(1x,I10)
+14 format(1x,I10,I10)
 
 ! Read in MO's
   write(unit=2,fmt=9) " Reading in MO's..."
@@ -170,6 +180,16 @@ program driver2
   call iwfmt( moints1, moints2, type1, orbtls, moflnm, moints1len, moints2len )  
   write(unit=2,fmt=9) " "
 
+! Allocate arrays for CI wavefunction truncation
+  allocate(tadets(tadetslen))
+  allocate(pstring(cidim,2))
+  allocate(pstep(tadetslen))
+  allocate(tbdets(tbdetslen))
+  allocate(qstring(cidim,2))
+  allocate(qstep(tbdetslen))
+  allocate(tdets(cidim))
+  allocate(crossref(cidim))
+
 ! Read in determinants
   write(unit=2,fmt=9) " Reading in strings and determinants..."
 ! Alpha strings
@@ -177,31 +197,56 @@ program driver2
   if ( openstat > 0 ) stop "**** CANNOT OPEN ALPHA STRING FILE, alpha.dets. ****"
   read(unit=4,fmt=13) ( tadets(i), i=1, tadetslen )
   close(unit=4)
+
+! Alpha string det list
+  open(unit=7,file=pstringfl,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "**** CANNOT OPEN PSTRING DETERMINANT LIST, pstring.list. ****"
+  read(unit=7,fmt=14) ( pstring(i), i=1, cidim )
+  close(unit=7)
+
+! Alpha string step list
+  open(unit=10,file=pstepfl,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "**** CANOT OPEN PSTRING STEP FILE, pstep.list. ****"
+  read(unit=10,fmt=13) ( pstep(i), i=1, tadetslen )
+  close(unit=10)
+
 ! Beta strings
   open (unit=5,file=bstringfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN BETA STRING FILE, beta.dets. ****"
   read(unit=5,fmt=13) ( tbdets(i), i=1, tbdetslen )
   close(unit=5)
+
+! Beta string det list
+  open(unit=8,file=qstringfl,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "**** CANNOT OPEN QSTRING DETERMINANT LIST, qstring.list. ****"
+  read(unit=8,fmt=14) ( qstring(i), i=1, cidim )
+  close(unit=8)
+
+! Beta string step list
+  open(unit=11,file=qstepfl,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "**** CANNOT OPEN QSTRING STEP FILE, qstep.list. ****"
+  read(unit=11,fmt=13) ( qstep(i), i=1, tadetslen )
+  close(unit=11)
+
 ! Determinants
   open (unit=6,file=determfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN DETERMINANT FILE, dets.list. ****"
   read(unit=6,fmt=13) ( tdets(i), i=1, cidim )
   close(unit=6)
-  write(unit=2,fmt=9) " "
 
+! Read in cross reference list
+  open (unit=9,file=xreffile,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, cross.ref. ****"
+  read(unit=9,fmt=13) (crossref(i), i=1, cidim )
+  close(unit=9)
 
 ! Compute diagonal matrix elements
   write(unit=2,fmt=9) " Computing diagonal matrix elements..."
-
-
-
-
-
-
-
-
-
-
+  allocate(digonals(cidim))
+  call diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,       &
+                 tadets, tadetslen, tbdets, tbdetslen, cidim, electrons,   &
+                 orbitals, aelec, belec, adets, bdets, moints1, moints1len,&
+                 moints2, moints2len,   
 
 
 
