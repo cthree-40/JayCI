@@ -48,8 +48,8 @@ program driver2
 
 ! ...file names...
   character*20 :: inputfl1, inputfl2, outputfl, astringfl, bstringfl, &
-                  determfl, xreffile, pstepfl, qstepfl, pstringfl, &
-                  qstringfl
+                  determfl, pxreffile, pstepfl, qstepfl, pstringfl, &
+                  qstringfl, qxreffile, moflnm, plocfl, qlocfl
 
 ! .....................
 ! ...NAMELIST INPUTS...
@@ -79,9 +79,9 @@ program driver2
 ! ...driver integer arrays...
   integer, dimension(:), allocatable :: tdets
   integer, dimension(:), allocatable :: tadets, tbdets
-  integer, dimension(:), allocatable :: pstep, qstep
+  integer, dimension(:), allocatable :: pstep, qstep, plocate, qlocate
   integer, dimension(:), allocatable :: pstring, qstring
-  integer, dimension(:), allocatable :: crossref
+  integer, dimension(:), allocatable :: pcrossref, qcrossref
   
 ! ...driver real*8 arrays...
   real*8, dimension(:), allocatable :: diagonals
@@ -111,9 +111,12 @@ program driver2
   astringfl= 'alpha.dets'
   bstringfl= 'beta.dets'
   determfl = 'dets.list'
-  xreffile = 'cross.ref'
+  pxreffile = 'pcross.ref'
+  qxreffile = 'qcross.ref'
   pstepfl  = 'pstep.list'
   qstepfl  = 'qstep.list'
+  plocfl   = 'plocate.list'
+  qlocfl   = 'qlocate.list'
   pstringfl= 'pstring.list'
   qstringfl= 'qstring.list'
   
@@ -184,9 +187,11 @@ program driver2
   allocate(tadets(tadetslen))
   allocate(pstring(cidim,2))
   allocate(pstep(tadetslen))
+  allocate(plocate(taadetslen))
   allocate(tbdets(tbdetslen))
   allocate(qstring(cidim,2))
   allocate(qstep(tbdetslen))
+  allocate(qlocate(tbdetslen))
   allocate(tdets(cidim))
   allocate(crossref(cidim))
 
@@ -201,7 +206,7 @@ program driver2
 ! Alpha string det list
   open(unit=7,file=pstringfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN PSTRING DETERMINANT LIST, pstring.list. ****"
-  read(unit=7,fmt=14) ( pstring(i), i=1, cidim )
+  read(unit=7,fmt=14) ( (pstring(i,j),j=1,2), i=1, cidim )
   close(unit=7)
 
 ! Alpha string step list
@@ -210,6 +215,11 @@ program driver2
   read(unit=10,fmt=13) ( pstep(i), i=1, tadetslen )
   close(unit=10)
 
+! Alpha string locate list
+  open(unit=12,file=plocfl,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "**** CANNOT OPEN PLOCATE FILE, plocate.list. *****"
+  read(unit=12,fmt=13) ( plocate(i), i=1, tadetslen)
+  close(unit=12)
 ! Beta strings
   open (unit=5,file=bstringfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN BETA STRING FILE, beta.dets. ****"
@@ -219,14 +229,20 @@ program driver2
 ! Beta string det list
   open(unit=8,file=qstringfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN QSTRING DETERMINANT LIST, qstring.list. ****"
-  read(unit=8,fmt=14) ( qstring(i), i=1, cidim )
+  read(unit=8,fmt=14) ( (qstring(i,j),j=1,2), i=1, cidim )
   close(unit=8)
 
 ! Beta string step list
   open(unit=11,file=qstepfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN QSTRING STEP FILE, qstep.list. ****"
-  read(unit=11,fmt=13) ( qstep(i), i=1, tadetslen )
+  read(unit=11,fmt=13) ( qstep(i), i=1, tbdetslen )
   close(unit=11)
+
+! Beta sting locate list
+  open(unit=13,file=qlocfl,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "*** CANNOT OPEN QLOCATE FILE, qlocate.list. ****"
+  read(unit=13,fmt=13) ( qlocate(i), i=1, tbdetslen)
+  close(unit=13)
 
 ! Determinants
   open (unit=6,file=determfl,status='old',position='rewind',iostat=openstat)
@@ -235,18 +251,24 @@ program driver2
   close(unit=6)
 
 ! Read in cross reference list
-  open (unit=9,file=xreffile,status='old',position='rewind',iostat=openstat)
+  open (unit=9,file=pxreffile,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, cross.ref. ****"
-  read(unit=9,fmt=13) (crossref(i), i=1, cidim )
+  read(unit=9,fmt=13) (pcrossref(i), i=1, cidim )
   close(unit=9)
+
+  open (unit=14,file=qxreffile,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, cross.ref. ****"
+  read(unit=14,fmt=13 (qcrossref(i), i=1, cidim )
+  close(unit=14)
 
 ! Compute diagonal matrix elements
   write(unit=2,fmt=9) " Computing diagonal matrix elements..."
   allocate(digonals(cidim))
-  call diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,       &
-                 tadets, tadetslen, tbdets, tbdetslen, cidim, electrons,   &
+  call diagonal( pstring, pstep, tadetslen, qstring, qstep, tbdetslen,       &
+                 tadets, tadetslen, tbdets, tbdetslen, tdets, cidim, electrons,   &
                  orbitals, aelec, belec, adets, bdets, moints1, moints1len,&
-                 moints2, moints2len,   
+                 moints2, moints2len, pcrossref, qcrossref, cidim, plocate, &
+                 qlocate, diagonals )   
 
 
 
