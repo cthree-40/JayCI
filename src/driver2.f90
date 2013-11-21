@@ -65,10 +65,10 @@ program driver2
   character*20 :: moflnm
   
 ! ...runlevel2 integer scalars...
-  integer :: maxiter, krmin, krmax, roots
+  integer :: maxiter, krmin, krmax, roots, prediag, initgdim
 
 ! ...runlevel2 real*8 scalars...
-  real*8 :: rtoler
+  real*8 :: rtoler, nucrep
 
 ! ......................
 ! ...DRIVER VARIABLES...
@@ -84,9 +84,9 @@ program driver2
   integer, dimension(:), allocatable :: pcrossref, qcrossref
   
 ! ...driver real*8 arrays...
-  real*8, dimension(:), allocatable :: diagonals
-  real*8, dimension(:), allocatable :: eigenvalues
-
+  real*8, dimension(:),   allocatable :: diagonals
+  real*8, dimension(:),   allocatable :: eigenvalues
+  real*8, dimension(:,:), allocatable :: initvectors
 
 ! ...driver integer scalars...
   integer :: i, j, k, l
@@ -100,7 +100,8 @@ program driver2
   namelist /expinfo/ moflnm, cidim, aelec, belec, adets, bdets,&
                      tadetslen, bdetslen
 
-  namelist /runlevel2/ maxiter, krmin, krmax, rtoler, roots
+  namelist /runlevel2/ maxiter, krmin, krmax, rtoler, roots, nucrep, prediag,&
+                       initgdim
 
 !--------------------------------------------------------------------
 
@@ -163,6 +164,8 @@ program driver2
   write(unit=2,fmt=10) "  krmax=", krmax
   write(unit=2,fmt=12) "  rtoler=", rtoler
   write(unit=2,fmt=10) "  roots=", roots
+  write(unit=2,fmt=12) "  nucrep=", nucrep
+  write(unit=2,fmt=10) "  initgdim=", initgdim
   write(unit=2,fmt=9)  " "
 
 9  format(1x,A)
@@ -171,6 +174,7 @@ program driver2
 12 format(1x,A,ES10.1)
 13 format(1x,I10)
 14 format(1x,I10,I10)
+15 format(1x,I3,A)
 
 ! Read in MO's
   write(unit=2,fmt=9) " Reading in MO's..."
@@ -270,9 +274,24 @@ program driver2
                  moints2, moints2len, pcrossref, qcrossref, cidim, plocate, &
                  qlocate, diagonals )   
 
+  write(unit=2,fmt=9) " "
+  write(unit=2,fmt=9) " Diagonal matrix elements computed. "
+  write(unit=2,fmt=9) " "
+  write(unit=2,fmt=12)" -- Hartree Fock energy:    ", diagonals(1)-nucrep
+  write(unit=2,fmt=9) " "
 
-
-
+! Generate initial guess vectors
+! This can be done three ways: 1) unit vectors 
+!                              2) lowest diagonals
+!                              3) prediagonalization of H subblock
+  if ( prediag .eq. 1 )
+    write(unit=2,fmt=9) " Using unit vectors for initial guess..."
+    call geninituvec( initgdim, cidim, initvectors )
+    write(unit=2,fmt=15) initgdim, " initial vectors generated."
+    write(unit=2,fmt=9) " "
+  else if ( prediag .eq. 2 )
+    write(unit=2,fmt=9) " Using lowest diagonals prediag. subroutine for initial guess..."
+    call lowdiagprecond( diagonals
 
 
 
