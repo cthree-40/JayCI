@@ -54,13 +54,14 @@ contains
    
     integer, dimension(aelec) :: astring, astring2
     integer, dimension(belec) :: bstring
-    integer, dimension(orbitals-aelec) :: pexits1
+    integer, dimension(orbitals-aelec) :: pexits1, qexits1
     
-    integer, dimension(:,:), allocatable :: srepinfo
+    !integer, dimension(:,:), allocatable :: srepinfo
+    integer, dimension(:), allocatable :: srepinfo
 
-    integer :: singexlen, eps1, eps2, xindx1, xindx2, vecindx1, vecindx2
+    integer :: singexlen, eps1, eps2, eps3, xindx1, xindx2, vecindx1, vecindx2
 
-    real*8 :: int1e1, int2e1, int2e2, int3elweps
+    real*8 :: int1e1, int2e1, int2e2, int3e2, int3elweps
     !----------------------------------------------------------------
     ! Loop over alpha strings in expansion
     do i=1, pdetstrunc
@@ -72,9 +73,11 @@ contains
 
     ! Allocate info array
       singexlen = aelec*(orbitals-aelec)
-      if ( allocated(srepfinfo) ) deallocate(srepinfo)
-      allocate( srepinfo( singexlen, 4 ))
-
+      !if ( allocated(srepfinfo) ) deallocate(srepinfo)
+      !allocate( srepinfo( singexlen, 4 ))
+      !srepinfo = 0
+      if ( allocated(srepinfo) ) deallocate(srepinfo)
+      allocate( srepinfo(2))
     ! Loop over single excitations
       loopelec: do j=1, aelec
         loopexite: do k=1, orbitals-aelec
@@ -83,10 +86,10 @@ contains
     ! Test if xindx1 is in pdets
           do l=1, pdetstrunc
             if ( xindx1 .eq. pdets(l) ) then
-              srepinfo((j-1)*(orbitals-aelec)+k,1) = astring(j) ! Orbital exciting from
-              srepinfo((j-1)*(orbitals-aelec)+k,2) = pexits1(k) ! Orbital exciting to
-              srepinfo((j-1)*(orbitals-aelec)+k,3) = eps1       ! Parity
-              srepinfo((j-1)*(orbitals-aelec)+k,4) = xindx1     ! Index of new string
+             ! srepinfo((j-1)*(orbitals-aelec)+k,1) = astring(j) ! Orbital exciting from
+             ! srepinfo((j-1)*(orbitals-aelec)+k,2) = pexits1(k) ! Orbital exciting to
+              srepinfo(1) = eps1       ! Parity
+              srepinfo(2) = xindx1     ! Index of new string
 
               int1e1 = moints1(ind2val(astring(j),pexits(k)))
               
@@ -157,19 +160,41 @@ contains
                   end do ! Testing loop
                 end do ! Loop over excitations
               end do ! Loop over electrons
-            end if ! If p* is in expansion
-          end do ! Testing loop
-        end do loopexite
-      end do loopelec
       
       ! We now will loop over single excitations in both alpha and beta strings.
       ! Loop over beta strings in expansion associated with alpha string p.
       ! This information is in pstring.  We are looping over the second column.
-    
+              do m=1, pstep(i)
+                ! Generate an orbital string set for q
+                call genorbstring( pstring(plocate(i)+m,2), belec, orbitals, bdets, bstring )
+                ! Generate a list of possible excitations
+                call possex1( bstring, orbitals, belec, ( orbitals-belec ), qexits1 )
 
+                ! Loop over single excitations in beta strings
+                do n=1, belec
+                  do o=1, orbitals -belec
+                    call singrepinfo( bstring, belec, qexits1(o), n, orbitals, eps3, xindx1 )
 
-
-
-
-
+                    ! Loop over q indices that correspond to the single excitation r(pjv*) in p strings
+                    do p=1, pstep(l)  ! l is the indice of p* in our p string list
+                      if ( xindx1 .eq. pstring(plocate(l)+p,2) ) then
+                        int3e2 = moints2( index2e2( astring(j), pexits1(k), bstring(n), qexits1(o) ))
+                        vecindx1 = indxk(srepinfo(2), xindx1, belec, orbitals )
+                        vecindx2 = indxk( pdets(i),pstring(plocate(i)+m,2), belec, orbitals )
+                        vector2(vecindx2) = vector2(vecindx2) + srepinfo(1)*eps3*int3e2
+                      end if
+                    end do
+                  end do ! Excitations
+                end do ! Electrons
+              end do ! q strings
+            end if ! Test
+          end do ! Test loop
+        end do loopexe
+      end do loopelec
+    end do ! alpha strings in expansion
+    return
+  end subroutine
+!====================================================================
+!====================================================================
+!>
 end module
