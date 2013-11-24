@@ -170,7 +170,7 @@ contains
                 ! Generate a list of possible excitations
                 call possex1( bstring, orbitals, belec, ( orbitals-belec ), qexits1 )
 
-                ! Loop over single excitations in beta strings
+                ! Loop over single excitations in beta strings 
                 do n=1, belec
                   do o=1, orbitals -belec
                     call singrepinfo( bstring, belec, qexits1(o), n, orbitals, eps3, xindx1 )
@@ -196,5 +196,46 @@ contains
   end subroutine
 !====================================================================
 !====================================================================
-!>
+!>acthv_beta
+!
+! Subroutine to evaluate the contribution to Hv of single and double
+!  excitations in beta strings.  This subroutine follows the above
+!  subroutine, with beta and alpha strings swapped.
+!--------------------------------------------------------------------
+  subroutine acthv_beta( vector1, moints1, moints2, moints1len, moints2len,&
+    pstring, pstep, plocate, pxreflist, pdets, qstring, qstep, qlocate,    &
+    qxreflist, qdets, cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec,  &
+    belec, orbitals, vector2 )
+    use detci2
+    use detci5
+    implicit none
+    integer, intent(in) :: moints1len, moints2len, cidim, pdetstrunc,&
+                           qdetstrunc, adets, bdets, aelec, belec,   &
+                           orbitals
+    
+    integer, dimension(cidim, 2), intent(in)  :: pstring, qstring
+    integer, dimension(pdetstrunc), intent(in):: pstep, plocate, pdets
+    integer, dimension(qdetstrunc), intent(in):: qstep, qlocate, qdets
+    integer, dimension(cidim), intent(in)     :: pxreflist, qxreflist
+    
+    real*8, dimension(moints1len), intent(in) :: moints1
+    real*8, dimension(moints2len), intent(in) :: moints2
+    real*8, dimension(cidim), intent(in)      :: vector1
+  
+    real*8, dimension(cidim), intent(inout)   :: vector2
+
+    integer :: i, j, k, l, m, n, o, p, q, r, s
+   
+    integer, dimension(aelec) :: astring, astring2
+    integer, dimension(belec) :: bstring
+    integer, dimension(orbitals-aelec) :: pexits1, qexits1
+    
+    !integer, dimension(:,:), allocatable :: srepinfo
+    integer, dimension(:), allocatable :: srepinfo
+
+    integer :: singexlen, eps1, eps2, eps3, xindx1, xindx2, vecindx1, vecindx2
+
+    real*8 :: int1e1, int2e1, int2e2, 
+!--------------------------------------------------------------------
+
 end module

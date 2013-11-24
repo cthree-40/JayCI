@@ -62,5 +62,14 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
 ! Diagonal contribution
   call acthv_diag( vector1, diagonals, cidim, vector2 )
 ! Single, double and single single(beta) in alpha strings
-  call acthv_alpha( vector1, 
+  call acthv_alpha( vector1, moints1, moints2, moints1len, moints2len,       &
+                    pstring, pstep, plocate, pxreflist, pdets, qstring,      &
+                    qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc,     &
+                    qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
+! Single, double excitations in beta strings
+  call acthv_beta( vector1, moints1, moints2, moints2len, moints2len,        &
+                   pstring, pstep, plocate, pxreflist, pdets, qstring,       &
+                   qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc,      &
+                   qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
+!
 end subroutine
