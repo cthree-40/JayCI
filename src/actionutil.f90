@@ -81,7 +81,7 @@ contains
     ! Loop over single excitations
       loopelec: do j=1, aelec
         loopexite: do k=1, orbitals-aelec
-          call singrepinfo( astring1, aelec, pexits1(k), j, orbitals, &
+          call singrepinfo( astring, aelec, pexits1(k), j, orbitals, &
                             eps1, xindx1 )      
     ! Test if xindx1 is in pdets
           do l=1, pdetstrunc
@@ -91,7 +91,7 @@ contains
               srepinfo(1) = eps1       ! Parity
               srepinfo(2) = xindx1     ! Index of new string
 
-              int1e1 = moints1(ind2val(astring(j),pexits(k)))
+              int1e1 = moints1(ind2val(astring(j),pexits1(k)))
               
               int2e1 = 0d0
               do m=1, aelec
@@ -226,8 +226,8 @@ contains
 
     integer :: i, j, k, l, m, n, o, p, q, r, s
    
-    integer, dimension(aelec) :: astring, astring2
-    integer, dimension(belec) :: bstring
+    integer, dimension(aelec) :: astring
+    integer, dimension(belec) :: bstring, bstring2
     integer, dimension(orbitals-aelec) :: pexits1, qexits1
     
     !integer, dimension(:,:), allocatable :: srepinfo
@@ -236,6 +236,93 @@ contains
     integer :: singexlen, eps1, eps2, eps3, xindx1, xindx2, vecindx1, vecindx2
 
     real*8 :: int1e1, int2e1, int2e2, 
-!--------------------------------------------------------------------
+    !----------------------------------------------------------------
+    do i=1, qdetstrunc
+      ! Generate orbital index string
+      call genorbstring ( qdets(i), belec, orbitals, bdets, bstring )
 
+      ! Genererate list of excitations
+      call possex1( bstring, orbitals, belec, ( orbitals-belec ), pexits1 )
+
+      ! Allocate info array
+      if ( allocated(srepinfo) ) deallocate(srepinfo)
+      allocate( srepinfo(2) )
+      ! Loop over single excitations
+      loopelec: do j=1, belec
+        loopexcite: do k=1, orbitals - belec
+          call singrepinfo( bstring, belec, pexits1(k), j, orbitals, &
+                            eps1, xindx1 )
+          ! Test if xindx1 is in qdets
+          do l=1, qdetstrunc
+            if ( xindx1 .eq. qdets(l) ) then
+              srepinfo(1)=eps1
+              srepinfo(2)=xindx1
+
+              int1e1 = moints1(ind2val(bstring(j),pexits1(k)))
+
+              int2e1 = 0d0
+              do m=1, belec
+                if ( m .ne. j ) then
+                  int2e1 = int2e1 + moints2( index2e2( bstring(m), bstring(m), bstring(j),   &                                     pexits1(k))) - moints2( index2e2( bstring(m), bstring(j),&
+                                      bstring(m), pexits1(k)))
+                end if
+              end do
+
+                ! Loop over corresponding p strings
+              do m=1, qstep(l)
+                do n=1, qstep(i)
+                ! Test if corresponding p of qdets(i) corresponds to qdets(l)
+                  if ( qstring(qlocate(l)+m,2) .eq. qstring(qlocate(i)+n,2)) then
+                    !Generate orbital index string
+                    call genorbstring(qstring(qlocate(i)+n,2),aelec, orbitals, adets, astring )
+                    int2e2 = 0d0
+                    do o=1, aelec
+                      int2e2 = int2e2 + moints2( index2e2( astring(o), astring(o), bstring(j), &
+                                          pexits1(k) ) )
+                    end do
+                    ! Find index of determinant C[r(p,qjv*)]
+                    vecindx1 = indxk( qstring(qlocate(l)+m,2),xindx1, belec, orbitals )
+                    ! Find index of determinant V[(p,q)]
+                    vecindx2 = indxk( qstring(qlocate(l)+m,2),qdets(i), belec, orbitals )
+                    ! Add the stored integerals and multiply by parity
+                    vector2(vecindx2) = vector2(vecindx2) + eps1*(int1e1+int2e1+int2e2)*&
+                                        vector1(vecindx1)
+                  end if
+                end do
+              end do
+
+              ! Loop over additional replacements in beta strings ( m > j; n> k )
+              do m=j+1, belec
+                do n=k+1, orbitals-belec
+                  call doublerepinfo( bstring, belec, pexits1(k), j, pexits1(n), m, &
+                                      orbitals, eps2, xindx2 )
+                  int3elweps = eps2*( moints2(index2e2(bstring(j),pexits1(k),bstring(m),                                        pexits1(n) ) ) - moints2( index2e2( bstring(j),   &
+                                        pexits1(n), bstring(m), pexits1(k) )))
+                  ! Test if xindx2 is in expansion
+                  do o=1, qdetstrunc
+                    if ( xindx2 .eq. qdets(o) ) then
+                    ! Loop over p string w/o generating orbital index set
+                    ! p must correspond to both q and q**
+                      do p=1, qstep(o)
+                        do q=1, qstep(i)
+                          if ( qstring(qlocate(o)+p,2) .eq. qstring(qlocate(i)+q,2) ) then
+                            vecindx1 = indxk( qstring(qlocate(o)+p), xindx2, belec, orbitals )
+                            vecindx2 = indxk( qstring(qlocate(o)+p), qdets(i),belec, orbitals)
+                            vector2(vecindx2) = vector2(vecindx2) + int3elweps*vector1(vecindx1)
+                          end if
+                        end do
+                      end do
+                    end if
+                  end do
+                end do
+              end do
+            end if
+          end do
+        end do loopexite
+      end do loopelec
+    end do
+    return
+  end subroutine
+!====================================================================
+!====================================================================
 end module

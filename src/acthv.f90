@@ -71,5 +71,6 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
                    pstring, pstep, plocate, pxreflist, pdets, qstring,       &
                    qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc,      &
                    qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
-!
+! Return vector2
+  return
 end subroutine
