@@ -1,0 +1,123 @@
+ Starting...
+ Testing hvdiag()...
+ System info:       
+   H2
+   Orbitals:                           28 
+   Electrons:                           2 
+   CI-dimension:                      784 
+  HF electronic energy should be:  -1.133 
+  
+ Calling citrunc()...
+  
+ Reading in results of citrunc()...
+  Reading in strings and determinants...
+  
+ Calling diagonal()...
+  Generating unit vector guess...
+  Calling acthv()...
+  Adding contribution from                     29  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                     57  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                     85  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    113  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    141  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    169  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    197  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    225  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    253  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    281  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    309  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    337  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    365  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    393  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    421  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    449  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    477  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    505  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    533  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    561  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    589  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    617  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    645  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    673  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    701  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    757  to                      1
+  Adding contribution from                     29  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                     57  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                     85  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    113  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    141  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    169  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    197  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    225  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    253  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    281  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    309  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    337  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    365  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    393  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    421  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    449  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    477  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    505  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    533  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    561  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    589  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    617  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    645  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    673  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    701  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    729  to                      1
+  Adding contribution from                    757  to                      1
+ Resulting vector being printed to file: output_acthv.1
+ Done.
