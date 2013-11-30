@@ -73,6 +73,8 @@ program driver2
 ! ......................
 ! ...DRIVER VARIABLES...
 
+! ...driver integer parameters...
+  integer, parameter :: diagsguess=100
 ! ...driver integer scalars...
   integer :: moints1len, moints2len, max1e, max2e
 
@@ -291,7 +293,17 @@ program driver2
     write(unit=2,fmt=9) " "
   else if ( prediag .eq. 2 )
     write(unit=2,fmt=9) " Using lowest diagonals prediag. subroutine for initial guess..."
-    call lowdiagprecond( diagonals
+    call lowdiagprecond( diagonals, cidim, moints1, moints2, moints1len, &
+                         moints2len, pstring, pstep, plocate, qstring,   &
+                         qlocate, pdets, qdets, pdetslen, qdetslen,adets,&
+                         bdets, aelec, belec, orbitals, initgdim, diagsguess ,initvectors )
+    write(unit=2,fmt=15) initgdim, " initial vectors generated."
+    write(unit=2,fmt=9) " "
+  else if ( prediag .eq. 3 ) 
+    write(unit=2,fmt=9) " Using prediagonalization of H subblock for initial guess..."
+    call prediagsubblock( diagonals, cidim, moints1, moints2, moints1len, &
+                          moints2len, pdets, pdetslen, qdets, qdetslen,   &
+                          tdetslen, subblockdim, initvectors )
 
 
 

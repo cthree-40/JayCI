@@ -63,17 +63,50 @@ contains
 
     real*8 :: int1e1, int2e1, int2e2, int3e2, int3elweps
 #ifdef HVACTION
+    character(len=11) :: debugfl
+    integer :: debugunit
     integer :: openstat
+#endif
+#ifdef HVACTION
+9  format(1x,A)
+10 format(1x,A,I8)
+11 format(1x,I3,I3)
+12 format(1x,I2)
+13 format(1x, A, I8, A, I8 )
+14 format(1x, A, F10.6)
 #endif
     !----------------------------------------------------------------
     ! Loop over alpha strings in expansion
     do i=1, pdetstrunc
+!___________________________________________________
+#ifdef HVACTION
+    debugunit=5
+    debugfl='debug.acthv'
+    open(unit=debugunit,file=debugfl, status='unknown', iostat=openstat )
+    if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN DEBUGGING FILE *****"
+    write( unit=debugunit, fmt=10 ) "Looping over alpha string ", pdets(i)
+    write( unit=debugunit, fmt=14 ) "  VECTOR2(1) : " , vector2(1)
+#endif
+!___________________________________________________
     ! Generate orbital index string
       call genorbstring( pdets(i), aelec, orbitals, adets, astring )
-
+!___________________________________________________
+#ifdef HVACTION
+      write( unit=debugunit, fmt=9) "  This string looks like : "
+      write( unit=debugunit, fmt=11)  astring(1)
+      write( unit=debugunit, fmt=9) " "
+#endif 
     ! Generate list of excitations
       call possex1( astring, orbitals, aelec, (orbitals-aelec), pexits1 )
-
+!___________________________________________________
+#ifdef HVACTION
+      write( unit=debugunit, fmt=9) "  Possible excitations for this string are: "
+      do j=1, orbitals-aelec
+        write( unit=debugunit, fmt=10) "    ", pexits1(j)
+      end do
+      write( unit=debugunit, fmt=9) " "
+#endif
+!____________________________________________________      
     ! Allocate info array
       singexlen = aelec*(orbitals-aelec)
       !if ( allocated(srepfinfo) ) deallocate(srepinfo)
@@ -89,22 +122,20 @@ contains
     ! Test if xindx1 is in pdets
           do l=1, pdetstrunc
             if ( xindx1 .eq. pdets(l) ) then
+!__________________________________________________
+#ifdef HVACTION
+            write( unit=debugunit, fmt=9 ) "    Entering contribution Loop..."
+            write( unit=debugunit, fmt=10) "      Index of new string is : ", pdets(l)
+            write( unit=debugunit, fmt=9) " "
+#endif
+!___________________________________________________
              ! srepinfo((j-1)*(orbitals-aelec)+k,1) = astring(j) ! Orbital exciting from
              ! srepinfo((j-1)*(orbitals-aelec)+k,2) = pexits1(k) ! Orbital exciting to
               srepinfo(1) = eps1       ! Parity
               srepinfo(2) = xindx1     ! Index of new string
 
-              int1e1 = moints1(ind2val(astring(j),pexits1(k)))
-              
-              int2e1 = 0d0
-              do m=1, aelec
-                if ( m .ne. j ) then
-                  int2e1 = int2e1 + moints2( index2e2( astring(m), astring(m), astring(j),   &
-                                    pexits1(k))) - moints2( index2e2( astring(m), astring(j),&
-                                    astring(m), pexits1(k)))
-                end if
-              end do
-             
+             call eval_singlex1( astring, pexits1, aelec, moints1, moints2, moints1len, &
+                                 moints2len, orbitals, j, k, int1e1, int2e1 )             
     ! Loop over corresponding q strings. This info is in pstrings()
     ! These q strings correspond to both p and r(pjv*)
     ! We are evaluating <p,q|H|p*,q>; therefore, |p,q> and |p*,q> must be in
@@ -117,41 +148,47 @@ contains
                 ! Test if the corresponding q of pdets(i) corresponds to
                 ! pdets(l)
                   if ( pstring(plocate(l)+m,2) .eq. pstring(plocate(i)+n,2) ) then
-                  ! Generate orbital index string
-                    call genorbstring(pstring(plocate(i)+n,2), belec, orbitals, bdets, bstring )
-                    int2e2=0d0
-                    do o=1, belec
-                      int2e2 = int2e2 + moints2( index2e2( bstring(o), bstring(o), astring(j), &
-                                        pexits1(k) ) )
-                    end do
+!_______________________________________________
+#ifdef HVACTION
+                    write( unit=debugunit, fmt=10 ) " Q string is ", pstring(plocate(l)+m,2)
+                    write( unit=debugunit, fmt=9) " "
+#endif
+!_______________________________________________
+
+                  ! Compute contribution
+                    call eval_singlex2( pstring(plocate(l)+m,2), belec, orbitals, bdets, &
+                                   astring(j), pexits1(k), moints1, moints2, moints1len, &
+                                   moints2len, int2e2 )
                   ! Find index of determinant C[r(pjv*,q)]
                     vecindx1 = indxk( xindx1, pstring(plocate(l)+m,2), belec, orbitals )
                   ! Find index of determinant V[(p,q)]
                     vecindx2 = indxk( pdets(i), pstring(plocate(l)+m,2), belec, orbitals )
+!________________________________________________
 #ifdef HVACTION
-                    open( unit=50,file='alpha-cont.dets',status='unknown',position='append', iostat=openstat)
-                    if ( openstat .ne. 0 ) stop "COULD NOT OPEN FILE"
-                    write(unit=50,fmt=10) "From ", vecindx1," to ", vecindx2
-                    close(unit=50)
-10 format( 1x, A, I8, A, I8 )
+                    write( unit=debugunit, fmt=13 ) "        Adding contribution from ", vecindx1, "to", vecindx2
+                    write( unit=debugunit, fmt=14 ) "        vector(vecindx1) is ", vector1(vecindx1)
+                    write( unit=debugunit, fmt=14 ) "        vector(1) is ", vector2(1)
 #endif
+!________________________________________________
+ 
                   ! Add the stored integrals and multiply by parity
                     vector2(vecindx2) = vector2(vecindx2) + eps1*( int1e1 + int2e1 + int2e2 )*&
                                          vector1(vecindx1)
+!_______________________________________________
+#ifdef HVACTION
+                    write( unit=debugunit,fmt=14) "         vector(1) is ", vector2(1)
+#endif
+!_______________________________________________
                   end if
                 end do
               end do
-#ifdef HVACTION
-              open( unit=51, file='alpha-single.cont',status='unknown', position='append', iostat=openstat )
-              if ( openstat .ne. 0 ) stop "COULD NOT OPEN alpha-single.cont"
-              write( unit=51 , fmt=10) "Looping over det ", pdets(i), " det num. ", i
-              do m=1, cidim
-                write( unit=51, fmt=11) m, vector2(m)
-              end do
-              close( unit=51 )
-11 format( 1x, I9, F10.6 )
-#endif
+
     ! Loop over additional replacements in alpha strings. ( m > j; n > k )
+!________________________________________________
+#ifdef HVACTION
+              write( unit=debugunit, fmt=9 ) " Now for addition replacements..."
+#endif
+!_________________________________________________
               do m=j+1, aelec      
                 do n=k+1, orbitals-aelec
                   call doublerepinfo( astring, aelec, pexits1(k), j, pexits1(n), m, &
@@ -168,10 +205,15 @@ contains
                       do p=1, pstep(o)
                         do q=1, pstep(i)
                           if ( pstring(plocate(o)+p,2) .eq. pstring(plocate(i)+q,2) ) then
-                          ! Do NOT generate orbital index strings. All that is needed is the index.
+                          ! Do NOT generate orbital index strings. All that is needed is the indoex.
                             vecindx1 = indxk( xindx2, pstring(plocate(o)+p,2), belec, orbitals )
                             vecindx2 = indxk( pdets(i), pstring(plocate(o)+p,2), belec, orbitals )
                             vector2(vecindx2) = vector2(vecindx2) + int3elweps*vector1(vecindx1)
+!_______________________________________________
+#ifdef HVACTION
+                            write( unit=debugunit,fmt=13) " Adding the contribution from ", vecindx1, "to", vecindx2
+#endif
+!_______________________________________________
                           end if ! If q corresponds to both p and p**
                         end do ! Testing loop
                       end do ! Testing loop
@@ -183,6 +225,12 @@ contains
       ! We now will loop over single excitations in both alpha and beta strings.
       ! Loop over beta strings in expansion associated with alpha string p.
       ! This information is in pstring.  We are looping over the second column.
+!__________________________________________________
+#ifdef HVACTION
+              write( unit=debugunit,fmt=9) " Now entering single excitations in both alpha and beta strings..."
+              write( unit=debugunit,fmt=14) "   vector2(1): ", vector2(1)
+#endif
+!___________________________________________________
               do m=1, pstep(i)
                 ! Generate an orbital string set for q
                 call genorbstring( pstring(plocate(i)+m,2), belec, orbitals, bdets, bstring )
@@ -200,7 +248,7 @@ contains
                         int3e2 = moints2( index2e2( astring(j), pexits1(k), bstring(n), qexits1(o) ))
                         vecindx1 = indxk(srepinfo(2), xindx1, belec, orbitals )
                         vecindx2 = indxk( pdets(i),pstring(plocate(i)+m,2), belec, orbitals )
-                        vector2(vecindx2) = vector2(vecindx2) + srepinfo(1)*eps3*int3e2
+                        vector2(vecindx2) = vector2(vecindx2) + srepinfo(1)*eps3*int3e2*vector1(vecindx1)
                       end if
                     end do
                   end do ! Excitations
@@ -277,28 +325,17 @@ contains
               srepinfo(1)=eps1
               srepinfo(2)=xindx1
 
-              int1e1 = moints1(ind2val(bstring(j),pexits1(k)))
-
-              int2e1 = 0d0
-              do m=1, belec
-                if ( m .ne. j ) then
-                  int2e1 = int2e1 + moints2( index2e2( bstring(m), bstring(m), bstring(j),   &                                     pexits1(k))) - moints2( index2e2( bstring(m), bstring(j),&
-                                      bstring(m), pexits1(k)))
-                end if
-              end do
-
+              call eval_singlex1( bstring, pexits1, belec, moints1, moints2, moints1len, &
+                                  moints2len, orbitals, j, k, int1e1, int2e1 )
                 ! Loop over corresponding p strings
               do m=1, qstep(l)
                 do n=1, qstep(i)
                 ! Test if corresponding p of qdets(i) corresponds to qdets(l)
                   if ( qstring(qlocate(l)+m,2) .eq. qstring(qlocate(i)+n,2)) then
-                    !Generate orbital index string
-                    call genorbstring(qstring(qlocate(i)+n,2),aelec, orbitals, adets, astring )
-                    int2e2 = 0d0
-                    do o=1, aelec
-                      int2e2 = int2e2 + moints2( index2e2( astring(o), astring(o), bstring(j), &
-                                          pexits1(k) ) )
-                    end do
+                    ! Compute contribution
+                    call eval_singlex2( qstring(qlocate(l)+m,2), aelec, orbitals, adets, &
+                                        bstring(j), pexits1(k), moints1, moints2, moints1len, &
+                                        moints2len, int2e2 )
                     ! Find index of determinant C[r(p,qjv*)]
                     vecindx1 = indxk( qstring(qlocate(l)+m,2),xindx1, belec, orbitals )
                     ! Find index of determinant V[(p,q)]
@@ -342,6 +379,98 @@ contains
     end do
     return
   end subroutine
+!====================================================================
+!====================================================================
+!>eval_singlex1
+!
+!Subroutine to compute single exitation contributions
+!--------------------------------------------------------------------
+  subroutine eval_singlex1( spstring, spexits, spelec, moints1,  moints2, &
+    moints1len, moints2len, orbitals, bound_elec, excited_elec, cont_1elec,&
+    cont_2elec)
+  !Input:
+  ! spstring    = alpha/beta string
+  ! spexits     = alpha/beta exited orbital string
+  ! spelec      = # of alpha/beta electrons
+  ! moints1     = 1-e integrals
+  ! moints2     = 2-e integrals
+  ! moints1len  = length of moints1
+  ! moints2len  = length of moints2
+  ! orbitals    = # of MO's
+  ! bound_elec  = index of electron being excited in spstring
+  ! exited_elec = index of new orbital in spexits
+  ! cont_1elec  = one electron contribution
+  ! cont_2elec  = two electron contribution
+    use detci5
+    implicit none
+  ! ...input integer scalars...
+    integer, intent(in) :: spelec, moints1len, moints2len, orbitals, bound_elec,&
+                         excited_elec
+  ! ...input integer arrays...
+    integer, dimension(spelec), intent(in)          :: spstring
+    integer, dimension(orbitals-spelec), intent(in) :: spexits
+  ! ...input real*8 arrays...
+    real*8, dimension(moints1len),intent(in)        :: moints1
+    real*8, dimension(moints2len),intent(in)        :: moints2
+  ! ...output real*8 scalars...
+    real*8, intent(out) :: cont_1elec, cont_2elec
+  ! ...loop integer scalars...
+    integer :: i, j, k
+  !--------------------------------------------------------------------
+  ! One electron contribution
+    cont_1elec = moints1(ind2val(spstring(bound_elec),spexits(excited_elec)))
+  ! Two elecron contribution
+    cont_2elec = 0d0
+    do i=1, spelec
+      if ( i .ne. bound_elec ) then
+        cont_2elec = cont_2elec + moints2( index2e2( spstring(i), spstring(i), &
+                     spstring(bound_elec),spexits(excited_elec))) - moints2(   &
+                     index2e2( spstring(i), spstring(bound_elec), spstring(i), &
+                     spexits(excited_elec)))
+      end if
+    end do
+  ! Return
+    return
+  end subroutine eval_singlex1
+!====================================================================
+!====================================================================
+!>eval_singlex2
+!
+! Subroutine to compute 3 integral of single excitations
+!--------------------------------------------------------------------
+  subroutine eval_singlex2( sp2index, sp2elec, orbitals, sp2_dets, sp1orbital_bnd,&
+    sp1orbital_ex , moints1, moints2, moints1len, moints2len, cont_2elec)
+  !Input:
+  ! sp2index       = beta/alpha string index
+  ! sp2elec        = beta/alpha electron number
+  ! orbitals       = # of MO's
+  ! sp2_dets       = non-truncated beta/alpha determinants
+  ! sp2_string     = beta/alpha string
+  ! sp1orbital_bnd = orbital of electron being excited FROM
+  ! sp1orbital_ex  = orbital electron is being excited TO
+  ! cont_2elec     = 2-e contribution
+    use detci2
+    use detci5
+    implicit none
+    integer, intent(in) :: sp2index, sp2elec, orbitals, sp2_dets, sp1orbital_bnd, &
+                           sp1orbital_ex, moints1len, moints2len
+    real*8, dimension(moints1len), intent(in) :: moints1
+    real*8, dimension(moints2len), intent(in) :: moints2
+    real*8, intent(out) :: cont_2elec
+    integer, dimension(sp2elec) :: sp2_string
+    integer :: i
+    !----------------------------------------------------------------
+    ! Generate orbital index string
+      call genorbstring( sp2index, sp2elec, orbitals, sp2_dets, sp2_string )
+    ! Compute contribution
+    cont_2elec = 0d0
+    do i=1, sp2elec
+      cont_2elec = cont_2elec + moints2( index2e2( sp2_string(i), sp2_string(i), &
+                   sp1orbital_bnd, sp1orbital_ex ))
+    end do
+    ! Return
+    return
+  end subroutine eval_singlex2
 !====================================================================
 !====================================================================
 end module

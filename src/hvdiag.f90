@@ -144,15 +144,6 @@ subroutine contribdiag( spin, detlist, detlistlen, pstring, pstringlen,  &
 ! ...integer scalars...
   integer :: vecindx1
 !--------------------------------------------------------------------
-  print *, " Printint pstring and qstring "
-  print *, " First, pqstring..."
-  do i=1, pstringlen
-    print *, pstring(i,1), pstring(i,2)
-  end do
-  print *, " .................."
-  do i=1, qstringlen
-    print *, qstring(i,1), qstring(i,2)
-  end do
 
   if ( spin .eq. 'a' ) then
 ! Loop over p strings in expansion
@@ -187,7 +178,6 @@ subroutine contribdiag( spin, detlist, detlistlen, pstring, pstringlen,  &
         end do
 
 ! Add sums to diagonal element <p,q| H |p,q>
-        print *, " p, q, det index: ", pdets(i), pstring(plocate(i)+j,2), pxreflist(plocate(i)+j)
         diagonals(pxreflist(plocate(i)+j)) = diagonals(pxreflist(plocate(i)+j)) + int1e1 + int2e1 + int2e2
       end do
     end do
@@ -223,7 +213,6 @@ subroutine contribdiag( spin, detlist, detlistlen, pstring, pstringlen,  &
 !          end do
 !        end do
 ! Add sums to diagonal element <p,q|H|p,q>
-        print *, " p, q, det index: ", qstring(i+j,2), qdets(i), qxreflist(qlocate(i)+j)
         diagonals(qxreflist(qlocate(i)+j)) = diagonals(qxreflist(qlocate(i)+j)) + int1e1 + int2e1 + int2e2
       end do
     end do

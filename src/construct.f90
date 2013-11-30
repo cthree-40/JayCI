@@ -1,4 +1,4 @@
-subroutine construct( spdim, actstrlen,  moints1, &
+subroutine hv_construct( spdim, actstrlen,  moints1, &
   moints2, max1e, max2e, actstr, aelec, belec, totels,  &
   orbitals, adets, bdets, dgls, nfrzn, ndocc, ncas )
 !==========================================================
@@ -64,4 +64,55 @@ subroutine construct( spdim, actstrlen,  moints1, &
 
   print *, "Finished"
   return
-end subroutine
+end subroutine hv_construct
+!====================================================================
+!====================================================================
+!> exp_construct
+!
+! Subroutine to explicitly construct H by finding value of each matrix
+!  element.
+!--------------------------------------------------------------------
+subroutine exp_construct( moints1, moints1len, moints2, moints2len, 
+  cidim, aelec, belec, orbitals, pdets, qdets, pdetslen, qdetslen )
+  implicit none
+
+!--------------------------------------------------------------------
+! Construct hamiltonian
+  do i=1, cidim
+    do j=1, cidim
+      hamiltonian(j,i) = ham_element( j, i, moints1, moints1len, moints2,
+                         moints2len, cidim, &
+                         aelec, belec, orbitals, pdets, pdetslen, qdets, &
+                         qdetslen, ....  )
+    end do
+  end do
+  return
+end subroutine exp_construct
+!====================================================================
+!====================================================================
+!> ham_element
+!
+! real*8 function to compute hamiltonian element(i,j)
+!--------------------------------------------------------------------
+real*8 function ham_element( ind1, ind2, moints1, moints1len, moints2, &
+  moints2len, cidimension, aelec, belec, orbitals, pdets, pdetslen,    &
+  qdets, qdetslen, .... )
+  use detci2
+  implicit none
+  integer, intent(in) :: ind1, ind2, moints1len, moints2len, cidimension, &
+                         aelec, belec, orbitals, pdetslen, qdetslen
+
+  integer :: p1, q1, p2, q2
+  integer, dimension( aelec ) :: pstring1, pstring2
+  integer, dimension( belec ) :: qstring1, qstring2
+
+!--------------------------------------------------------------------
+! Find determinant string indices for ind1 and ind2
+  call k2indc( ind1, belec, orbitals, p1, q1 )
+  call k2indc( ind2, belec, orbitals, p2, q2 )
+! Find respective strings for p1, q1, p2, q2
+  call genorbstring( p1, aelec, orbitals, adets, pstring1 )
+  call genorbstring( p2, aelec, orbitals, adets, pstring2 )
+  call genorbstring( q1, belec, orbitals, bdets, qstring1 )
+  call genorbstring( q2, belec, orbitals, bdets, qstring2 )
+! Test differences in strings. If > 2 orbitals, element is 0
