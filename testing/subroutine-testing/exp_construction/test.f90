@@ -31,6 +31,9 @@ program test
   integer, dimension(3) :: qstring1, qstring2
   integer :: diffs
 #endif
+#ifdef STRINGDIFFS
+  integer, dimension(:,:), allocatable :: diff_mat
+#endif
 #ifdef EXPBUILD
   real*8, dimension(:,:), allocatable :: hamiltonian
 #endif
@@ -239,6 +242,23 @@ program test
     pstring2(2) = 4
     call orbdiffs( pstring1, pstring2, qstring1, qstring2, 3, 3, diffs )
     print *, diffs, " should equal ", 3
+#endif
+#ifdef STRINGDIFFS
+    print *, "Testing stringdiffs..."
+    do i=1, 3
+      pstring1(i) = i
+      pstring2(i) = i
+      qstring1(i) = i
+      qstring2(i) = i
+    end do
+    pstring2(3) = 5
+    allocate( diff_mat(2,2) )
+    call stringdiffs( pstring1, pstring2, 3, diff_mat, diffs )
+    print *, diffs, " should equal ", 2
+    print *, "and..."
+    print *, diff_mat(1,1), diff_mat(1,2)
+    print *, "should match"
+    print *, pstring1(3), pstring2(3)
 #endif
 #ifdef EXPBUILD
     print *, "Building the Hamiltonian explicitly... "
