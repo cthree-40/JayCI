@@ -36,6 +36,12 @@ program test
 #endif
 #ifdef EXPBUILD
   real*8, dimension(:,:), allocatable :: hamiltonian
+  real*8 :: abstol, dlamch
+  integer :: lwork, liwork, il, iu, info, o, vu, vl
+  integer, dimension(:),   allocatable :: isuppz
+  real*8,  dimension(:),   allocatable :: work, iwork
+  real*8,  dimension(:,:), allocatable :: eigvec
+  real*8,  dimension(:),   allocatable :: eigval
 #endif
 !-------------------------
 
@@ -93,10 +99,12 @@ program test
    print *, "Testing hvdiag()..."
    print *, "System info:       "
    print *, "  H2"
-   print *, "  Orbitals:                           28 "
-   print *, "  Electrons:                           2 "
-   print *, "  CI-dimension:                      784 "
-   print *, " HF electronic energy should be:  -1.133 " 
+   print *, "  Orbitals:                              28 "
+   print *, "  Electrons:                              2 "
+   print *, "  CI-dimension:                         784 "
+   print *, " HF electronic energy should be:  -1.839941 "
+   print *, " Hartree Fock GS is:              -1.132854
+   print *, " Nuclear Repulsion energy is:      0.707107 " 
 
    adets       = 28
    bdets       = 28
@@ -251,14 +259,17 @@ program test
       qstring1(i) = i
       qstring2(i) = i
     end do
+    pstring2(2) = 4
     pstring2(3) = 5
     allocate( diff_mat(2,2) )
     call stringdiffs( pstring1, pstring2, 3, diff_mat, diffs )
     print *, diffs, " should equal ", 2
     print *, "and..."
     print *, diff_mat(1,1), diff_mat(1,2)
-    print *, "should match"
-    print *, pstring1(3), pstring2(3)
+    print *, "should be equal."
+    print *, "And below should be the excitation(s)..."
+    print *, pstring1(2), pstring2(diff_mat(1,2))
+    print *, pstring1(3), pstring2(diff_mat(2,2))
 #endif
 #ifdef EXPBUILD
     print *, "Building the Hamiltonian explicitly... "
@@ -269,8 +280,22 @@ program test
     open( unit=30, file='hamiltonian.col1', status='new', position='rewind', iostat = openstat )
     if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN hamiltonian file ****"
     do m=1, cidim
-      write( unit=30, fmt=15 ) hamiltonian(1,m)
+      write( unit=30, fmt=20 ) hamiltonian(1,m), hamiltonian(m,1)
     end do
+20 format(1x,F10.6,F10.6)
     close(unit=30)
+    print *, "Diagonalizing this matrix..."
+    print *, "Calling DSYEVR..."
+    abstol = dlamch( 'safe minimum' )
+    liwork = 12*cidim
+    lwork  = 27*cidim
+    allocate(isuppz(2*cidim))
+    allocate(work(lwork))
+    allocate(iwork(liwork))
+    allocate(eigval(cidim))
+    allocate(eigvec(cidim,cidim))
+    call dsyevr( 'n','a','u', cidim, hamiltonian, cidim, vl, vu, il, iu, abstol, o, eigval, &
+                  eigvec, cidim, isuppz, work, lwork, iwork, liwork, info )
+    print *, "Eigenvalue 1: ", eigval(1)
 #endif
 end program
