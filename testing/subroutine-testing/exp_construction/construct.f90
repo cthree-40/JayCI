@@ -227,8 +227,16 @@ real*8 function dblexcitations( pstring1, pstring2, qstring1, qstring2, &
                      moints2( index2e2(qstring1(qdiffs(1,1)),qstring2(qdiffs(2,2)),&
                               qstring1(qdiffs(2,1)),qstring2(qdiffs(1,2))))
   else
-    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
-                              pstring2(pdiffs(1,2)),qstring2(qdiffs(2,2))))
+     dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
+                              pstring2(pdiffs(1,2)),qstring2(qdiffs(1,2))))
+!     dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
+!                              pstring2(pdiffs(1,2)),qstring2(qdiffs(1,2))))  - &
+!                      moints2( index2e2(pstring1(pdiffs(1,1)),qstring2(qdiffs(1,2)),&
+!                              qstring2(qdiffs(1,1)),pstring2(pdiffs(1,2))))
+!    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)),&
+!                              qstring1(qdiffs(1,1)),qstring2(qdiffs(1,2)))) - &
+!                     moints2( index2e2(pstring1(pdiffs(1,1)),qstring2(qdiffs(1,2)),&
+!                              qstring1(qdiffs(1,1)),pstring2(pdiffs(1,2))))                              
   end if
 end function
 !====================================================================
@@ -303,10 +311,10 @@ real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
   call stringdiffs( qstring1, qstring2, belec, qdiffs, qd )
 ! Test which string has excitation
   val = 0d0
-  if ( pd .ne. 0 ) then
-    val = moints1( ind2val(pdiffs(1,1), pdiffs(1,2)))
+  if ( pd .eq. 1 ) then
+    val = moints1( ind2val(pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2))))
     do i=1, aelec
-      if ( pstring1(i) .ne. pdiffs(1,1) ) then
+      if ( pstring1(i) .ne. pstring1(pdiffs(1,1)) ) then
         val = val + moints2( index2e2( pstring1(i), pstring1(i),           &
                     pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) ) -     &
                     moints2( index2e2( pstring1(i), pstring1(pdiffs(1,1)), &
@@ -315,12 +323,14 @@ real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
     end do
     do i=1, belec
       val = val + moints2( index2e2( qstring1(i), qstring1(i), &
-                  pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) )
+                  pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) ) !-       &
+!                  moints2( index2e2( qstring1(i), pstring1(pdiffs(1,1)),   &
+!                  qstring1(i), pstring2(pdiffs(1,2)) ) )
     end do
-  else if ( qd .ne. 0 ) then
-    val = moints1( ind2val(qdiffs(1,1), qdiffs(1,2)))
+  else if ( qd .eq. 1 ) then
+    val = moints1( ind2val(qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2))))
     do i=1, belec
-      if ( qstring1(i) .ne. qdiffs(1,1) ) then
+      if ( qstring1(i) .ne. qstring1(qdiffs(1,1)) ) then
         val = val + moints2( index2e2( qstring1(i), qstring1(i),           &
                     qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)))) -       &
                     moints2( index2e2( qstring1(i), qstring1(qdiffs(1,1)), &
@@ -329,7 +339,9 @@ real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
     end do
     do i=1, aelec
       val = val + moints2( index2e2( pstring1(i), pstring1(i), &
-                  qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)) ) )
+                  qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)) ) ) !-       &
+!                  moints2( index2e2( pstring1(i), qstring1(qdiffs(1,1)),   &
+!                  pstring1(i), qstring2(qdiffs(1,2)) ) )
     end do
   end if
   singlexcitations = val
