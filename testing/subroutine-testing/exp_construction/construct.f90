@@ -217,26 +217,36 @@ real*8 function dblexcitations( pstring1, pstring2, qstring1, qstring2, &
 ! Find orbitals differing in beta strings
   call stringdiffs( qstring1, qstring2, belec, qdiffs, qd )
   if ( pd .eq. 2 ) then
-    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)),&
-                              pstring1(pdiffs(2,1)),pstring2(pdiffs(2,2)))) - &
-                     moints2( index2e2(pstring1(pdiffs(1,1)),pstring2(pdiffs(2,2)),&
-                              pstring1(pdiffs(2,1)),pstring2(pdiffs(1,2))))
+!    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),pstring1(pdiffs(2,1)),&
+!                              pstring2(pdiffs(1,2)),pstring2(pdiffs(2,2)))) - &
+!                     moints2( index2e2(pstring1(pdiffs(1,1)),pstring1(pdiffs(2,1)),&
+!                              pstring2(pdiffs(2,2)),pstring2(pdiffs(1,2))))
+    dblexcitations = moints2( index2e2( pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)),&
+                              pstring1(pdiffs(2,1)), pstring2(pdiffs(2,2)))) - &
+                     moints2( index2e2( pstring1(pdiffs(1,1)), pstring2(pdiffs(2,2)),&
+                              pstring1(pdiffs(2,1)), pstring2(pdiffs(1,2))))
   else if ( qd .eq. 2 ) then
-    dblexcitations = moints2( index2e2(qstring1(qdiffs(1,1)),qstring2(qdiffs(1,2)),&
-                              qstring1(qdiffs(2,1)),qstring2(qdiffs(2,2)))) - &
-                     moints2( index2e2(qstring1(qdiffs(1,1)),qstring2(qdiffs(2,2)),&
-                              qstring1(qdiffs(2,1)),qstring2(qdiffs(1,2))))
+!    dblexcitations = moints2( index2e2(qstring1(qdiffs(1,1)),qstring1(qdiffs(2,1)),&
+!                              qstring2(qdiffs(1,2)),qstring2(qdiffs(2,2)))) - &
+!                     moints2( index2e2(qstring1(qdiffs(1,1)),qstring1(qdiffs(2,1)),&
+!                              qstring2(qdiffs(2,2)),qstring2(qdiffs(1,2))))
+    dblexcitations = moints2( index2e2( qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)),&
+                              qstring1(qdiffs(2,1)), qstring2(qdiffs(2,2)))) - &
+                     moints2( index2e2( qstring1(qdiffs(1,1)), qstring2(qdiffs(2,2)),&
+                              qstring1(qdiffs(2,1)), qstring2(qdiffs(1,2))))
   else
-     dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
-                              pstring2(pdiffs(1,2)),qstring2(qdiffs(1,2))))
+!     dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
+!                              pstring2(pdiffs(1,2)),qstring2(qdiffs(1,2))))
 !     dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
 !                              pstring2(pdiffs(1,2)),qstring2(qdiffs(1,2))))  - &
-!                      moints2( index2e2(pstring1(pdiffs(1,1)),qstring2(qdiffs(1,2)),&
-!                              qstring2(qdiffs(1,1)),pstring2(pdiffs(1,2))))
+!                      moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
+!                              qstring2(qdiffs(1,2)),pstring2(pdiffs(1,2))))
 !    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)),&
 !                              qstring1(qdiffs(1,1)),qstring2(qdiffs(1,2)))) - &
 !                     moints2( index2e2(pstring1(pdiffs(1,1)),qstring2(qdiffs(1,2)),&
-!                              qstring1(qdiffs(1,1)),pstring2(pdiffs(1,2))))                              
+!
+    dblexcitations = moints2( index2e2( pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)), &
+                              qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2))))
   end if
 end function
 !====================================================================
