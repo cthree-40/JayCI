@@ -103,7 +103,7 @@ program test
    print *, "  Electrons:                              2 "
    print *, "  CI-dimension:                         784 "
    print *, " HF electronic energy should be:  -1.839941 "
-   print *, " Hartree Fock GS is:              -1.132854
+   print *, " Hartree Fock GS is:              -1.132854 "
    print *, " Nuclear Repulsion energy is:      0.707107 " 
 
    adets       = 28
