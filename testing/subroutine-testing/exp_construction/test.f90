@@ -110,7 +110,7 @@ program test
    bdets       = 28
    aelec       = 1
    belec       = 1
-   cidimension = 1575
+   cidimension = 784
    orbitals    = 28
    nfrozen     = 0
    ndocc       = 0
