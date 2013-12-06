@@ -43,6 +43,13 @@ program test
   real*8,  dimension(:,:), allocatable :: eigvec
   real*8,  dimension(:),   allocatable :: eigval
 #endif
+#ifdef HVBUILDMAT
+  real*8, dimension(:,:), allocatable :: unitmat
+#endif
+#ifdef GENPROBEL
+  integer, dimension( 28, 2 ) :: probstr
+  integer, dimension(1) :: apstring, bpstring
+#endif
 !-------------------------
 
    print *, "Starting..."
@@ -280,7 +287,7 @@ program test
     open( unit=30, file='hamiltonian.col1', status='new', position='rewind', iostat = openstat )
     if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN hamiltonian file ****"
     do m=1, cidim
-      write( unit=30, fmt=20 ) hamiltonian(1,m), hamiltonian(m,1)
+      write( unit=30, fmt=20 ) hamiltonian(m,1), hamiltonian(1,m)
     end do
 20 format(1x,F10.6,F10.6)
     close(unit=30)
@@ -298,4 +305,70 @@ program test
                   eigvec, cidim, isuppz, work, lwork, iwork, liwork, info )
     print *, "Eigenvalue 1: ", eigval(1)
 #endif
+#ifdef HVBUILDMAT
+    print *, "Building Hamiltonian by performing Hv..."
+    allocate(unitmat(cidim,cidim))
+    unitmat=0d0
+    do i=1, cidim
+      unitmat(i,i) = 1d0
+    end do
+    print *, "Reallocating hamiltonian(:,:)..."
+    deallocate(hamiltonian)
+    allocate(hamiltonian(cidim,cidim))
+    print *, "Peforming Hv_i = M_ij for i=1,2,...,cidim ..."
+    do i=1, cidim
+      call acthv( unitmat(1,i), moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, pcrossref, &
+                qstring, qstep, qlocate, qcrossref, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
+                aelec, belec, orbitals, diagonals, hamiltonian(1,i) )
+    end do
+    do i=1, cidim
+      write(unit=*,fmt=20) hamiltonian(i,1), hamiltonian(1,i)
+    end do
+    print *, "Diagonalizing constructed Hamiltonian..."
+    deallocate(isuppz)
+    deallocate(work)
+    deallocate(iwork)
+    deallocate(eigval)
+    deallocate(eigvec)
+    allocate(isuppz(2*cidim))
+    allocate(work(lwork))
+    allocate(iwork(liwork))
+    allocate(eigval(cidim))
+    allocate(eigvec(cidim,cidim))
+    call dsyevr( 'n', 'a', 'u', cidim, hamiltonian, cidim, vl, vu, il, iu, abstol, o, eigval, &
+                  eigvec, cidim, isuppz, work, lwork, iwork, liwork, info )
+    print *, "Eigenvalue 1: ", eigval(1)
+#endif
+#ifdef GENPROBEL
+    print *, "Generating strings of problem determinants..."
+    do i=729, 756
+      call k2indc( i, belec, orbitals, probstr(i-728,1), probstr(i-728,2) )
+    end do
+    print *, "Writing problem strings to file..."
+    open( unit=60, file='problem.strings', status='new', iostat=openstat )
+    if ( openstat .ne. 0 ) stop "**** CANNOT OPEN problem.strings ******"
+    do i=1,28
+      write( unit=60, fmt=60 ) probstr(i,1), probstr(i,2)
+    end do
+    close(unit=60)
+60 format(1x,I5,I5)
+    print *, "Writing problem alpha string arrays to file..."
+    open( unit=61, file='problem.alpha', status='new', iostat=openstat )
+    if ( openstat .ne. 0 ) stop "*** CANNOT OPEN problem.alpha ******"
+    do i=1, 28
+      call genorbstring( probstr(i,1), aelec, orbitals, adets, apstring )
+      write( unit=61, fmt=61 ) apstring
+    end do
+    close( unit=61 )
+61 format(1x,I10)
+    print *, "Writing problem beta string arrays to file..."
+    open( unit=62, file='problem.beta', status='new', iostat=openstat )
+    if ( openstat .ne. 0 ) stop "*** CANNOT OPEN problem.beta ******"
+    do i=1, 28
+      call genorbstring( probstr(i,2), belec, orbitals, bdets, bpstring )
+      write( unit=62, fmt=61 ) bpstring
+    end do
+    close( unit=62 )
+  
+#endif       
 end program

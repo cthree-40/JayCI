@@ -67,12 +67,12 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
   call acthv_diag( vector1, diagonals, cidim, vector2 )
 
 #ifdef HVACTION
-  open(unit=30,file='diag.cont',status='new',iostat=openstat)
-  if ( openstat .ne. 0 ) stop "*** COULD NOT OPEN diag.cont ****"
-  do i=1, cidim
-    write( unit=30,fmt=1) vector2(i)
-  end do
-  close(unit=30)
+!  open(unit=30,file='diag.cont',status='new',iostat=openstat)
+!  if ( openstat .ne. 0 ) stop "*** COULD NOT OPEN diag.cont ****"
+!  do i=1, cidim
+!    write( unit=30,fmt=1) vector2(i)
+!  end do
+!  close(unit=30)
 1 format(1x,F10.6)
 #endif
 
@@ -90,12 +90,12 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
                     qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc,     &
                     qdetstrunc, adets, bdets, aelec, belec, orbitals, vector4 )
   
-  open(unit=20,file='alpha.cont',status='new',iostat=openstat)
-  if ( openstat .ne. 0 ) stop "*** COULD NOT OPEN alpha.cont ***"
-  do i=1, cidim
-    write( unit=20, fmt=1 ) vector4(i)
-  end do
-  close(unit=20)
+!  open(unit=20,file='alpha.cont',status='new',iostat=openstat)
+!  if ( openstat .ne. 0 ) stop "*** COULD NOT OPEN alpha.cont ***"
+!  do i=1, cidim
+!    write( unit=20, fmt=1 ) vector4(i)
+!  end do
+!  close(unit=20)
 #endif
 ! Single, double excitations in beta strings
   call acthv_beta( vector1, moints1, moints2, moints2len, moints2len,        &
