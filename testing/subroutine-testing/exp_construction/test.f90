@@ -43,6 +43,7 @@ program test
   real*8,  dimension(:,:), allocatable :: eigvec
   real*8,  dimension(:),   allocatable :: eigval
 #endif
+<<<<<<< HEAD
 #ifdef HVBUILDMAT
   real*8, dimension(:,:), allocatable :: unitmat
 #endif
@@ -50,6 +51,8 @@ program test
   integer, dimension( 28, 2 ) :: probstr
   integer, dimension(1) :: apstring, bpstring
 #endif
+=======
+>>>>>>> 31b9138fbf0435eecc7e0be81a5ca591bff56d67
 !-------------------------
 
    print *, "Starting..."
@@ -287,7 +290,11 @@ program test
     open( unit=30, file='hamiltonian.col1', status='new', position='rewind', iostat = openstat )
     if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN hamiltonian file ****"
     do m=1, cidim
+<<<<<<< HEAD
       write( unit=30, fmt=20 ) hamiltonian(m,1), hamiltonian(1,m)
+=======
+      write( unit=30, fmt=20 ) hamiltonian(1,m), hamiltonian(m,1)
+>>>>>>> 31b9138fbf0435eecc7e0be81a5ca591bff56d67
     end do
 20 format(1x,F10.6,F10.6)
     close(unit=30)
@@ -305,6 +312,7 @@ program test
                   eigvec, cidim, isuppz, work, lwork, iwork, liwork, info )
     print *, "Eigenvalue 1: ", eigval(1)
 #endif
+<<<<<<< HEAD
 #ifdef HVBUILDMAT
     print *, "Building Hamiltonian by performing Hv..."
     allocate(unitmat(cidim,cidim))
@@ -371,4 +379,6 @@ program test
     close( unit=62 )
   
 #endif       
+=======
+>>>>>>> 31b9138fbf0435eecc7e0be81a5ca591bff56d67
 end program

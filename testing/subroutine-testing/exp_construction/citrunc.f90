@@ -47,8 +47,13 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   integer, dimension( adets ) :: alphastrings
   integer, dimension( bdets ) :: betastrings
 
+<<<<<<< HEAD
 !  integer, dimension( adets, aelec ) :: alphmat 
 !  integer, dimension( bdets, belec ) :: betamat
+=======
+  integer, dimension( adets, aelec ) :: alphmat 
+  integer, dimension( bdets, belec ) :: betamat
+>>>>>>> 31b9138fbf0435eecc7e0be81a5ca591bff56d67
  
   integer, dimension(:), allocatable   :: modalpha, modbeta
 
