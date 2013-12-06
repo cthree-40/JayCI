@@ -1,9 +1,5 @@
 # MAKEFILE for tester
-<<<<<<< HEAD
 PREPROC2	= -DHVBUILDMAT -DGENPROBEL -DHVDIAG -DHVACTION -DEXPBUILD 
-=======
-PREPROC2	= -DHVDIAG -DHVACTION -DEXPBUILD -DORBSTRINGS -DSTRINGDIFFS
->>>>>>> 31b9138fbf0435eecc7e0be81a5ca591bff56d67
 
 OBJS2			= detci1.o detci2.o detci5.o truncation.o citrunc.o hvdiag.o iwfmt.o \
 						possex1.o cannon.o singrepinfo.o doublerepinfo.o actionutil.o \
