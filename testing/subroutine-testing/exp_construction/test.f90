@@ -50,7 +50,10 @@ program test
   integer, dimension( 28, 2 ) :: probstr
   integer, dimension(1) :: apstring, bpstring
 #endif
+  integer :: testcol    ! Testing column for Hv
+  integer :: probdet, probb, probp
 !-------------------------
+  testcol = 729
 
    print *, "Starting..."
 #ifdef CITRUNC
@@ -230,7 +233,7 @@ program test
     allocate(initialguess(cidim))
     allocate(resultingvec(cidim))
     initialguess=0d0
-    initialguess(1)=1d0
+    initialguess(729)=1d0
     print *, " Calling acthv()..."
     call acthv( initialguess, moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, pcrossref, &
                 qstring, qstep, qlocate, qcrossref, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
@@ -284,10 +287,11 @@ program test
     call exp_construct( moints1, moints1len, moints2, moints2len, cidim, aelec, belec, &
                     orbitals, tdets, hamiltonian )
     print *, " Hartree Fock GS: ", hamiltonian(1,1)
-    open( unit=30, file='hamiltonian.col1', status='new', position='rewind', iostat = openstat )
+    open( unit=30, file='hamiltonian.col729', status='new', position='rewind', iostat = openstat )
     if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN hamiltonian file ****"
+    print *, " Printing column 729 of Hamiltonian... "
     do m=1, cidim
-      write( unit=30, fmt=20 ) hamiltonian(m,1), hamiltonian(1,m)
+      write( unit=30, fmt=20 ) hamiltonian(m,729), hamiltonian(729,m)
     end do
 20 format(1x,F10.6,F10.6)
     close(unit=30)
@@ -321,15 +325,19 @@ program test
                 qstring, qstep, qlocate, qcrossref, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
                 aelec, belec, orbitals, diagonals, hamiltonian(1,i) )
     end do
+    open( unit=90, file='hv-hamiltonian.col729', status='new', iostat=openstat )
+    if ( openstat .ne. 0 ) stop "*** COULD NOT OPEN hv-hamiltonian.col729 ***"
     do i=1, cidim
-      write(unit=*,fmt=20) hamiltonian(i,1), hamiltonian(1,i)
+      write(unit=90,fmt=20) hamiltonian(i,729), hamiltonian(729,i)
     end do
+    close (unit=90)
     print *, "Diagonalizing constructed Hamiltonian..."
     deallocate(isuppz)
     deallocate(work)
     deallocate(iwork)
     deallocate(eigval)
     deallocate(eigvec)
+    stop " DONE. "
     allocate(isuppz(2*cidim))
     allocate(work(lwork))
     allocate(iwork(liwork))
@@ -369,6 +377,9 @@ program test
       write( unit=62, fmt=61 ) bpstring
     end do
     close( unit=62 )
-  
-#endif       
+    print *, " What determinant is causing problems? "
+    read *, probdet
+    call k2indc( probdet, belec, orbitals, probp, probb )
+    print *, " This det is composed of strings: ", probp, probb
+#endif    
 end program

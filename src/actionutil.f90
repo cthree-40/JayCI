@@ -270,7 +270,8 @@ contains
                 do n=k+1, orbitals-belec
                   call doublerepinfo( bstring, belec, pexits1(k), j, pexits1(n), m, &
                                       orbitals, eps2, xindx2 )
-                  int3elweps = eps2*( moints2(index2e2(bstring(j),pexits1(k),bstring(m),                                        pexits1(n) ) ) - moints2( index2e2( bstring(j),   &
+                  int3elweps = eps2*( moints2(index2e2(bstring(j),pexits1(k),bstring(m), &
+                                        pexits1(n) ) ) - moints2( index2e2( bstring(j),   &
                                         pexits1(n), bstring(m), pexits1(k) )))
                   ! Test if xindx2 is in expansion
                   do o=1, qdetstrunc

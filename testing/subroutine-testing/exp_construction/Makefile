@@ -1,5 +1,5 @@
 # MAKEFILE for tester
-PREPROC2	= -DHVBUILDMAT -DGENPROBEL -DHVDIAG -DHVACTION -DEXPBUILD 
+PREPROC2	= -DGENPROBEL -DHVDIAG -DHVACTION -DEXPBUILD 
 
 OBJS2			= detci1.o detci2.o detci5.o truncation.o citrunc.o hvdiag.o iwfmt.o \
 						possex1.o cannon.o singrepinfo.o doublerepinfo.o actionutil.o \
@@ -40,6 +40,6 @@ test:$(OBJS)
 	$(PREFIX) "$(COMPILER) -cpp -o $@ $< $(CPOPT) $(PREPROC2)"
   
 clean:
-	$(RM) $(OBJS) ./*.o ./*.mod ./*.dets ./*.list ./*.ref ./alpha-single.cont ./diag.cont ./output_acthv.1 ./alpha.cont
+	$(RM) $(OBJS) ./problem* ./debug.acthv ./*.o ./*.mod ./*.dets ./*.list ./*.ref ./alpha-single.cont ./diag.cont ./output_acthv.1 ./alpha.cont
 	@echo "Finished cleaning."  
 
