@@ -321,6 +321,7 @@ program test
     allocate(hamiltonian(cidim,cidim))
     print *, "Peforming Hv_i = M_ij for i=1,2,...,cidim ..."
     do i=1, cidim
+      print *, i
       call acthv( unitmat(1,i), moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, pcrossref, &
                 qstring, qstep, qlocate, qcrossref, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
                 aelec, belec, orbitals, diagonals, hamiltonian(1,i) )
@@ -337,7 +338,6 @@ program test
     deallocate(iwork)
     deallocate(eigval)
     deallocate(eigvec)
-    stop " DONE. "
     allocate(isuppz(2*cidim))
     allocate(work(lwork))
     allocate(iwork(liwork))

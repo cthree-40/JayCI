@@ -349,7 +349,7 @@ contains
           call singrepinfo( bstring, belec, pexits1(k), j, orbitals, &
                             eps1, xindx1 )
           ! Test if xindx1 is in qdets
-          do l=1, qdetstrunc
+          test_q: do l=1, qdetstrunc
             if ( xindx1 .eq. qdets(l) ) then
               srepinfo(1)=eps1
               srepinfo(2)=xindx1
@@ -402,8 +402,9 @@ contains
                   end do
                 end do
               end do
+              exit test_q
             end if
-          end do
+          end do test_q
         end do loopexite
       end do loopelec
     end do
