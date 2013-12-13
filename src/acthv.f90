@@ -35,7 +35,7 @@
 ! vector2         = Hv                                      real*8 array
 !====================================================================
 subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
-  pstring, pstep, plocate, qstring, qstep, qlocate,&
+  pstring, pstep, plocate, qstring, qstep, qlocate, &
   cidim, pdets, qdets, pdetstrunc, qdetstrunc, adets, bdets, aelec, belec, orbitals,  &
   diagonals, vector2 )
   use actionutil
@@ -55,25 +55,11 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
   real*8, dimension(cidim), intent(inout)   :: vector2
 ! ...loop integer scalars...
   integer :: i, j, k, l
-#ifdef HVACTION
-  integer :: openstat
-  real*8, dimension(cidim) :: vector3, vector4, vector5, vector6
-#endif
 !--------------------------------------------------------------------
 ! Zero out vector2
   vector2 = 0d0
 ! Diagonal contribution
   call acthv_diag( vector1, diagonals, cidim, vector2 )
-
-#ifdef HVACTION
-  open(unit=30,file='diag.cont',status='new',iostat=openstat)
-  if ( openstat .ne. 0 ) stop "*** COULD NOT OPEN diag.cont ****"
-  do i=1, cidim
-    write( unit=30,fmt=1) vector2(i)
-  end do
-  close(unit=30)
-1 format(1x,F10.6)
-#endif
 
 ! Single, double and single single(beta) in alpha strings
   call acthv_alpha( vector1, moints1, moints2, moints1len, moints2len,       &
@@ -81,25 +67,10 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
                     qstep, qlocate, qdets, cidim, pdetstrunc,     &
                     qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
 
-#ifdef HVACTION
-  vector3 = 0d0
-  vector3(1) = 1d0
-  call acthv_alpha( vector3, moints1, moints2, moints1len, moints2len,       &
-                    pstring, pstep, plocate, pdets, qstring,      &
-                    qstep, qlocate, qdets, cidim, pdetstrunc,     &
-                    qdetstrunc, adets, bdets, aelec, belec, orbitals, vector4 )
-  
-  open(unit=20,file='alpha.cont',status='new',iostat=openstat)
-  if ( openstat .ne. 0 ) stop "*** COULD NOT OPEN alpha.cont ***"
-  do i=1, cidim
-    write( unit=20, fmt=1 ) vector4(i)
-  end do
-  close(unit=20)
-#endif
 ! Single, double excitations in beta strings
   call acthv_beta( vector1, moints1, moints2, moints2len, moints2len,        &
-                   pstring, pstep, plocate, pxreflist, pdets, qstring,       &
-                   qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc,      &
+                   pstring, pstep, plocate, pdets, qstring,       &
+                   qstep, qlocate, qdets, cidim, pdetstrunc,      &
                    qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
 ! Return vector2
   return

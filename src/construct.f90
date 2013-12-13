@@ -72,21 +72,24 @@ end subroutine hv_construct
 ! Subroutine to explicitly construct H by finding value of each matrix
 !  element.
 !--------------------------------------------------------------------
-subroutine exp_construct( moints1, moints1len, moints2, moints2len, 
+subroutine exp_construct( moints1, moints1len, moints2, moints2len, & 
   cidim, aelec, belec, orbitals, determs, hamiltonian )
   implicit none
-  integer, intent(in) :: moints1len, moints2len, cidim, aelec, belec,
-                         orbitals, 
+  integer, intent(in) :: moints1len, moints2len, cidim, aelec, belec, &
+                         orbitals
   real*8,  dimension( moints1len ), intent(in) :: moints1
   real*8,  dimension( moints2len ), intent(in) :: moints2
   integer, dimension( cidim ), intent(in)      :: determs
+  real*8,  dimension( cidim, cidim ), intent(out) :: hamiltonian
+  integer :: i, j
+  real*8  :: ham_element
 !--------------------------------------------------------------------
 ! Construct hamiltonian
   do i=1, cidim
     do j=1, cidim
       hamiltonian(j,i) = ham_element( determs(j), determs(i), moints1,    &
-                         moints1len, moints2, moints2len, cidim, aelec,   &
-                         belec, orbitals )
+                         moints1len, moints2, moints2len, aelec,   &
+                         belec, orbitals)
     end do
   end do
   return
@@ -99,6 +102,7 @@ end subroutine exp_construct
 !--------------------------------------------------------------------
 real*8 function ham_element( ind1, ind2, moints1, moints1len, moints2, &
   moints2len, aelec, belec, orbitals)
+  use detci1
   use detci2
   implicit none
   integer, intent(in) :: ind1, ind2, moints1len, moints2len, &
@@ -109,8 +113,11 @@ real*8 function ham_element( ind1, ind2, moints1, moints1len, moints2, &
   integer, dimension( aelec ) :: pstring1, pstring2
   integer, dimension( belec ) :: qstring1, qstring2
 
-  integer :: diffs
+  integer :: diffs, adets, bdets
+  real*8 :: dblexcitations, singlexcitations, diagonal_mat
 !--------------------------------------------------------------------
+  adets = binom( orbitals, aelec )
+  bdets = binom( orbitals, belec )
 ! Find determinant string indices for ind1 and ind2
   call k2indc( ind1, belec, orbitals, p1, q1 )
   call k2indc( ind2, belec, orbitals, p2, q2 )
@@ -128,7 +135,10 @@ real*8 function ham_element( ind1, ind2, moints1, moints1len, moints2, &
     ham_element = dblexcitations( pstring1, pstring2, qstring1, qstring2, aelec, &
                          belec, moints1, moints1len, moints2, moints2len )
   else if ( diffs .eq. 1 ) then
-    ham_element =  snglexcitations( pstring1, pstring2, qstring1, qstring2, aelec, &
+    if ( ind1 .eq. 1 .and. ind2 .eq. 729 ) then
+      print *, " Evaluating element (1,729)"
+    end if
+    ham_element =  singlexcitations( pstring1, pstring2, qstring1, qstring2, aelec, &
                          belec, moints1, moints1len, moints2, moints2len )
   else 
     ham_element =  diagonal_mat( pstring1, qstring1, aelec, &
@@ -210,18 +220,36 @@ real*8 function dblexcitations( pstring1, pstring2, qstring1, qstring2, &
 ! Find orbitals differing in beta strings
   call stringdiffs( qstring1, qstring2, belec, qdiffs, qd )
   if ( pd .eq. 2 ) then
-    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)),&
-                              pstring1(pdiffs(2,1)),pstring2(pdiffs(2,2)))) - &
-                     moints2( index2e2(pstring1(pdiffs(1,1)),pstring2(pdiffs(2,2)),&
-                              pstring1(pdiffs(2,1)),pstring2(pdiffs(1,2))))
+!    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),pstring1(pdiffs(2,1)),&
+!                              pstring2(pdiffs(1,2)),pstring2(pdiffs(2,2)))) - &
+!                     moints2( index2e2(pstring1(pdiffs(1,1)),pstring1(pdiffs(2,1)),&
+!                              pstring2(pdiffs(2,2)),pstring2(pdiffs(1,2))))
+    dblexcitations = moints2( index2e2( pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)),&
+                              pstring1(pdiffs(2,1)), pstring2(pdiffs(2,2)))) - &
+                     moints2( index2e2( pstring1(pdiffs(1,1)), pstring2(pdiffs(2,2)),&
+                              pstring1(pdiffs(2,1)), pstring2(pdiffs(1,2))))
   else if ( qd .eq. 2 ) then
-    dblexcitations = moints2( index2e2(qstring1(qdiffs(1,1)),qstring2(qdiffs(1,2)),&
-                              qstring1(qdiffs(2,1)),qstring2(qdiffs(2,2)))) - &
-                     moints2( index2e2(qstring1(qdiffs(1,1)),qstring2(qdiffs(2,2)),&
-                              qstring1(qdiffs(2,1)),qstring2(qdiffs(1,2))))
+!    dblexcitations = moints2( index2e2(qstring1(qdiffs(1,1)),qstring1(qdiffs(2,1)),&
+!                              qstring2(qdiffs(1,2)),qstring2(qdiffs(2,2)))) - &
+!                     moints2( index2e2(qstring1(qdiffs(1,1)),qstring1(qdiffs(2,1)),&
+!                              qstring2(qdiffs(2,2)),qstring2(qdiffs(1,2))))
+    dblexcitations = moints2( index2e2( qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)),&
+                              qstring1(qdiffs(2,1)), qstring2(qdiffs(2,2)))) - &
+                     moints2( index2e2( qstring1(qdiffs(1,1)), qstring2(qdiffs(2,2)),&
+                              qstring1(qdiffs(2,1)), qstring2(qdiffs(1,2))))
   else
-    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
-                              pstring2(pdiffs(1,2)),qstring2(qdiffs(2,2))))
+!     dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
+!                              pstring2(pdiffs(1,2)),qstring2(qdiffs(1,2))))
+!     dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
+!                              pstring2(pdiffs(1,2)),qstring2(qdiffs(1,2))))  - &
+!                      moints2( index2e2(pstring1(pdiffs(1,1)),qstring1(qdiffs(1,1)),&
+!                              qstring2(qdiffs(1,2)),pstring2(pdiffs(1,2))))
+!    dblexcitations = moints2( index2e2(pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)),&
+!                              qstring1(qdiffs(1,1)),qstring2(qdiffs(1,2)))) - &
+!                     moints2( index2e2(pstring1(pdiffs(1,1)),qstring2(qdiffs(1,2)),&
+!
+    dblexcitations = moints2( index2e2( pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)), &
+                              qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2))))
   end if
 end function
 !====================================================================
@@ -296,10 +324,10 @@ real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
   call stringdiffs( qstring1, qstring2, belec, qdiffs, qd )
 ! Test which string has excitation
   val = 0d0
-  if ( pd .ne. 0 ) then
-    val = moints1( ind2val(pdiffs(1,1), pdiffs(1,2)))
+  if ( pd .eq. 1 ) then
+    val = moints1( ind2val(pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2))))
     do i=1, aelec
-      if ( pstring1(i) .ne. pdiffs(1,1) )
+      if ( pstring1(i) .ne. pstring1(pdiffs(1,1)) ) then
         val = val + moints2( index2e2( pstring1(i), pstring1(i),           &
                     pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) ) -     &
                     moints2( index2e2( pstring1(i), pstring1(pdiffs(1,1)), &
@@ -308,12 +336,14 @@ real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
     end do
     do i=1, belec
       val = val + moints2( index2e2( qstring1(i), qstring1(i), &
-                  pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) )
+                  pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) ) !-       &
+!                  moints2( index2e2( qstring1(i), pstring1(pdiffs(1,1)),   &
+!                  qstring1(i), pstring2(pdiffs(1,2)) ) )
     end do
-  else if ( qd .ne. 0 ) then
-    val = moints1( ind2val(qdiffs(1,1), qdiffs(1,2)))
+  else if ( qd .eq. 1 ) then
+    val = moints1( ind2val(qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2))))
     do i=1, belec
-      if ( qstring1(i) .ne. qdiffs(1,1) )
+      if ( qstring1(i) .ne. qstring1(qdiffs(1,1)) ) then
         val = val + moints2( index2e2( qstring1(i), qstring1(i),           &
                     qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)))) -       &
                     moints2( index2e2( qstring1(i), qstring1(qdiffs(1,1)), &
@@ -322,7 +352,9 @@ real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
     end do
     do i=1, aelec
       val = val + moints2( index2e2( pstring1(i), pstring1(i), &
-                  qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)) ) )
+                  qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)) ) ) !-       &
+!                  moints2( index2e2( pstring1(i), qstring1(qdiffs(1,1)),   &
+!                  pstring1(i), qstring2(qdiffs(1,2)) ) )
     end do
   end if
   singlexcitations = val
@@ -335,6 +367,7 @@ end function
 !--------------------------------------------------------------------
 real*8 function diagonal_mat( pstring1, qstring1,  aelec, &
                        belec, moints1, moints1len, moints2, moints2len )
+  use detci5
   implicit none
   integer, intent(in) :: belec, aelec, moints1len, moints2len
   integer, dimension( aelec ),    intent(in) :: pstring1

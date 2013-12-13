@@ -303,10 +303,24 @@ program driver2
     write(unit=2,fmt=9) " Using prediagonalization of H subblock for initial guess..."
     call prediagsubblock( diagonals, cidim, moints1, moints2, moints1len, &
                           moints2len, pdets, pdetslen, qdets, qdetslen,   &
-                          tdetslen, subblockdim, initvectors )
-
-
-
-
+                          tdetslen, subblockdim, initgdim, initvectors )
+    write(unit=2,fmt=15) initgdim, " initial vectors generated."
+    write(unit=2,fmt=9) " "
+  end if
+!
+! Call Davidson algorithm
+  write(unit=2,fmt=9) " Calling Davidson algorithm..."
+  call davidson( initgdim, initvectors, diagonals, moints1, moints1len, moints2, &
+                 moints2len, cidim, pstring, pstep, plocate, qstring, qstep, qlocate,   &
+                 pdets, pdetslen, qdets, qdetslen, adets, bdets, aelec, belec,   &
+                 orbitals, krmin, krmax, rtol, roots, eigvalues, eigenvectors )
+  do i=1, roots
+    write(unit=2,fmt=16) "Total CI energy for root # ", i," = ", (eigvalues(i) - nucrep)
+  end do
+16 format(1x, A,I2,A,F10.7
+  write(unit=2,fmt=9) "----------------------------------------"
+  write(unit=2,fmt=9) " Finished. "
+  write(unit=2,fmt=9) "-----------"
+end program
 
  

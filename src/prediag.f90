@@ -97,8 +97,9 @@ contains
     character(len=1)   :: uplo, jobz, rnge
     real*8             :: abstol, dlamch, vl, vu
     integer            :: lwork, liwork, il, iu, info, eigfound
-    integer, dimension(:,:), allocatable :: isuppz, eigvectors
-    real*8, dimension(:),    allocatable :: eigvalues, work, iwork
+    integer, dimension(:),   allocatable :: isuppz 
+    real*8,  dimension(:,:), allocatable :: eigvectors
+    real*8,  dimension(:),   allocatable :: eigvalues, work, iwork
 ! ...DGEMM VARIABLES...
     character(len=1)   :: transa, transb
     integer            :: lda, ldb, ldc, p, q, r
@@ -133,7 +134,7 @@ contains
     allocate(  work( lwork) )
     allocate( iwork(liwork) )
     allocate( eigvalues(intdiagsguess) )
-    call dsevr( jobz, rnge, uplo, intdiagsguess, subham, intdiagsguess, vl, &
+    call dsyevr( jobz, rnge, uplo, intdiagsguess, subham, intdiagsguess, vl, &
                 vu, il, iu, abstol, eigfound, eigvalues, eigvectors, intdiagsguess,&
                 isuppz, work, lwork, iwork, liwork, info )
 ! Generate eigenvector guess...
@@ -159,8 +160,9 @@ contains
 ! Subroutine that explicitly constructs matrix elements Hij and diagonalizes
 !  the subblock.
 !--------------------------------------------------------------------
-  subroutine prediagsubblock( diagonals, cidim, moints1, moints2, moints1len, &
-    moints2len, pdets, pdetslen, qdets, qdetslen, tdets, subblockdim, outvectors )
+  subroutine prediagsubblock( diagonals, cidim, moints1, moints2, moints1len,  &
+    moints2len, pdets, pdetslen, qdets, qdetslen, tdets, subblockdim, initgdim,&
+    outvectors )
 !Input:
 ! diagonals        = <K|H|K>
 ! cidim            = dimension of CI space
@@ -172,15 +174,86 @@ contains
 ! pdetslen         = length of pdets
 ! qdets            = beta determinants  (truncated)
 ! qdetslen         = length of qdets
+! tdets            = determinants
+! initgdim         = number of vectors to return
 ! subblockdim      = dimension of H subblock
 !Output:
-! outvectors      = outputvectors
+! outvectors      = output vectors
     implicit none
 ! ...input integer scalars...
     integer, intent(in) :: cidim, moints1len, moints2len, pdetslen, qdetslen, &
-                           subblockdim
+                           subblockdim, initgdim
 ! ...input integer arrays...
-    integer, dimension( pdetslen ) :: pdets
-    integer, dimension( qdetslen ) :: qdets
-! ...
+    integer, dimension( pdetslen ), intent(in)   :: pdets
+    integer, dimension( qdetslen ), intent(in)   :: qdets
+    integer, dimension( cidim),     intent(in)   :: tdets
+! ...input real*8 arrays...
+    real*8,  dimension( moints1len ), intent(in) :: moints1
+    real*8,  dimension( moints2len ), intent(in) :: moints2
+! ...output real*8 arrays...
+    real*8, dimension( cidim, initgdim ), intent(inout) :: outvectors
+! ...loop integer scalars...
+    integer :: i, j
+! ...real*8 arrays...
+    real*8, dimension( subblockdim, subblockdim ) :: hamblock
+    real*8, dimension( cidim, inigdim )           :: unitvecs
+! ...DSYEVR variables...
+    character(len=1) :: jobz, uplo, rnge
+    integer          :: lwork, liwork, il, iu, info, eigfound
+    real*8           :: abstol, dlamch, vl, vu
+    integer, dimension(:),   allocatable :: isuppz 
+    real*8,  dimension(:,:), allocatable :: eigvectors
+    real*8,  dimension(:),   allocatable :: eigvalues, work, iwork
+! ...DGEMM variables...
+! ...DGEMM VARIABLES...
+    character(len=1)   :: transa, transb
+    integer            :: lda, ldb, ldc, p, q, r
+    real*8             :: alpha, beta
+!--------------------------------------------------------------------
+! Construct subblockdim x subblockdim hamiltonian
+    do i=1, subblockdim
+      do j=1, subblockdim
+        hamblock(j,i) = ham_element( tdets(j), tdets(i), moints1, moints1len, &
+                                     moints2, moints2len, aelec, belec, orbitals )
+      end do
+    end do
+! Diagonalize hamblock using DSYEVR
+! Set DSYEVR variables
+    jobz  = 'v'    ! Return eigenvalues
+    rnge  = 'a'    ! Return full range of eigenvectors and eigenvalues
+    uplo  = 'l'    ! Lower triangle is stored in matrix A
+    abstol= dlamch( 'Safe minimum' )
+    lwork = 26*subblockdim+10
+    liwork= 11*subblockdim
+    allocate( isuppz(subblockdim) )
+    allocate( eigvectors(subblockdim, subblockdim) )
+    allocate(  work( lwork) )
+    allocate( iwork(liwork) )
+    allocate( eigvalues(subblockdim) )
+    call dsyevr( jobz, rnge, uplo, subblockdim, hamblock, subblockdim, vl, &
+                vu, il, iu, abstol, eigfound, eigvalues, eigvectors, subblockdim,&
+                isuppz, work, lwork, iwork, liwork, info )
+! Generate unit vectors
+    unitvec = 0d0
+    do i=1, initgdim
+      unitvecs(i,i) = 1d0
+    end do
+! Set DGEMM variables
+    transa = 'n'
+    transb = 'n'
+    p = cidim
+    q = subblockdim
+    r = q
+    alpha = 1d0
+    beta  = 0d0
+    lda   = p
+    ldb   = initgdim
+    ldc   = p
+    call dgemm( transa, transb, p, q, r, alpha, unitvecs, lda, eigvectors, ldb, beta, &
+                outvectors, ldc )
+! Return
+    return
+  end subroutine
+!====================================================================
+!====================================================================
 end module 

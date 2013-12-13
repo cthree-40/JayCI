@@ -160,7 +160,7 @@ contains
     ! corresponding q's.
               
               do m=1, pstep(l)
-                do n=1, pstep(i)
+                test_p2: do n=1, pstep(i)
                 ! Test if the corresponding q of pdets(i) corresponds to
                 ! pdets(l)
                   if ( pstring(plocate(l)+m,2) .eq. pstring(plocate(i)+n,2) ) then
@@ -201,8 +201,9 @@ contains
                     end if
 #endif
 !_______________________________________________
+                    exit test_p2
                   end if
-                end do
+                end do test_p2
               end do
 
     ! Loop over additional replacements in alpha strings. ( m > j; n > k )
@@ -222,7 +223,7 @@ contains
                                      astring(m),pexits1(k) )))
 
                   ! Test if xindx2 is in expansion
-                  do o=1, pdetstrunc
+                  test_x2: do o=1, pdetstrunc
                     if ( xindx2 .eq. pdets(o) ) then
                     ! Loop over q string without generating orbital index set
                     ! Again, q must correspond to both p and p**
@@ -243,8 +244,9 @@ contains
                           end if ! If q corresponds to both p and p**
                         end do ! Testing loop
                       end do ! Testing loop
+                      exit test_x2
                     end if ! p** is in expansion
-                  end do ! Testing loop
+                  end do test_x2! Testing loop
                 end do ! Loop over excitations
               end do ! Loop over electrons
       
@@ -271,14 +273,15 @@ contains
                     call singrepinfo( bstring, belec, qexits1(o), n, orbitals, eps3, xindx1 )
 
                     ! Loop over q indices that correspond to the single excitation r(pjv*) in p strings
-                    do p=1, pstep(l)  ! l is the indice of p* in our p string list
+                    test_p3: do p=1, pstep(l)  ! l is the indice of p* in our p string list
                       if ( xindx1 .eq. pstring(plocate(l)+p,2) ) then
                         int3e2 = moints2( index2e2( astring(j), pexits1(k), bstring(n), qexits1(o) ))
                         vecindx1 = indxk(srepinfo(2), xindx1, belec, orbitals )
                         vecindx2 = indxk( pdets(i),pstring(plocate(i)+m,2), belec, orbitals )
                         vector2(vecindx2) = vector2(vecindx2) + srepinfo(1)*eps3*int3e2*vector1(vecindx1)
+                        exit test_p3
                       end if
-                    end do
+                    end do test_p3
                   end do ! Excitations
                 end do ! Electrons
               end do ! q strings
@@ -358,7 +361,7 @@ contains
                                   moints2len, orbitals, j, k, int1e1, int2e1 )
                 ! Loop over corresponding p strings
               do m=1, qstep(l)
-                do n=1, qstep(i)
+                test_q2: do n=1, qstep(i)
                 ! Test if corresponding p of qdets(i) corresponds to qdets(l)
                   if ( qstring(qlocate(l)+m,2) .eq. qstring(qlocate(i)+n,2)) then
                     ! Compute contribution
@@ -372,8 +375,9 @@ contains
                     ! Add the stored integerals and multiply by parity
                     vector2(vecindx2) = vector2(vecindx2) + eps1*(int1e1+int2e1+int2e2)*&
                                         vector1(vecindx1)
+                    exit test_q2
                   end if
-                end do
+                end do test_q2
               end do
 
               ! Loop over additional replacements in beta strings ( m > j; n> k )
@@ -385,7 +389,7 @@ contains
                                         pexits1(n) ) ) - moints2( index2e2( bstring(j),   &
                                         pexits1(n), bstring(m), pexits1(k) )))
                   ! Test if xindx2 is in expansion
-                  do o=1, qdetstrunc
+                  test_x2: do o=1, qdetstrunc
                     if ( xindx2 .eq. qdets(o) ) then
                     ! Loop over p string w/o generating orbital index set
                     ! p must correspond to both q and q**
@@ -398,8 +402,9 @@ contains
                           end if
                         end do
                       end do
+                      exit test_x2
                     end if
-                  end do
+                  end do test_x2
                 end do
               end do
               exit test_q
