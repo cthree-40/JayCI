@@ -20,7 +20,6 @@ program driver1
   
   use detci1
   use detci2
-  use citrunc
 
   implicit none
 
@@ -86,7 +85,7 @@ program driver1
   call alphbet( electrons, aelec, belec )
   write(unit=2,fmt=11)" Alpha electrons: ", aelec
   write(unit=2,fmt=11)" Beta  electrons: ", belec
-  write(uint=2,fmt=9) " "
+  write(unit=2,fmt=9) " "
 
 ! Compute adets, bets
   adets = binom( orbitals, aelec )

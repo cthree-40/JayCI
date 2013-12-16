@@ -1,0 +1,19 @@
+&runlevel1
+electrons = 10,
+orbitals = 14,
+nfrozen  =  1,
+ndocc    =  1,
+nactive  =  7,
+xlevel   =  2,
+/
+&runlevel2
+maxiter=100,
+krmin=3,
+krmax=7,
+rtoler=1.0D-5,
+roots=1,
+nucrep=9.1549349D+0,
+prediag_set=1
+initgdim=5
+/
+

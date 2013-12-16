@@ -29,8 +29,8 @@ contains
 !  in alpha and beta strings
 !--------------------------------------------------------------------
   subroutine acthv_alpha( vector1, moints1, moints2, moints1len,    &
-    moints2len, pstring, pstep, plocate, pdets, qstring, &
-    qstep, qlocate, qdets, cidim, pdetstrunc, qdetstrunc,&
+    moints2len, pstring, pstep, plocate, pxreflist, pdets, qstring, &
+    qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc, qdetstrunc,&
     adets, bdets, aelec, belec, orbitals, vector2 )
     use detci2
     use detci5
@@ -42,6 +42,7 @@ contains
     integer, dimension(cidim, 2), intent(in)  :: pstring, qstring
     integer, dimension(pdetstrunc), intent(in):: pstep, plocate, pdets
     integer, dimension(qdetstrunc), intent(in):: qstep, qlocate, qdets
+    integer, dimension(cidim), intent(in)     :: pxreflist, qxreflist
     
     real*8, dimension(moints1len), intent(in) :: moints1
     real*8, dimension(moints2len), intent(in) :: moints2
@@ -301,8 +302,8 @@ contains
 !  subroutine, with beta and alpha strings swapped.
 !--------------------------------------------------------------------
   subroutine acthv_beta( vector1, moints1, moints2, moints1len, moints2len,&
-    pstring, pstep, plocate, pdets, qstring, qstep, qlocate,    &
-    qdets, cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec,  &
+    pstring, pstep, plocate, pxreflist, pdets, qstring, qstep, qlocate,    &
+    qxreflist, qdets, cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec,  &
     belec, orbitals, vector2 )
     use detci2
     use detci5
@@ -314,6 +315,7 @@ contains
     integer, dimension(cidim, 2), intent(in)  :: pstring, qstring
     integer, dimension(pdetstrunc), intent(in):: pstep, plocate, pdets
     integer, dimension(qdetstrunc), intent(in):: qstep, qlocate, qdets
+    integer, dimension(cidim), intent(in)     :: pxreflist, qxreflist
     
     real*8, dimension(moints1len), intent(in) :: moints1
     real*8, dimension(moints2len), intent(in) :: moints2
