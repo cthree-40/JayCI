@@ -1,7 +1,6 @@
 program test
 
   implicit none
-
   integer :: adets, bdets, aelec, belec, orbitals, nfrozen, &
              ndocc, nactive, xlevel, cidimension, adetlen, bdetlen
 
@@ -16,11 +15,10 @@ program test
    orbitals = 6
    nfrozen  = 1
    ndocc    = 2
-   nactive     = 2
+   nactive     = 3
    xlevel   = 1
 
    call citrunc( adets, bdets, aelec, belec, orbitals, nfrozen,&
                  ndocc, nactive, xlevel, adetlen, bdetlen, cidimension )
    
-   print *, cidimension
 end program

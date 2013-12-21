@@ -164,7 +164,14 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   close(unit=4)
 ! ...FORM STRING PAIRS...
 ! String pairs (p,q)
+  print *, ">>> TESTING "
+  do i=1, cidimension
 
+    call k2indc(fnldets(i), belec, orbitals, p, q)
+    print *, p, q
+  end do
+  print *, "+++++++++++++++++++++++++++++"
+  print *, " +++++++++++++++++++++++++++ "
   allocate( strngpr1(cidimension,2))
   allocate( strngpr2(cidimension,2))
 
@@ -177,6 +184,42 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
                     fnldets, cidimension, belec, orbitals, 'a', &
                     strngpr1, cidimension, pstep, modalphalen,  &
                     pdeterms )
+  do i=1, modalphalen
+    print *, strngpr1(i,1), strngpr1(i,2)
+  end do
+  print *, "=========================="
+  allocate(plocate(modalphalen))
+  allocate(qlocate(modbetalen))
+  call gen_alphastrpr( fnldets, cidimension, belec, orbitals, &
+                       strngpr1, pstep, plocate, modalphalen )
+  do i=1, cidimension
+    print *, strngpr1(i,1), strngpr1(i,2)
+  end do
+  print *, "-------------------------"
+  do i=1, modalphalen
+    print *, pstep(i)
+  end do
+  print *, "------------------------"
+  do i=1, modalphalen
+    print *, plocate(i)
+  end do
+  print *, "========================="
+  print *, " "
+  print *, "========================="
+  call gen_betastrpr( strngpr1, cidimension, pstep, modalphalen,&
+                      plocate, strngpr2, qstep, qlocate, modbeta,&
+                      modbetalen )
+  do i=1, cidimension
+    print *, strngpr2(i,1), strngpr2(i,2)
+  end do
+  print *, "------------------------"
+  do i=1, modbetalen
+    print *, qstep(i)
+  end do
+  print *, "--------------------"
+  do i=1, modbetalen
+    print *, qlocate(i)
+  end do  
   call genstrpairs( modbeta, modbetalen, modalpha, modalphalen, &
                     fnldets, cidimension, belec, orbitals, 'b', &
                     strngpr2, cidimension, qstep, modbetalen,   &

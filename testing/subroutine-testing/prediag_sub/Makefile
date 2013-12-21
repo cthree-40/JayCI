@@ -1,5 +1,5 @@
 # MAKEFILE for tester
-PREPROC2	= -DHVBUILDMAT -DGENPROBEL -DHVDIAG -DHVACTION -DEXPBUILD 
+PREPROC2	=-DPREDIAG -DGENPROBEL -DHVDIAG -DHVACTION -DEXPBUILD 
 SOURCE		= ./src
 JDIR			= ./
 OBJS2			= detci1.o detci2.o detci5.o truncation.o citrunc.o hvdiag.o iwfmt.o \
@@ -7,13 +7,13 @@ OBJS2			= detci1.o detci2.o detci5.o truncation.o citrunc.o hvdiag.o iwfmt.o \
 						acthv.o
 OBJS3			= $(OBJS2) construct.o
 
-OBJS			= $(OBJS3) test.o
+OBJS			= $(OBJS3) cannonreal.o lowdiags.o prediag.o test.o
 
 COMPILER	= ifort -i8
 PREFIX		= sh -c
 LIBS			= -L$(MKLROOT)/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm
 LIB2			= ./colib.a ./blaswrapper.a
-CPOPT			= -auto -c -assume byterecl -g -traceback -fp-stack-check -check bounds
+CPOPT			= -auto -c -assume byterecl -g -traceback -fp-stack-check -check bounds -check all
 LKOPT			= -auto -lpthread
 EXEC			= test.x
 
