@@ -47,8 +47,8 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   integer, dimension( adets ) :: alphastrings
   integer, dimension( bdets ) :: betastrings
 
-  integer, dimension( adets, aelec ) :: alphmat 
-  integer, dimension( bdets, belec ) :: betamat
+!  integer, dimension( adets, aelec ) :: alphmat 
+!  integer, dimension( bdets, belec ) :: betamat
  
   integer, dimension(:), allocatable   :: modalpha, modbeta
 
@@ -60,7 +60,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 
   integer, dimension(:), allocatable :: fnldets
   
-  integer, dimension(:), allocatable :: crossreflist
+  integer, dimension(:), allocatable :: qcrossreflist, pcrossreflist
   
   integer, dimension(:), allocatable :: qdeterms, pdeterms
 
@@ -78,9 +78,9 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   call enffrozen( betastrings, nfrozen, belec, orbitals, bdets )
 ! ...ENFORCE DOCC RESTRICTIONS...
   call enfdocc( alphastrings, adets, aelec, orbitals, nfrozen, &
-                ndocc, xlevel )
+                ndocc, nactive, xlevel )
   call enfdocc( betastrings, bdets, belec, orbitals, nfrozen, &
-                ndocc, xlevel )
+                ndocc, nactive, xlevel )
 ! ...ENFORCE CAS RESTRICTIONS
   call enfactive( alphastrings, adets, orbitals, aelec, nfrozen,&
                   ndocc, nactive, xlevel )
@@ -137,8 +137,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
   remdet=0
   call enfdoccdet( fnldets, fnldetslen, aelec, adets, belec, bdets, &
-                   orbitals, nfrozen, ndocc, xlevel, remdet )
-
+                   orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
 ! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
   call enfactivedet( fnldets, fnldetslen, aelec, adets, belec, bdets,&
                      orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
@@ -164,66 +163,30 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   close(unit=4)
 ! ...FORM STRING PAIRS...
 ! String pairs (p,q)
-  print *, ">>> TESTING "
-  do i=1, cidimension
 
-    call k2indc(fnldets(i), belec, orbitals, p, q)
-    print *, p, q
-  end do
-  print *, "+++++++++++++++++++++++++++++"
-  print *, " +++++++++++++++++++++++++++ "
   allocate( strngpr1(cidimension,2))
   allocate( strngpr2(cidimension,2))
 
   allocate( pstep(modalphalen))
   allocate( qstep(modbetalen))
+  allocate( plocate(modalphalen))
+  allocate( qlocate(modbetalen))
   allocate( pdeterms(cidimension))
   allocate( qdeterms(cidimension))
 ! Generate alpha string pairs
-  call genstrpairs( modalpha, modalphalen, modbeta, modbetalen, &
-                    fnldets, cidimension, belec, orbitals, 'a', &
-                    strngpr1, cidimension, pstep, modalphalen,  &
-                    pdeterms )
-  do i=1, modalphalen
-    print *, strngpr1(i,1), strngpr1(i,2)
-  end do
-  print *, "=========================="
-  allocate(plocate(modalphalen))
-  allocate(qlocate(modbetalen))
+!  call genstrpairs( modalpha, modalphalen, modbeta, modbetalen, &
+!                    fnldets, cidimension, belec, orbitals, 'a', &
+!                    strngpr1, cidimension, pstep, modalphalen,  &
+!                    pdeterms, plocate )
+!  call genstrpairs( modbeta, modbetalen, modalpha, modalphalen, &
+!                    fnldets, cidimension, belec, orbitals, 'b', &
+!                    strngpr2, cidimension, qstep, modbetalen,   &
+!                    qdeterms, qlocate )
+
   call gen_alphastrpr( fnldets, cidimension, belec, orbitals, &
                        strngpr1, pstep, plocate, modalphalen )
-  do i=1, cidimension
-    print *, strngpr1(i,1), strngpr1(i,2)
-  end do
-  print *, "-------------------------"
-  do i=1, modalphalen
-    print *, pstep(i)
-  end do
-  print *, "------------------------"
-  do i=1, modalphalen
-    print *, plocate(i)
-  end do
-  print *, "========================="
-  print *, " "
-  print *, "========================="
-  call gen_betastrpr( strngpr1, cidimension, pstep, modalphalen,&
-                      plocate, strngpr2, qstep, qlocate, modbeta,&
-                      modbetalen )
-  do i=1, cidimension
-    print *, strngpr2(i,1), strngpr2(i,2)
-  end do
-  print *, "------------------------"
-  do i=1, modbetalen
-    print *, qstep(i)
-  end do
-  print *, "--------------------"
-  do i=1, modbetalen
-    print *, qlocate(i)
-  end do  
-  call genstrpairs( modbeta, modbetalen, modalpha, modalphalen, &
-                    fnldets, cidimension, belec, orbitals, 'b', &
-                    strngpr2, cidimension, qstep, modbetalen,   &
-                    qdeterms )
+  call gen_betastrpr(  strngpr1, cidimension, pstep, modalphalen, &
+                       plocate, strngpr2, qstep, qlocate, modbeta, modbetalen )
 
 ! ...WRITE strings to respective files...
   open(unit=5,file='pstring.list',status='new')
@@ -236,6 +199,11 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
     write(unit=7,fmt=9) pstep(i)
   end do
   close(unit=7)
+  open(unit=11,file='plocate.list',status='new')
+  do i=1,modalphalen
+    write(unit=11,fmt=9) plocate(i)
+  end do
+  close(unit=11)
   open(unit=6,file='qstring.list',status='new')
   do i=1,cidimension
     write(unit=6,fmt=10) strngpr2(i,1), strngpr2(i,2)
@@ -246,6 +214,11 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
     write(unit=8,fmt=9) qstep(i)
   end do
   close(unit=8)
+  open(unit=12,file='qlocate.list',status='new')
+  do i=1,modbetalen
+    write(unit=12,fmt=9) qlocate(i)
+  end do
+  close(unit=12)
 10 format(1x,I10,I10)
 
 
@@ -254,17 +227,24 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !  will list K'(K(p))
 
 ! Generate determinant list of determinants in stringpr1 list
-  allocate(crossreflist(cidimension))
-  call detcrossref( pdeterms, qdeterms,cidimension, crossreflist )
+!  allocate(qcrossreflist(cidimension))
+!  allocate(pcrossreflist(cidimension))
+!  call detcrossref( pdeterms, qdeterms, fnldets, cidimension, pcrossreflist, &
+!                    qcrossreflist )
 
 ! Write cross reference list to file
-  open(unit=9,file='cross.ref',status='new')
-  do i=1, cidimension
-    write(unit=9,fmt=9) crossreflist(i)
-  end do
-  close(unit=9)
+!  open(unit=9,file='pcross.ref',status='new')
+!  do i=1, cidimension
+!    write(unit=9,fmt=9) pcrossreflist(i)
+!  end do
+!  close(unit=9)
+!  open(unit=10,file='qcross.ref',status='new')
+!  do i=1, cidimension
+!    write(unit=10,fmt=9) qcrossreflist(i)
+!  end do
+!  close(unit=10)
 ! Deallocate all arrays
-  deallocate(crossreflist,qstep,pstep,strngpr1,strngpr2,modalpha,&
+  deallocate(qstep,pstep,strngpr1,strngpr2,modalpha,&
              modbeta,qdeterms,pdeterms)
   return
 

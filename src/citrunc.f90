@@ -78,9 +78,9 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   call enffrozen( betastrings, nfrozen, belec, orbitals, bdets )
 ! ...ENFORCE DOCC RESTRICTIONS...
   call enfdocc( alphastrings, adets, aelec, orbitals, nfrozen, &
-                ndocc, xlevel )
+                ndocc, nactive, xlevel )
   call enfdocc( betastrings, bdets, belec, orbitals, nfrozen, &
-                ndocc, xlevel )
+                ndocc, nactive, xlevel )
 ! ...ENFORCE CAS RESTRICTIONS
   call enfactive( alphastrings, adets, orbitals, aelec, nfrozen,&
                   ndocc, nactive, xlevel )
@@ -137,8 +137,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
   remdet=0
   call enfdoccdet( fnldets, fnldetslen, aelec, adets, belec, bdets, &
-                   orbitals, nfrozen, ndocc, xlevel, remdet )
-
+                   orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
 ! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
   call enfactivedet( fnldets, fnldetslen, aelec, adets, belec, bdets,&
                      orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
@@ -175,14 +174,19 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   allocate( pdeterms(cidimension))
   allocate( qdeterms(cidimension))
 ! Generate alpha string pairs
-  call genstrpairs( modalpha, modalphalen, modbeta, modbetalen, &
-                    fnldets, cidimension, belec, orbitals, 'a', &
-                    strngpr1, cidimension, pstep, modalphalen,  &
-                    pdeterms, plocate )
-  call genstrpairs( modbeta, modbetalen, modalpha, modalphalen, &
-                    fnldets, cidimension, belec, orbitals, 'b', &
-                    strngpr2, cidimension, qstep, modbetalen,   &
-                    qdeterms, qlocate )
+!  call genstrpairs( modalpha, modalphalen, modbeta, modbetalen, &
+!                    fnldets, cidimension, belec, orbitals, 'a', &
+!                    strngpr1, cidimension, pstep, modalphalen,  &
+!                    pdeterms, plocate )
+!  call genstrpairs( modbeta, modbetalen, modalpha, modalphalen, &
+!                    fnldets, cidimension, belec, orbitals, 'b', &
+!                    strngpr2, cidimension, qstep, modbetalen,   &
+!                    qdeterms, qlocate )
+
+  call gen_alphastrpr( fnldets, cidimension, belec, orbitals, &
+                       strngpr1, pstep, plocate, modalphalen )
+  call gen_betastrpr(  strngpr1, cidimension, pstep, modalphalen, &
+                       plocate, strngpr2, qstep, qlocate, modbeta, modbetalen )
 
 ! ...WRITE strings to respective files...
   open(unit=5,file='pstring.list',status='new')
@@ -223,24 +227,24 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !  will list K'(K(p))
 
 ! Generate determinant list of determinants in stringpr1 list
-  allocate(qcrossreflist(cidimension))
-  allocate(pcrossreflist(cidimension))
-  call detcrossref( pdeterms, qdeterms, fnldets, cidimension, pcrossreflist, &
-                    qcrossreflist )
+!  allocate(qcrossreflist(cidimension))
+!  allocate(pcrossreflist(cidimension))
+!  call detcrossref( pdeterms, qdeterms, fnldets, cidimension, pcrossreflist, &
+!                    qcrossreflist )
 
 ! Write cross reference list to file
-  open(unit=9,file='pcross.ref',status='new')
-  do i=1, cidimension
-    write(unit=9,fmt=9) pcrossreflist(i)
-  end do
-  close(unit=9)
-  open(unit=10,file='qcross.ref',status='new')
-  do i=1, cidimension
-    write(unit=10,fmt=9) qcrossreflist(i)
-  end do
-  close(unit=10)
+!  open(unit=9,file='pcross.ref',status='new')
+!  do i=1, cidimension
+!    write(unit=9,fmt=9) pcrossreflist(i)
+!  end do
+!  close(unit=9)
+!  open(unit=10,file='qcross.ref',status='new')
+!  do i=1, cidimension
+!    write(unit=10,fmt=9) qcrossreflist(i)
+!  end do
+!  close(unit=10)
 ! Deallocate all arrays
-  deallocate(qcrossreflist, pcrossreflist,qstep,pstep,strngpr1,strngpr2,modalpha,&
+  deallocate(qstep,pstep,strngpr1,strngpr2,modalpha,&
              modbeta,qdeterms,pdeterms)
   return
 

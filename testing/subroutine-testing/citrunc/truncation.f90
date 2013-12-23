@@ -91,7 +91,7 @@ contains
 !  strings. Makes indices that do not satisfy DOCC restrictions 0.
 !--------------------------------------------------------------------
   subroutine enfdocc( string, determs, elecs, orbitals, nfrozen, &
-                      ndocc, xlevel )
+                      ndocc, nactive, xlevel )
 ! Input:
 !  string   = alpha/beta string indices         integer array  1-d
 !  determs  = alpha/beta determinants           integer scalar
@@ -104,7 +104,7 @@ contains
     implicit none
 ! ...input integer scalars...
     integer, intent(in) :: determs, elecs, orbitals, nfrozen, ndocc,&
-                           xlevel
+                           xlevel, nactive
 ! ...input/output integer arrays...
     integer, dimension(determs), intent(inout) :: string
 ! ...loop integer scalars...
@@ -137,7 +137,7 @@ contains
         end if
       end do
 
-      if ( test > xlevel ) then
+      if ( (test-nactive) > xlevel) then
         string(i) = 0   ! Remove from expansion
       end if
       
@@ -277,7 +277,7 @@ contains
 ! Subroutine to enforce docc restrictions on determinants
 !--------------------------------------------------------------------
   subroutine enfdoccdet( detlist, detlistlen, aelec, adets, belec, &
-    bdets, orbitals, nfrozen, ndocc, xlevel, remdet )
+    bdets, orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
 ! Input:
 !  detlist     = list of determinants                integer array  1-d
 !  detlistlen  = length of detlist()                 integer scalar
@@ -294,7 +294,7 @@ contains
     implicit none
 ! ...input integer scalars...
     integer, intent(in) :: detlistlen, aelec, belec, adets, bdets, &
-                           orbitals, nfrozen, ndocc, xlevel
+                           orbitals, nfrozen, ndocc, nactive, xlevel
 ! ...input/output integer scalars...
     integer, intent(inout) :: remdet
 ! ...input/output integer arrays...
@@ -315,19 +315,19 @@ contains
       call k2indc( detlist(i), belec, orbitals, p, q )
       test=0
 ! Check alpha string
-      do j=1, aelec
+      do j=nfrozen+1, aelec
         if ( alphamat(p,j) > nfrozen + ndocc ) then
           test = test + 1
         end if
       end do
 ! Check beta string
-      do j=1, belec
+      do j= 1, belec
         if ( betamat(q, j) > nfrozen + ndocc ) then
           test = test + 1
         end if
       end do
 ! If test > xlevel, throw determinant away
-      if ( test > xlevel ) then
+      if ( (test-nactive) > xlevel ) then
         detlist(i) = 0
         remdet = remdet + 1
       end if
@@ -396,6 +396,7 @@ contains
 ! Test if test > xlevel
       if ( test > xlevel ) then
         detlist(i) = 0
+        remdet=remdet+1
       end if
     end do
     return
@@ -407,7 +408,7 @@ contains
   subroutine genstrpairs( leadspinstr, leadspinstrlen, secondspinstr,  &
     secondspinstrlen, determlist, determlistlen, belec, orbitals,      &
     leadspin, stringpairs, stringpairslen, stringsteps, stringstepslen,&
-    stringdets )
+    stringdets, locate )
 ! Input:
 !  leadspinstr     = alpha/beta strings                integer array  1-d
 !  leadspinstrlen  = $spinstr length                   integer scalar
@@ -418,6 +419,7 @@ contains
 !  belec           = beta electrons                    integer scalar
 !  orbitals        = orbitals                          integer scalar
 !  leadspin        = leading sping    
+!  locate          = array of locations of new string  integer array  1-d
 ! Output:
 !  stringpairs     = string pairings                   integer array  2-d
 !  stringpairslen  = rows of string pairings           integer scalar
@@ -437,6 +439,7 @@ contains
 ! ...output integer arrays...
     integer, dimension( stringpairslen, 2 ), intent(inout) :: stringpairs
     integer, dimension( stringstepslen), intent(inout)     :: stringsteps
+    integer, dimension( stringstepslen), intent(inout)     :: locate
     integer, dimension( determlistlen ), intent(inout)     :: stringdets
 ! ...loop integer scalars...
     integer :: i, j, k, l
@@ -444,6 +447,7 @@ contains
     integer :: step, index1
 !--------------------------------------------------------------------
     l=1
+    locate = 0
 ! Loop over leading string
     do i=1, leadspinstrlen
       step=0
@@ -460,7 +464,7 @@ contains
 ! Test if index1 is in expansion
         do k=1, determlistlen
           if ( index1 .eq. determlist(k) ) then
-            stringpairs(l,1) = i
+            stringpairs(l,1) = i                 ! START FROM PREVIOUS INDEX
             stringpairs(l,2) = j
             stringdets(l) = index1
             l=l+1
@@ -470,6 +474,9 @@ contains
         end do
       end do
       stringsteps(i) = step
+      do j=1,i-1
+        locate(i) = locate(i) + stringsteps(j)
+      end do
     end do
     return
   end subroutine genstrpairs
@@ -477,7 +484,8 @@ contains
 !====================================================================
 ! Subroutine to generate the determinant cross refernce list
 !--------------------------------------------------------------------
-  subroutine detcrossref( pdeterms, qdeterms, length, crossreflist ) 
+  subroutine detcrossref( pdeterms, qdeterms, determs, length, &
+                          pcrossreflist, qcrossreflist ) 
 ! Input:
 !  pdeterms     = determinants ordered by p           integer array  1-d
 !  qdeterms     = determinants ordered by q           integer array  1-d
@@ -489,20 +497,32 @@ contains
 ! ...input integer scalars...
     integer, intent(in) :: length
 ! ...input integer arrays...
-    integer, dimension( length ), intent(in) :: pdeterms, qdeterms
+    integer, dimension( length ), intent(in) :: pdeterms, qdeterms, determs
 ! ...output itneger arrays...
-    integer, dimension( length ), intent(inout) :: crossreflist
+    integer, dimension( length ), intent(inout) :: pcrossreflist, qcrossreflist
 ! ...loop integer scalars...
     integer :: i, j
 ! ...integer scalars...
     integer :: l
 !--------------------------------------------------------------------
+! Loop over p list
+    l = 1
+    do i=1, length
+      do j=1, length
+        if ( pdeterms(i) .eq. determs(j) ) then
+          pcrossreflist(l) = j
+          l=l+1
+          exit
+        end if
+      end do
+    end do
+ 
 ! Loop over q list
     l = 1
     do i=1, length
       do j=1, length
-        if ( qdeterms(i) .eq. pdeterms(j) ) then
-          crossreflist(l) = j
+        if ( qdeterms(i) .eq. determs(j) ) then
+          qcrossreflist(l) = j
           l=l+1
           exit
         end if
@@ -542,8 +562,6 @@ contains
         step = step + 1
         cycle
       else
-        print *, "Determinant:  ", i
-        print *, "Alpha step ", l, " equals ", step
         alpha_step(l) = step
         step = 1
         l = l+1
@@ -598,9 +616,7 @@ contains
       if ( beta_strpr(i,1) .eq. beta_strpr(i+1, 1) ) then
         step = step + 1
       else
-        print *, " Determinant:  ", i
         beta_step(l) = step
-        print *, " Beta step ", l, " equals ", step
         step=1
         l = l+1
       end if
