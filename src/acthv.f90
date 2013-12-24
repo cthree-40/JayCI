@@ -35,7 +35,7 @@
 ! vector2         = Hv                                      real*8 array
 !====================================================================
 subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
-  pstring, pstep, plocate, pxreflist, qstring, qstep, qlocate, qxreflist,&
+  pstring, pstep, plocate, qstring, qstep, qlocate,&
   cidim, pdets, qdets, pdetstrunc, qdetstrunc, adets, bdets, aelec, belec, orbitals,  &
   diagonals, vector2 )
   use actionutil
@@ -47,7 +47,6 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
   integer, dimension(cidim,2), intent(in)    :: pstring, qstring
   integer, dimension(pdetstrunc), intent(in) :: pstep, plocate, pdets
   integer, dimension(qdetstrunc), intent(in) :: qstep, qlocate, qdets
-  integer, dimension(cidim), intent(in)      :: pxreflist, qxreflist
 ! ...input real*8 arrays...
   real*8, dimension(moints1len), intent(in) :: moints1
   real*8, dimension(moints2len), intent(in) :: moints2
@@ -78,16 +77,16 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
 
 ! Single, double and single single(beta) in alpha strings
   call acthv_alpha( vector1, moints1, moints2, moints1len, moints2len,       &
-                    pstring, pstep, plocate, pxreflist, pdets, qstring,      &
-                    qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc,     &
+                    pstring, pstep, plocate, pdets, qstring,      &
+                    qstep, qlocate, qdets, cidim, pdetstrunc,     &
                     qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
 
 #ifdef HVACTION
   vector3 = 0d0
   vector3(1) = 1d0
   call acthv_alpha( vector3, moints1, moints2, moints1len, moints2len,       &
-                    pstring, pstep, plocate, pxreflist, pdets, qstring,      &
-                    qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc,     &
+                    pstring, pstep, plocate, pdets, qstring,      &
+                    qstep, qlocate, qdets, cidim, pdetstrunc,     &
                     qdetstrunc, adets, bdets, aelec, belec, orbitals, vector4 )
   
 !  open(unit=20,file='alpha.cont',status='new',iostat=openstat)
@@ -105,8 +104,8 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
 #endif
 ! Single, double excitations in beta strings
   call acthv_beta( vector1, moints1, moints2, moints2len, moints2len,        &
-                   pstring, pstep, plocate, pxreflist, pdets, qstring,       &
-                   qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc,      &
+                   pstring, pstep, plocate, pdets, qstring,       &
+                   qstep, qlocate, qdets, cidim, pdetstrunc,      &
                    qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
 ! Return vector2
   return

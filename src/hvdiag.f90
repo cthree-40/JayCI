@@ -29,14 +29,13 @@
 !====================================================================
 subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   & 
   pdets, pdetslen, qdets, qdetslen, detlist, cidim, totels, orbitals, aelec, belec, &
-  adets, bdets, moints1, moints1len, moints2, moints2len, pxreflist, qxreflist, &
-  xreflistlen, plocate, qlocate, diagonals )
+  adets, bdets, moints1, moints1len, moints2, moints2len, plocate, qlocate, diagonals )
 
   implicit none
 ! ...input integer scalars...
   integer,intent(in) :: psteplen, qsteplen, cidim, totels, orbitals, aelec, &
                         belec, adets, bdets, moints1len, moints2len, pdetslen,&
-                        qdetslen, xreflistlen
+                        qdetslen
 ! ...input integer arrays...
   integer, dimension(cidim,2),  intent(in) :: pstring, qstring
   integer, dimension(cidim),    intent(in) :: detlist
@@ -44,12 +43,15 @@ subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   &
   integer, dimension(qsteplen), intent(in) :: qstep, qlocate
   integer, dimension(pdetslen), intent(in) :: pdets
   integer, dimension(qdetslen), intent(in) :: qdets
-  integer, dimension(xreflistlen),intent(in)::pxreflist,qxreflist
 ! ...input real*8 arrays...
   integer, dimension(moints1len), intent(in) :: moints1
   integer, dimension(moints2len), intent(in) :: moints2
 ! ...output real*8 arrays...
   real*8, dimension(cidim), intent(inout) :: diagonals
+! ...real*8 scalars...
+  real*8 :: ham_element_diag
+! ...integer scalars...
+  integer :: i
 ! ...integer arrays...
 !  integer, dimension(cidim ) :: alphadiagindex, betadiagindex
 !--------------------------------------------------------------------

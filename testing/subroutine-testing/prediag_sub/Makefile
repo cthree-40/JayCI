@@ -1,5 +1,5 @@
 # MAKEFILE for tester
-PREPROC2	=-DPREDIAG -DGENPROBEL -DHVDIAG -DHVACTION -DEXPBUILD 
+PREPROC2	=-DPREDIAG -DHVDIAG -DHVACTION -DEXPBUILD 
 SOURCE		= ./src
 JDIR			= ./
 OBJS2			= detci1.o detci2.o detci5.o truncation.o citrunc.o hvdiag.o iwfmt.o \

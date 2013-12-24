@@ -543,7 +543,7 @@ contains
     integer, dimension( determlistlen ), intent(in)  :: determlist
     integer, dimension( determlistlen,2 ), intent(out) :: alpha_strpair 
     integer, dimension( alpha_detlen ),  intent(out) :: alpha_step, alpha_locate 
-    integer :: l, i, j, step, locate, p, q, p0
+    integer :: l, i, j, step, locate, p, q, tot_step
   !--------------------------------------------------------------------
   ! Loop through determinants generating alpha_strpair
     alpha_step = 1   ! All determinants will have at least one step
@@ -553,19 +553,22 @@ contains
       alpha_strpair(i,2) = q
     end do
   ! Loop through alpha_strpair generating step array and location array
-    p0 = 1
+    tot_step=0
     step = 1
     j=1
     l=1
     do i=1, determlistlen-1
       if ( alpha_strpair(i,1) .eq. alpha_strpair(i+1,1) ) then
         step = step + 1
-        cycle
       else
         alpha_step(l) = step
+        tot_step = tot_step + step
         step = 1
         l = l+1
-        cycle
+        if ( l .eq. alpha_detlen ) then
+          alpha_step(l) = determlistlen - tot_step
+          exit
+        end if
       end if
     end do
     do i=1, alpha_detlen
@@ -593,7 +596,7 @@ contains
     integer, dimension( beta_detlen ),    intent(in) :: beta_det
     integer, dimension( beta_detlen ),   intent(out) :: beta_step, beta_locate
     integer, dimension( cidimension, 2 ),intent(out) :: beta_strpr
-    integer :: i, j, step, locate, l
+    integer :: i, j, step, locate, l, tot_step
   !--------------------------------------------------------------------
   ! Loop over q strings
     beta_step = 1 ! All strings will have at least one step
@@ -612,13 +615,19 @@ contains
     step = 1
     j=1
     l = 1
+    tot_step = 0
     do i=1, cidimension-1
       if ( beta_strpr(i,1) .eq. beta_strpr(i+1, 1) ) then
         step = step + 1
       else
         beta_step(l) = step
+        tot_step = tot_step + step
         step=1
         l = l+1
+        if ( l .eq. beta_detlen ) then
+          beta_step(l) = cidimension - tot_step
+          exit
+        end if
       end if
     end do
     do i=1, beta_detlen

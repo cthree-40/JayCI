@@ -29,8 +29,8 @@ contains
 !  in alpha and beta strings
 !--------------------------------------------------------------------
   subroutine acthv_alpha( vector1, moints1, moints2, moints1len,    &
-    moints2len, pstring, pstep, plocate, pxreflist, pdets, qstring, &
-    qstep, qlocate, qxreflist, qdets, cidim, pdetstrunc, qdetstrunc,&
+    moints2len, pstring, pstep, plocate, pdets, qstring, &
+    qstep, qlocate, qdets, cidim, pdetstrunc, qdetstrunc,&
     adets, bdets, aelec, belec, orbitals, vector2 )
     use detci2
     use detci5
@@ -42,7 +42,6 @@ contains
     integer, dimension(cidim, 2), intent(in)  :: pstring, qstring
     integer, dimension(pdetstrunc), intent(in):: pstep, plocate, pdets
     integer, dimension(qdetstrunc), intent(in):: qstep, qlocate, qdets
-    integer, dimension(cidim), intent(in)     :: pxreflist, qxreflist
     
     real*8, dimension(moints1len), intent(in) :: moints1
     real*8, dimension(moints2len), intent(in) :: moints2
@@ -80,37 +79,37 @@ contains
     do i=1, pdetstrunc
 !___________________________________________________
 #ifdef HVACTION
-    if ( pdets(i) .eq. 27 ) then
-      debugunit=5
-      debugfl='debug.acthv'
-      open(unit=debugunit,file=debugfl, status='unknown', iostat=openstat )
-      if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN DEBUGGING FILE *****"
-      write( unit=debugunit, fmt=10 ) "Looping over alpha string ", pdets(i)
-      write( unit=debugunit, fmt=14 ) "VECTOR2(1) : " , vector2(1)
-    end if
+!    if ( pdets(i) .eq. 28 ) then
+!      debugunit=5
+!      debugfl='debug.acthv'
+!      open(unit=debugunit,file=debugfl, status='unknown', iostat=openstat )
+!      if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN DEBUGGING FILE *****"
+!      write( unit=debugunit, fmt=10 ) "Looping over alpha string ", pdets(i)
+!      write( unit=debugunit, fmt=14 ) "VECTOR2(1) : " , vector2(1)
+!    end if
 #endif
 !___________________________________________________
     ! Generate orbital index string
       call genorbstring( pdets(i), aelec, orbitals, adets, astring )
 !___________________________________________________
 #ifdef HVACTION
-      if ( pdets(i) .eq. 27 ) then
-        write( unit=debugunit, fmt=9) "This string looks like : "
-        write( unit=debugunit, fmt=11)  astring(1)
-        write( unit=debugunit, fmt=9) " "
-      end if
+!      if ( pdets(i) .eq. 28 ) then
+!        write( unit=debugunit, fmt=9) "This string looks like : "
+!        write( unit=debugunit, fmt=11)  astring(1)
+!        write( unit=debugunit, fmt=9) " "
+!      end if
 #endif 
     ! Generate list of excitations
       call possex1( astring, orbitals, aelec, (orbitals-aelec), pexits1 )
 !___________________________________________________
 #ifdef HVACTION
-      if ( pdets(i) .eq. 27 ) then
-        write( unit=debugunit, fmt=9) "Possible excitations for this string are: "
-        do j=1, orbitals-aelec
-          write( unit=debugunit, fmt=10) "    ", pexits1(j)
-        end do
-        write( unit=debugunit, fmt=9) " "
-      end if
+!      if ( pdets(i) .eq. 28 ) then
+!        write( unit=debugunit, fmt=9) "Possible excitations for this string are: "
+!        do j=1, orbitals-aelec
+!          write( unit=debugunit, fmt=10) "    ", pexits1(j)
+!        end do
+!        write( unit=debugunit, fmt=9) " "
+!      end if
 #endif
 !____________________________________________________      
     ! Allocate info array
@@ -127,10 +126,10 @@ contains
                             eps1, xindx1 )      
 !__________________________________________________
 #ifdef HVACTION
-          if ( pdets(i) .eq. 27 ) then
-            write( unit=debugunit,fmt=10 ) " Exciting electron: ", j
-            write( unit=debugunit,fmt=10 ) " Into orbital:      ", pexits1(k)
-          end if
+!          if ( pdets(i) .eq. 28 ) then
+!            write( unit=debugunit,fmt=10 ) " Exciting electron: ", j
+!            write( unit=debugunit,fmt=10 ) " Into orbital:      ", pexits1(k)
+!          end if
 #endif
 !__________________________________________________
     ! Test if xindx1 is in pdets
@@ -138,11 +137,11 @@ contains
             if ( xindx1 .eq. pdets(l) ) then
 !__________________________________________________
 #ifdef HVACTION
-              if ( pdets(i) .eq. 27 ) then
-                write( unit=debugunit, fmt=9 ) "Entering contribution Loop..."
-                write( unit=debugunit, fmt=10) "Index of new string is ( found from singrepinfo ) : ", pdets(l)
-                write( unit=debugunit, fmt=10) " xindx1 : ", xindx1
-              end if
+!              if ( pdets(i) .eq. 28 ) then
+!                write( unit=debugunit, fmt=9 ) "Entering contribution Loop..."
+!                write( unit=debugunit, fmt=10) "Index of new string is ( found from singrepinfo ) : ", pdets(l)
+!                write( unit=debugunit, fmt=10) " xindx1 : ", xindx1
+!              end if
 #endif
 !___________________________________________________
              ! srepinfo((j-1)*(orbitals-aelec)+k,1) = astring(j) ! Orbital exciting from
@@ -166,10 +165,10 @@ contains
                   if ( pstring(plocate(l)+m,2) .eq. pstring(plocate(i)+n,2) ) then
 !_______________________________________________
 #ifdef HVACTION
-                    if ( pdets(i) .eq. 27 ) then
-                      write( unit=debugunit, fmt=10 ) " Q string is ", pstring(plocate(l)+m,2)
-                      write( unit=debugunit, fmt=9) " "
-                    end if
+!                    if ( pdets(i) .eq. 28 ) then
+!                      write( unit=debugunit, fmt=10 ) " Q string is ", pstring(plocate(l)+m,2)
+!                      write( unit=debugunit, fmt=9) " "
+!                    end if
 #endif
 !_______________________________________________
 
@@ -183,11 +182,11 @@ contains
                     vecindx2 = indxk( pdets(i), pstring(plocate(l)+m,2), belec, orbitals )
 !________________________________________________
 #ifdef HVACTION
-                    if ( pdets(i) .eq. 27 ) then
-                      write( unit=debugunit, fmt=13 ) "        Adding contribution from ", vecindx1, "to", vecindx2
-                      write( unit=debugunit, fmt=14 ) "        vector(vecindx1) is ", vector1(vecindx1)
-                      write( unit=debugunit, fmt=14 ) "        vector(1) is ", vector2(1)
-                    end if
+!                    if ( pdets(i) .eq. 28 ) then
+!                      write( unit=debugunit, fmt=13 ) "        Adding contribution from ", vecindx1, "to", vecindx2
+!                      write( unit=debugunit, fmt=14 ) "        vector(vecindx1) is ", vector1(vecindx1)
+!                      write( unit=debugunit, fmt=14 ) "        vector(1) is ", vector2(1)
+!                    end if
 #endif
 !________________________________________________
  
@@ -196,9 +195,9 @@ contains
                                          vector1(vecindx1)
 !_______________________________________________
 #ifdef HVACTION
-                    if ( pdets(i) .eq. 27 ) then
-                      write( unit=debugunit,fmt=14) "         vector(1) is ", vector2(1)
-                    end if
+!                    if ( pdets(i) .eq. 28 ) then
+!                      write( unit=debugunit,fmt=14) "         vector(1) is ", vector2(1)
+!                    end if
 #endif
 !_______________________________________________
                     exit test_p2
@@ -209,9 +208,9 @@ contains
     ! Loop over additional replacements in alpha strings. ( m > j; n > k )
 !________________________________________________
 #ifdef HVACTION
-              if ( pdets(i) .eq. 27 ) then
-                write( unit=debugunit, fmt=9 ) " Now for addition replacements..."
-              end if
+!              if ( pdets(i) .eq. 28 ) then
+!                write( unit=debugunit, fmt=9 ) " Now for addition replacements..."
+ !             end if
 #endif
 !_________________________________________________
               do m=j+1, aelec      
@@ -236,9 +235,9 @@ contains
                             vector2(vecindx2) = vector2(vecindx2) + int3elweps*vector1(vecindx1)
 !_______________________________________________
 #ifdef HVACTION            
-                            if ( pdets(i) .eq. 27 ) then
-                              write( unit=debugunit,fmt=13) " Adding the contribution from ", vecindx1, "to", vecindx2
-                            end if
+!                            if ( pdets(i) .eq. 28 ) then
+!                              write( unit=debugunit,fmt=13) " Adding the contribution from ", vecindx1, "to", vecindx2
+!                            end if
 #endif
 !_______________________________________________
                           end if ! If q corresponds to both p and p**
@@ -255,10 +254,10 @@ contains
       ! This information is in pstring.  We are looping over the second column.
 !__________________________________________________
 #ifdef HVACTION
-              if ( pdets(i) .eq. 27 ) then
-                write( unit=debugunit,fmt=9) " Now entering single excitations in both alpha and beta strings..."
-                write( unit=debugunit,fmt=14) "   vector2(1): ", vector2(1)
-              end if
+!              if ( pdets(i) .eq. 28 ) then
+!                write( unit=debugunit,fmt=9) " Now entering single excitations in both alpha and beta strings..."
+!                write( unit=debugunit,fmt=14) "   vector2(1): ", vector2(1)
+!              end if
 #endif
 !___________________________________________________
               do m=1, pstep(i)
@@ -302,8 +301,8 @@ contains
 !  subroutine, with beta and alpha strings swapped.
 !--------------------------------------------------------------------
   subroutine acthv_beta( vector1, moints1, moints2, moints1len, moints2len,&
-    pstring, pstep, plocate, pxreflist, pdets, qstring, qstep, qlocate,    &
-    qxreflist, qdets, cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec,  &
+    pstring, pstep, plocate, pdets, qstring, qstep, qlocate,    &
+    qdets, cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec,  &
     belec, orbitals, vector2 )
     use detci2
     use detci5
@@ -315,7 +314,6 @@ contains
     integer, dimension(cidim, 2), intent(in)  :: pstring, qstring
     integer, dimension(pdetstrunc), intent(in):: pstep, plocate, pdets
     integer, dimension(qdetstrunc), intent(in):: qstep, qlocate, qdets
-    integer, dimension(cidim), intent(in)     :: pxreflist, qxreflist
     
     real*8, dimension(moints1len), intent(in) :: moints1
     real*8, dimension(moints2len), intent(in) :: moints2

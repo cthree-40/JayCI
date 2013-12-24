@@ -18,7 +18,7 @@ subroutine lowdiags( vector1, length, choose, initguess )
   integer, intent(in) :: length, choose
 
 ! ...output real*8 arrays...
-  real*8, dimension(length, choose) :: initguess
+  real*8, dimension(length, choose), intent(out) :: initguess
 
 ! ...loop integer scalars...
   integer :: i, j, k, l

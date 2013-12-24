@@ -2,6 +2,7 @@ program test
 ! PROGRAM TO TEST VARIOUS SUBROUTINES
   use detci2
   use detci5
+  use prediag
   implicit none
 
   integer :: adets, bdets, aelec, belec, orbitals, nfrozen, &
@@ -49,6 +50,10 @@ program test
 #ifdef GENPROBEL
   integer, dimension( 28, 2 ) :: probstr
   integer, dimension(1) :: apstring, bpstring
+#endif
+#if PREDIAG=2
+  integer :: initguessdim1, initdiagsguess
+  real*8, dimension(:,:),  allocatable :: outputvectors1
 #endif
   integer :: testcol    ! Testing column for Hv
   integer :: probdet, probb, probp
@@ -143,8 +148,8 @@ program test
    allocate(qstep(tbdetslen))
    allocate(qlocate(tbdetslen))
    allocate(tdets(cidim))
-   allocate(pcrossref(cidim))
-   allocate(qcrossref(cidim))
+!   allocate(pcrossref(cidim))
+!   allocate(qcrossref(cidim))
 
 ! Read in determinants
    print *, " Reading in strings and determinants..."
@@ -190,14 +195,14 @@ program test
    close(unit=6)
 
 ! Read in cross reference list
-   open (unit=9,file=pxreffile,status='old',position='rewind',iostat=openstat)
-   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, pcross.ref. ****"
-   read(unit=9,fmt=13) (pcrossref(i), i=1, cidim )
-   close(unit=9)
-   open(unit=12,file=qxreffile,status='old',position='rewind',iostat=openstat)
-   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, qcross.ref. ****"
-   read(unit=12,fmt=13) (qcrossref(i), i=1, cidim )
-   close(unit=12)
+!   open (unit=9,file=pxreffile,status='old',position='rewind',iostat=openstat)
+!   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, pcross.ref. ****"
+!   read(unit=9,fmt=13) (pcrossref(i), i=1, cidim )
+!   close(unit=9)
+!   open(unit=12,file=qxreffile,status='old',position='rewind',iostat=openstat)
+!   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, qcross.ref. ****"
+!   read(unit=12,fmt=13) (qcrossref(i), i=1, cidim )
+!   close(unit=12)
 ! Read in locate lists
    open (unit=13,file='plocate.list',status='old',position='rewind',iostat=openstat)
    if ( openstat > 0 ) stop "**** CANNOT OPEN LOCATE FILE, plocate.list ****"
@@ -220,7 +225,7 @@ program test
    allocate(diagonals(cidim))
    call diagonal( pstring, pstep, tadetslen, qstring, qstep, tbdetslen, tadets, &
                   tadetslen, tbdets, tbdetslen, tdets, cidim, 3, orbitals, aelec, belec,&
-                  adets, bdets, moints1, moints1len, moints2, moints2len, pcrossref, qcrossref,cidim,&
+                  adets, bdets, moints1, moints1len, moints2, moints2len, &
                   plocate, qlocate, diagonals )
 !   print *, diagonals(1)
 !   print *, diagonals(2)
@@ -235,8 +240,8 @@ program test
     initialguess=0d0
     initialguess(729)=1d0
     print *, " Calling acthv()..."
-    call acthv( initialguess, moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, pcrossref, &
-                qstring, qstep, qlocate, qcrossref, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
+    call acthv( initialguess, moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, &
+                qstring, qstep, qlocate, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
                 aelec, belec, orbitals, diagonals, resultingvec )
     print *, "Resulting vector being printed to file: output_acthv.1"
     open( unit=15, file='output_acthv.1', status='new', position='rewind', iostat=openstat )
@@ -291,7 +296,7 @@ program test
     if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN hamiltonian file ****"
     print *, " Printing column 729 of Hamiltonian... "
     do m=1, cidim
-      write( unit=30, fmt=20 ) hamiltonian(m,729), hamiltonian(729,m)
+      write( unit=30, fmt=20 ) hamiltonian(m,729)
     end do
 20 format(1x,F10.6,F10.6)
     close(unit=30)
@@ -322,8 +327,8 @@ program test
     print *, "Peforming Hv_i = M_ij for i=1,2,...,cidim ..."
     do i=1, cidim
       print *, i
-      call acthv( unitmat(1,i), moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, pcrossref, &
-                qstring, qstep, qlocate, qcrossref, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
+      call acthv( unitmat(1,i), moints1, moints2, moints1len, moints2len, pstring, pstep, plocate,&
+                qstring, qstep, qlocate, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
                 aelec, belec, orbitals, diagonals, hamiltonian(1,i) )
     end do
     open( unit=90, file='hv-hamiltonian.col729', status='new', iostat=openstat )
@@ -382,4 +387,18 @@ program test
     call k2indc( probdet, belec, orbitals, probp, probb )
     print *, " This det is composed of strings: ", probp, probb
 #endif    
+#if PREDIAG=2
+    print *, "Testing lowdiag preconditioner subroutine..."
+    initguessdim1 = 5
+    initdiagsguess= 100
+    allocate(outputvectors1( cidim, initguessdim1 ))
+    call lowdiagprecond( diagonals, cidim, moints1, moints1len, moints2, &
+                         moints2len, pstring, pstep, plocate, qstring, qstep, &
+                         qlocate, tadets, tbdets, tadetslen, tbdetslen, &
+                         adets, bdets, aelec, belec, orbitals, initguessdim1, &
+                         initdiagsguess, outputvectors1 )
+    print *, "Test complete."
+    deallocate( outputvectors1 )
+#endif
+    
 end program

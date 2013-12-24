@@ -156,7 +156,7 @@ real*8 function ham_element_diag( ind1, moints1, moints1len, moints2, &
   use detci1
   use detci2
   implicit none
-integer, intent(in) :: ind1, ind2, moints1len, moints2len, &
+integer, intent(in) :: ind1, moints1len, moints2len, &
                          aelec, belec, orbitals
   real*8, dimension( moints1len ), intent(in) :: moints1
   real*8, dimension( moints2len ), intent(in) :: moints2
@@ -178,9 +178,8 @@ integer, intent(in) :: ind1, ind2, moints1len, moints2len, &
   call genorbstring( q1, belec, orbitals, bdets, qstring1 )
   call genorbstring( q2, belec, orbitals, bdets, qstring2 )
 ! Test differences in strings. If > 2 orbitals, element is 0
-    ham_element = diagonal_mat( pstring1, qstring1, aelec, &
+    ham_element_diag = diagonal_mat( pstring1, qstring1, aelec, &
                          belec, moints1, moints1len, moints2, moints2len )
-  end if
 end function ham_element_diag
 !====================================================================
 !====================================================================
