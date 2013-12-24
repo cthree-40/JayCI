@@ -78,9 +78,9 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   call enffrozen( betastrings, nfrozen, belec, orbitals, bdets )
 ! ...ENFORCE DOCC RESTRICTIONS...
   call enfdocc( alphastrings, adets, aelec, orbitals, nfrozen, &
-                ndocc, xlevel )
+                ndocc, nactive, xlevel )
   call enfdocc( betastrings, bdets, belec, orbitals, nfrozen, &
-                ndocc, xlevel )
+                ndocc, nactive, xlevel )
 ! ...ENFORCE CAS RESTRICTIONS
   call enfactive( alphastrings, adets, orbitals, aelec, nfrozen,&
                   ndocc, nactive, xlevel )
@@ -137,8 +137,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
   remdet=0
   call enfdoccdet( fnldets, fnldetslen, aelec, adets, belec, bdets, &
-                   orbitals, nfrozen, ndocc, xlevel, remdet )
-
+                   orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
 ! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
   call enfactivedet( fnldets, fnldetslen, aelec, adets, belec, bdets,&
                      orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
@@ -175,12 +174,6 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   allocate( pdeterms(cidimension))
   allocate( qdeterms(cidimension))
 ! Generate alpha string pairs
-  call gen_alphastrpr( fnldets, cidimension, belec, orbitals, &
-                       strngpr1, pstep, plocate, modalphalen )
-  call gen_betastrpr( strngpr1, cidimension, pstep, modalphalen, &
-                      plocate, strngpr2, qstep, qlocate, modbeta,&
-                      modbetalen )
-
 !  call genstrpairs( modalpha, modalphalen, modbeta, modbetalen, &
 !                    fnldets, cidimension, belec, orbitals, 'a', &
 !                    strngpr1, cidimension, pstep, modalphalen,  &
@@ -189,6 +182,11 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !                    fnldets, cidimension, belec, orbitals, 'b', &
 !                    strngpr2, cidimension, qstep, modbetalen,   &
 !                    qdeterms, qlocate )
+
+  call gen_alphastrpr( fnldets, cidimension, belec, orbitals, &
+                       strngpr1, pstep, plocate, modalphalen )
+  call gen_betastrpr(  strngpr1, cidimension, pstep, modalphalen, &
+                       plocate, strngpr2, qstep, qlocate, modbeta, modbetalen )
 
 ! ...WRITE strings to respective files...
   open(unit=5,file='pstring.list',status='new')
@@ -229,18 +227,12 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !  will list K'(K(p))
 
 ! Generate determinant list of determinants in stringpr1 list
-! ** These are not really necessary...
 !  allocate(qcrossreflist(cidimension))
 !  allocate(pcrossreflist(cidimension))
 !  call detcrossref( pdeterms, qdeterms, fnldets, cidimension, pcrossreflist, &
 !                    qcrossreflist )
 
 ! Write cross reference list to file
-!  print *, "Writing cross reference lists "
-!  do i=1, cidimension
-!    print *, pcrossreflist(i)
-!  end do
-!  
 !  open(unit=9,file='pcross.ref',status='new')
 !  do i=1, cidimension
 !    write(unit=9,fmt=9) pcrossreflist(i)

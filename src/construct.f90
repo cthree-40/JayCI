@@ -147,6 +147,43 @@ real*8 function ham_element( ind1, ind2, moints1, moints1len, moints2, &
 end function
 !====================================================================
 !====================================================================
+!>ham_element_diag
+!
+! Subroutine to compute diagonal elements...see above for input details
+!--------------------------------------------------------------------
+real*8 function ham_element_diag( ind1, moints1, moints1len, moints2, &
+  moints2len, aelec, belec, orbitals)
+  use detci1
+  use detci2
+  implicit none
+integer, intent(in) :: ind1, ind2, moints1len, moints2len, &
+                         aelec, belec, orbitals
+  real*8, dimension( moints1len ), intent(in) :: moints1
+  real*8, dimension( moints2len ), intent(in) :: moints2
+  integer :: p1, q1, p2, q2
+  integer, dimension( aelec ) :: pstring1, pstring2
+  integer, dimension( belec ) :: qstring1, qstring2
+
+  integer :: diffs, adets, bdets
+  real*8 :: dblexcitations, singlexcitations, diagonal_mat
+!--------------------------------------------------------------------
+  adets = binom( orbitals, aelec )
+  bdets = binom( orbitals, belec )
+! Find determinant string indices for ind1 and ind2
+  call k2indc( ind1, belec, orbitals, p1, q1 )
+  call k2indc( ind1, belec, orbitals, p2, q2 )
+! Find respective strings for p1, q1, p2, q2
+  call genorbstring( p1, aelec, orbitals, adets, pstring1 )
+  call genorbstring( p2, aelec, orbitals, adets, pstring2 )
+  call genorbstring( q1, belec, orbitals, bdets, qstring1 )
+  call genorbstring( q2, belec, orbitals, bdets, qstring2 )
+! Test differences in strings. If > 2 orbitals, element is 0
+    ham_element = diagonal_mat( pstring1, qstring1, aelec, &
+                         belec, moints1, moints1len, moints2, moints2len )
+  end if
+end function ham_element_diag
+!====================================================================
+!====================================================================
 !> orbdiffs
 ! 
 ! Subroutine to compute the differences between two determinants

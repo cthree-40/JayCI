@@ -29,14 +29,14 @@
 !====================================================================
 subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   & 
   pdets, pdetslen, qdets, qdetslen, detlist, cidim, totels, orbitals, aelec, belec, &
-  adets, bdets, moints1, moints1len, moints2, moints2len, &
-  plocate, qlocate, diagonals )
+  adets, bdets, moints1, moints1len, moints2, moints2len, pxreflist, qxreflist, &
+  xreflistlen, plocate, qlocate, diagonals )
 
   implicit none
 ! ...input integer scalars...
   integer,intent(in) :: psteplen, qsteplen, cidim, totels, orbitals, aelec, &
                         belec, adets, bdets, moints1len, moints2len, pdetslen,&
-                        qdetslen
+                        qdetslen, xreflistlen
 ! ...input integer arrays...
   integer, dimension(cidim,2),  intent(in) :: pstring, qstring
   integer, dimension(cidim),    intent(in) :: detlist
@@ -44,6 +44,7 @@ subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   &
   integer, dimension(qsteplen), intent(in) :: qstep, qlocate
   integer, dimension(pdetslen), intent(in) :: pdets
   integer, dimension(qdetslen), intent(in) :: qdets
+  integer, dimension(xreflistlen),intent(in)::pxreflist,qxreflist
 ! ...input real*8 arrays...
   integer, dimension(moints1len), intent(in) :: moints1
   integer, dimension(moints2len), intent(in) :: moints2
@@ -55,23 +56,19 @@ subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   &
   diagonals = 0d0
 ! Alpha string contribution
 !  call formdiagindexes( pstring, cidim, belec, orbitals, alphadiagindex )
-!  call contribdiag( 'a', detlist, cidim, pstring, cidim, qstring, cidim, &
-!                     pstep, psteplen, qstep, qsteplen, & 
-!                     aelec, belec, orbitals, adets, bdets, pdets, &
-!                     pdetslen, qdets, qdetslen, moints1, moints1len,     &
-!                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
-!                     plocate, qlocate, diagonals )
+  call contribdiag( 'a', detlist, cidim, pstring, cidim, qstring, cidim, &
+                     pstep, psteplen, qstep, qsteplen, & 
+                     aelec, belec, orbitals, adets, bdets, pdets, &
+                     pdetslen, qdets, qdetslen, moints1, moints1len,     &
+                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
+                     plocate, qlocate, diagonals )
 ! Beta  string contribution
-!  call contribdiag( 'b', detlist, cidim, pstring, cidim, qstring, cidim, &
-!                     pstep, psteplen, qstep, qsteplen, & 
-!                     aelec, belec, orbitals, adets, bdets, pdets, &
-!                     pdetslen, qdets, qdetslen, moints1, moints1len,     &
-!                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
-!                     plocate, qlocate, diagonals )
-  do i=1, cidim
-    diagonals(i) = ham_element_diag( i, moints1, moints1len, moints2, moints2len, &
-                   aelec, belec, orbitals )
-  end do
+  call contribdiag( 'b', detlist, cidim, pstring, cidim, qstring, cidim, &
+                     pstep, psteplen, qstep, qsteplen, & 
+                     aelec, belec, orbitals, adets, bdets, pdets, &
+                     pdetslen, qdets, qdetslen, moints1, moints1len,     &
+                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
+                     plocate, qlocate, diagonals )
   return
 end subroutine
 !====================================================================

@@ -1,6 +1,5 @@
 program test
 ! PROGRAM TO TEST VARIOUS SUBROUTINES
-  use prediag
   use detci2
   use detci5
   implicit none
@@ -12,13 +11,6 @@ program test
   character*20 :: inputfl1, inputfl2, outputfl, astringfl, bstringfl, &
                   determfl, pxreffile, pstepfl, qstepfl, pstringfl, qstringfl,&
                   moflnm, qxreffile
-#ifdef PREDIAG
-  real*8, dimension(100,100) :: test_matrix
-  real*8, dimension(100,5)   :: test_vectors
-  integer :: stat, allocatestatus
-  real*8, dimension(:,:), allocatable :: eig_vectors
-  real*8, dimension(:,:), allocatable :: vectors1, vectors2, vectors5
-#endif
 #ifdef GENORB
   integer, dimension(:), allocatable :: string1
   integer :: h
@@ -58,7 +50,6 @@ program test
   integer, dimension( 28, 2 ) :: probstr
   integer, dimension(1) :: apstring, bpstring
 #endif
-
   integer :: testcol    ! Testing column for Hv
   integer :: probdet, probb, probp
 !-------------------------
@@ -224,8 +215,8 @@ program test
    allocate(moints2(moints2len))
    call iwfmt( moints1, moints2, 1, orbitals, moflnm, moints1len, moints2len )
 ! Call subroutine
-!   print *, " "
-!   print *, "Calling diagonal()..."
+   print *, " "
+   print *, "Calling diagonal()..."
    allocate(diagonals(cidim))
    call diagonal( pstring, pstep, tadetslen, qstring, qstep, tbdetslen, tadets, &
                   tadetslen, tbdets, tbdetslen, tdets, cidim, 3, orbitals, aelec, belec,&
@@ -387,54 +378,8 @@ program test
     end do
     close( unit=62 )
     print *, " What determinant is causing problems? "
-    probdet = 1
+    read *, probdet
     call k2indc( probdet, belec, orbitals, probp, probb )
     print *, " This det is composed of strings: ", probp, probb
 #endif    
-#ifdef PREDIAG
-    print *, " Debugging the prediagonalization subroutines..."
-    print *, "  First, gen_outvecs()..."
-    allocate(eig_vectors(10,10))
-    allocate(vectors1(100,10))
-    allocate(vectors2(100,3))
-    eig_vectors=0d0
-    do i=1, 10
-      eig_vectors(i,i) = 2d0
-    end do
-    do i=1, 10
-      do j=1, 100
-        vectors1(j,i) = real(i)
-      end do
-    end do
-    call gen_outvecs( eig_vectors, 10, vectors1, 100, 10, vectors2, 100, 3 )
-!    do i=1, 100
-!      print *, vectors2(i,1)
-!    end do
-    print *, " Testing diag_hamsub()..."
-    do i=1, 100
-      do j=1, 100
-        test_matrix(i,j) = 1d0
-      end do
-    end do
-    call diag_hamsub( test_matrix, 100, 5, test_vectors )
-    print *, " Now, lowdiagprecond()..."
-    vectors2 = 0d0
-    call lowdiagprecond( diagonals, cidim, moints1, moints1len, moints2, moints2len, &
-                         pstring, pstep, plocate, pcrossref, qstring, qstep, qlocate,&
-                         qcrossref, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
-                         aelec, belec, orbitals, 100, 10, vectors2 ) 
-    print *, "========"
-!    do i=1, 100
-!      print *, vectors2(i,1)
-!    end do
-    allocate(vectors5(cidim,3), stat=allocatestatus )
-    if ( stat .ne. 0 ) stop " *** FAILED TO ALLOCATE *** "
-    print *, "Calling prediagsubblock..."
-    call prediagsubblock( cidim, moints1, moints2, moints1len, moints2len, tadets, &
-                          tadetslen, tbdets, tbdetslen, tdets, 20, 3, vectors5, aelec, &
-                          belec, orbitals )
-    do i=1, cidim
-      print *, vectors5(i,1)
-    end do
-#endif
 end program

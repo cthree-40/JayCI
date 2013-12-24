@@ -56,19 +56,24 @@ subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   &
   diagonals = 0d0
 ! Alpha string contribution
 !  call formdiagindexes( pstring, cidim, belec, orbitals, alphadiagindex )
-  call contribdiag( 'a', detlist, cidim, pstring, cidim, qstring, cidim, &
-                     pstep, psteplen, qstep, qsteplen, & 
-                     aelec, belec, orbitals, adets, bdets, pdets, &
-                     pdetslen, qdets, qdetslen, moints1, moints1len,     &
-                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
-                     plocate, qlocate, diagonals )
+!  call contribdiag( 'a', detlist, cidim, pstring, cidim, qstring, cidim, &
+!                     pstep, psteplen, qstep, qsteplen, & 
+!                     aelec, belec, orbitals, adets, bdets, pdets, &
+!                     pdetslen, qdets, qdetslen, moints1, moints1len,     &
+!                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
+!                     plocate, qlocate, diagonals )
 ! Beta  string contribution
-  call contribdiag( 'b', detlist, cidim, pstring, cidim, qstring, cidim, &
-                     pstep, psteplen, qstep, qsteplen, & 
-                     aelec, belec, orbitals, adets, bdets, pdets, &
-                     pdetslen, qdets, qdetslen, moints1, moints1len,     &
-                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
-                     plocate, qlocate, diagonals )
+!  call contribdiag( 'b', detlist, cidim, pstring, cidim, qstring, cidim, &
+!                     pstep, psteplen, qstep, qsteplen, & 
+!                     aelec, belec, orbitals, adets, bdets, pdets, &
+!                     pdetslen, qdets, qdetslen, moints1, moints1len,     &
+!                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
+!                     plocate, qlocate, diagonals )
+  do i=1, cidim
+    diagonals(i) = ham_element_diag( i, moints1, moints1len, moints2, moints2len, &
+                                     aelec, belec, orbitals )
+  end do
+  
   return
 end subroutine
 !====================================================================

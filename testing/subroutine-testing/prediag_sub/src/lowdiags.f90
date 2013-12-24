@@ -18,7 +18,7 @@ subroutine lowdiags( vector1, length, choose, initguess )
   integer, intent(in) :: length, choose
 
 ! ...output real*8 arrays...
-  real*8, dimension(length, choose), intent(inout) :: initguess
+  real*8, dimension(length, choose) :: initguess
 
 ! ...loop integer scalars...
   integer :: i, j, k, l
@@ -31,6 +31,11 @@ subroutine lowdiags( vector1, length, choose, initguess )
   vector2 = vector1
   call cannonreal( vector2, length, l )
 
+  print *, "Lowest diagonals are..."
+  do i=1, choose
+    print *, vector2(i)
+  end do
+  initguess = 0d0
 ! Find lowest K's
   LPA: do i=1, choose
     LPB: do j=1, length
@@ -42,10 +47,6 @@ subroutine lowdiags( vector1, length, choose, initguess )
       end if
     end do LPB
   end do LPA
-  print *, " Lowest diagonal is..."
-  do i=1, length
-    print *, initguess(i,1)
-  end do
 
   return
 
