@@ -52,8 +52,13 @@ program test
   integer, dimension(1) :: apstring, bpstring
 #endif
 #if PREDIAG=2
-  integer :: initguessdim1, initdiagsguess
-  real*8, dimension(:,:),  allocatable :: outputvectors1
+  integer :: initguessdim1, initdiagsguess, dim1, dim2, dim3
+  real*8, dimension(:,:),  allocatable :: outputvectors1, test_mat, test_vecs, &
+                                          mat_a, mat_b, mat_out
+#endif
+#if PREDIAG=3
+  real*8, dimension(:,:), allocatable :: outvectors
+  integer :: subblockdim, initgdim
 #endif
   integer :: testcol    ! Testing column for Hv
   integer :: probdet, probb, probp
@@ -388,10 +393,49 @@ program test
     print *, " This det is composed of strings: ", probp, probb
 #endif    
 #if PREDIAG=2
+    print *, "Testing diagonalization subroutine..."
+    allocate( test_mat(4,4))
+   ! if ( allocated( test_mat) ) print *, "Allocated!"
+    allocate( test_vecs(4,4))
+   ! if ( allocated( test_mat) ) print *, "Allocated!"
+    do i=1,4
+      do j=1, 4
+        test_mat(i,j) = 1d0
+      end do
+    end do
+    print *, "Calling diag_hamsub..."
+    call diag_hamsub( test_mat, 4, 4, test_vecs )
+    print *, "Printing test_vecs"
+    do i=1, 4
+      print *, "________________________"
+      do j=1, 4
+  !      print *, test_vecs(j,i)
+      end do
+    end do
+    print *, "Calling ritz_vec..."
+    dim1 = 100
+    dim2 = 20
+    dim3 = 3
+    allocate( mat_b(dim2,dim2))
+    allocate( mat_a(dim1,dim2))
+    allocate( mat_out(dim1,dim3))
+    do i=1, 20
+      do j=1, 100
+        mat_a(j,i) = real(i)
+      end do
+    end do
+    mat_b = 0d0
+    do i=1, dim2
+      mat_b(i,i) = 1d0
+    end do
+    call ritz_vec( mat_b, dim1, dim2, dim3, mat_a, mat_out )
+    do i=1, dim3
+    !  print *, mat_out(:,i)
+    end do
     print *, "Testing lowdiag preconditioner subroutine..."
-    initguessdim1 = 5
-    initdiagsguess= 100
-    allocate(outputvectors1( cidim, initguessdim1 ))
+    initguessdim1 = 10
+    initdiagsguess= 5
+    allocate(outputvectors1( cidim, initdiagsguess ))
     call lowdiagprecond( diagonals, cidim, moints1, moints1len, moints2, &
                          moints2len, pstring, pstep, plocate, qstring, qstep, &
                          qlocate, tadets, tbdets, tadetslen, tbdetslen, &
@@ -400,5 +444,21 @@ program test
     print *, "Test complete."
     deallocate( outputvectors1 )
 #endif
-    
+#if PREDIAG=3
+    subblockdim = 20
+    initgdim = 4
+    if (allocated( outvectors)) deallocate(outvectors)
+    allocate( outvectors( cidim, initgdim ) )
+    print *, "Call prediag...."
+    call prediagsubblock( cidim, moints1, moints2, moints1len, &
+     moints2len, tadets, tadetslen, tbdets, tbdetslen, tdets, subblockdim, initgdim,&
+     aelec, belec, orbitals, outvectors )    
+    print *, "PRINTING PREDIAG OUTPUT "
+    do i=1, initgdim
+      print *, "----------------------------------------"
+      do j=1, cidim
+        print *, outvectors(j,i)
+      end do
+    end do
+#endif
 end program

@@ -62,7 +62,8 @@ contains
     real*8, dimension( diaglen, num_diags) :: vectors1, hvectors
     integer :: i,j, cidim
     real*8 :: ddot
-    real*8, dimension( num_diags, num_diags ) :: sub_hammat, eig_vectors
+    real*8, dimension( num_diags, num_diags ) :: sub_hammat
+    real*8, dimension( num_diags, init_dim ) :: eig_vectors
   !--------------------------------------------------------------------
     cidim = diaglen
     call lowdiags( diagonals, diaglen, num_diags, vectors1 )
@@ -80,9 +81,43 @@ contains
       end do
     end do
     ! Diagonalize this matrix. Return init_dim vectors
-    call diag_hamsub( sub_hammat, num_diags, init_dim, eig_vectors )
+    call diag_hamsub( sub_hammat, num_diags, init_dim, eig_vectors ) 
+
+    ! Generate vectors
+    call ritz_vec( eig_vectors, cidim, num_diags, init_dim, vectors1, outvectors )    
+    
     return
   end subroutine
+!======================================================================
+!======================================================================
+!>ritz_vec
+!
+! Subroutine to generate the ritz vector. (E)_nxm (alpha)_mxo = (VEC)_nxo
+!----------------------------------------------------------------------
+  subroutine ritz_vec( alpha, n, m, o, Evec, VEC )
+    implicit none
+    integer, intent(in) :: n, m, o
+    real*8,  dimension( n, m ), intent(in) :: Evec 
+    real*8,  dimension( m, o ), intent(in) :: alpha
+    real*8,  dimension( n, o ), intent(out):: VEC
+    character(len=1) :: transa, transb
+    integer :: lda, ldb, ldc, p, q, r
+    real*8 :: a, b
+!----------------------------------------------------------------------
+    transa = 'n'   ! Use transpose of A
+    transb = 'n'   ! Use transpose of B
+    p = n
+    q = o
+    r = m
+    a = 1d0
+    b = 0d0
+    lda = n
+    ldb = m
+    ldc = n
+    call dgemm( transa, transb, p, q, r, a, Evec, lda, alpha, ldb, b, &
+                VEC, ldc )
+    return
+  end subroutine 
 !======================================================================
 !======================================================================
 !>diag_hamsub
@@ -92,30 +127,35 @@ contains
   subroutine diag_hamsub( matrix, mat_dim, a, eig_vectors )
     implicit none
     integer, intent(in) :: mat_dim, a
-    real*8, dimension( mat_dim, mat_dim ), intent(in) :: matrix
-    real*8, dimension( mat_dim, a ), intent(in) :: eig_vectors
-    character(len=1) :: jobz, rnge, uplo
+    real*8, dimension( mat_dim, mat_dim ) :: matrix
+    real*8, dimension( mat_dim, a ), intent(out) :: eig_vectors
+    character*1 :: jobz, rnge, uplo
     real*8 :: abstol, dlamch, vl, vu
     integer :: lwork, liwork, il, iu, info, eigfound
-    integer, dimension(:), allocatable :: isuppz
-    real*8, dimension(a) :: eig_values
-    real*8, dimension(:), allocatable :: work, iwork
+    integer, dimension(mat_dim+10) :: isuppz
+    real*8, dimension( mat_dim ) :: eig_values
+    real*8, dimension( mat_dim, mat_dim ) :: dys_eigvec
+    real*8, dimension( 26*mat_dim+100) :: work
+    real*8, dimension( 11*mat_dim+100 )   :: iwork
+    integer :: i, j
 !----------------------------------------------------------------------
     ! Set dsyever variables
     jobz = 'v'
-    rnge = 'i'
-    il = 1
-    iu = a
+    rnge = 'a'
     uplo = 'l'
+    il = 1
+    iu = mat_dim
     abstol = dlamch( 'Safe minimum' )
-    lwork = 26*mat_dim+10
-    liwork = 11*mat_dim
-    allocate( isuppz( mat_dim ) )
-    allocate( work( lwork ) )
-    allocate( iwork(liwork) )
+    lwork = 26*mat_dim+100
+    liwork = 11*mat_dim+100
     call dsyevr( jobz, rnge, uplo, mat_dim, matrix, mat_dim, vl, &
-                 vu, il, iu, abstol, eigfound, eig_values, eig_vectors, &
+                 vu, il, iu, abstol, eigfound, eig_values, dys_eigvec, &
                  mat_dim, isuppz, work, lwork, iwork, liwork, info )
+    do i=1, a
+      do j=1, mat_dim
+        eig_vectors(j,i) = dys_eigvec(j,i)
+      end do
+    end do 
     return
   end subroutine
 !======================================================================
@@ -159,24 +199,13 @@ contains
     real*8, dimension( moints1len ), intent(in) :: moints1
     real*8, dimension( moints2len ), intent(in) :: moints2
 ! ...output real*8 arrays...
-    real*8, dimension( cidim, initgdim ), intent(inout) :: outvectors
+    real*8, dimension( cidim, initgdim ), intent(out) :: outvectors
 ! ...loop integer scalars...
     integer :: i, j
 ! ...real*8 arrays...
     real*8, dimension( subblockdim, subblockdim ) :: hamblock
-    real*8, dimension( cidim, initgdim ) :: unitvecs
-! ...DSYEVR variables...
-    character(len=1) :: jobz, uplo, rnge
-    integer :: lwork, liwork, il, iu, info, eigfound
-    real*8 :: abstol, dlamch, vl, vu
-    integer, dimension(:), allocatable :: isuppz
-    real*8, dimension(:,:), allocatable :: eigvectors
-    real*8, dimension(:), allocatable :: eigvalues, work, iwork
-! ...DGEMM variables...
-! ...DGEMM VARIABLES...
-    character(len=1) :: transa, transb
-    integer :: lda, ldb, ldc, p, q, r
-    real*8 :: alpha, beta
+    real*8, dimension( cidim, subblockdim ) :: unitvecs
+    real*8, dimension( cidim, initgdim )    :: vectors2
 ! ...real*8 scalars...
     real*8 :: ham_element
 !--------------------------------------------------------------------
@@ -187,43 +216,23 @@ contains
                                      moints2, moints2len, aelec, belec, orbitals )
       end do
     end do
+
 ! Diagonalize hamblock using DSYEVR
-! Set DSYEVR variables
-    jobz = 'v' ! Return eigenvalues
-    rnge = 'a' ! Return full range of eigenvectors and eigenvalues
-    uplo = 'l' ! Lower triangle is stored in matrix A
-    abstol= dlamch( 'Safe minimum' )
-    lwork = 26*subblockdim+10
-    liwork= 11*subblockdim
-    allocate( isuppz(subblockdim) )
-    allocate( eigvectors(subblockdim, subblockdim) )
-    allocate( work( lwork) )
-    allocate( iwork(liwork) )
-    allocate( eigvalues(subblockdim) )
-    call dsyevr( jobz, rnge, uplo, subblockdim, hamblock, subblockdim, vl, &
-                vu, il, iu, abstol, eigfound, eigvalues, eigvectors, subblockdim,&
-                isuppz, work, lwork, iwork, liwork, info )
+     call diag_hamsub( hamblock, subblockdim, initgdim, vectors2 ) 
+
 ! Generate unit vectors
-    unitvecs = 0d0
-    do i=1, initgdim
+    do i=1, subblockdim
+      do j=1, cidim
+        unitvecs(j,i) = 0d0
+      end do
       unitvecs(i,i) = 1d0
     end do
+
 ! Set DGEMM variables
-    transa = 'n'
-    transb = 'n'
-    p = cidim
-    q = subblockdim
-    r = q
-    alpha = 1d0
-    beta = 0d0
-    lda = p
-    ldb = initgdim
-    ldc = p
-    call dgemm( transa, transb, p, q, r, alpha, unitvecs, lda, eigvectors, ldb, beta, &
-                outvectors, ldc )
-! Return
+    call ritz_vec( vectors2, cidim, subblockdim, initgdim, unitvecs, outvectors )
+
     return
-end subroutine
+  end subroutine
 !====================================================================
 !====================================================================
 end module 

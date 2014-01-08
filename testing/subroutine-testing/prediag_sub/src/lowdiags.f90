@@ -31,10 +31,6 @@ subroutine lowdiags( vector1, length, choose, initguess )
   vector2 = vector1
   call cannonreal( vector2, length, l )
 
-  print *, "Lowest diagonals are..."
-  do i=1, choose
-    print *, vector2(i)
-  end do
   initguess = 0d0
 ! Find lowest K's
   LPA: do i=1, choose
