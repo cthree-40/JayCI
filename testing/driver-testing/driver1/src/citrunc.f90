@@ -20,7 +20,8 @@
 ! cidimension  = dimension of ci expansion          integer sclar
 !====================================================================
 subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
-  ndocc, nactive, xlevel, modalphalen, modbetalen, cidimension )
+  ndocc, nactive, xlevel, modalphalen, modbetalen, cidimension, unit1, &
+  unit2, unit3, unit4, unit5, unit6, unit7, unit8, unit9 )
 
   use detci2
   use truncation
@@ -29,7 +30,8 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 
 ! ...input integer scalars...
   integer, intent(in) :: adets, bdets, aelec, belec, orbitals, nfrozen,&
-                         ndocc, nactive, xlevel
+                         ndocc, nactive, xlevel, unit1, unit2, unit3,  &
+                         unit4, unit5, unit6, unit7, unit8, unit9
 
 ! ...OUTPUT integer scalars...
   integer :: cidimension
@@ -67,8 +69,6 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   integer :: fnldetslen, remdet
   
   integer :: step
-  
-  integer :: cidim
 !--------------------------------------------------------------------
 
 ! Generate alpha and beta string lists
@@ -80,9 +80,9 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   call enffrozen( betastrings, nfrozen, belec, orbitals, bdets )
 ! ...ENFORCE DOCC RESTRICTIONS...
   call enfdocc( alphastrings, adets, aelec, orbitals, nfrozen, &
-                ndocc, xlevel )
+                ndocc, nactive, xlevel )
   call enfdocc( betastrings, bdets, belec, orbitals, nfrozen, &
-                ndocc, xlevel )
+                ndocc, nactive, xlevel )
 ! ...ENFORCE CAS RESTRICTIONS
   call enfactive( alphastrings, adets, orbitals, aelec, nfrozen,&
                   ndocc, nactive, xlevel )
@@ -90,23 +90,22 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
                   ndocc, nactive, xlevel )
   
 ! Write out the alpha string indices
-  open( unit=20, file='alpha.dets', status='new' )
-
+  open( unit=unit3, file='alpha.dets', status='new' )
   do i=1, adets
     if ( alphastrings(i) .ne. 0 ) then
-      write( unit=20, fmt=9 ) alphastrings(i)
+      write( unit=unit3, fmt=9 ) alphastrings(i)
     end if
   end do
-  close(unit=20)
+  close(unit=unit3)
 
 ! Write out the beta string indices
-  open( unit=30, file='beta.dets', status='new' )
+  open( unit=unit2, file='beta.dets', status='new' )
   do i=1, bdets
     if ( betastrings(i) .ne. 0 ) then
-      write( unit=30, fmt=9 ) betastrings(i)
+      write( unit=unit2, fmt=9 ) betastrings(i)
     end if
   end do
-  close(unit=30)
+  close(unit=unit2)
 
 9 format(1x,I10)
 
@@ -124,13 +123,13 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 
 ! Read in index values from beta.dets and alpha.dets
 ! Alpha strings
-  open( unit=20, file='alpha.dets', status='old', position='rewind' )
-  read(unit=20, fmt=9) ( modalpha(i), i=1, modalphalen )
-  close(unit=20)
+  open( unit=unit3, file='alpha.dets', status='old', position='rewind' )
+  read(unit=unit3, fmt=9) ( modalpha(i), i=1, modalphalen )
+  close(unit=unit3)
 ! Beta strings
-  open ( unit=30, file='beta.dets', status='old', position='rewind' )
-  read(unit=30, fmt=9) ( modbeta(i), i=1, modbetalen )
-  close(unit=30)
+  open ( unit=unit2, file='beta.dets', status='old', position='rewind' )
+  read(unit=unit2, fmt=9) ( modbeta(i), i=1, modbetalen )
+  close(unit=unit2)
 
   fnldetslen=modalphalen*modbetalen
   allocate( fnldets(fnldetslen) )
@@ -140,34 +139,30 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! ...ENFORCE DOCC RESTRICTIONS ON DETERMINANTS...
   remdet=0
   call enfdoccdet( fnldets, fnldetslen, aelec, adets, belec, bdets, &
-                   orbitals, nfrozen, ndocc, xlevel, remdet )
-
+                   orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
 ! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
   call enfactivedet( fnldets, fnldetslen, aelec, adets, belec, bdets,&
                      orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
 
 ! Write determinant list to file
-  open( unit=40, file='det.list', status='new', position='rewind' )
-  cidim = 0
+  open( unit=unit1, file='det.list', status='new', position='rewind' )
   do i=1, fnldetslen
     if ( fnldets(i) .ne. 0 ) then
-      write(unit=40,fmt=9) fnldets(i)
-      cidim = cidim + 1
+      write(unit=unit1,fmt=9) fnldets(i)
     end if
   end do
-  close(unit=40)
+  close(unit=unit1)
 ! Deallocate fnldets
   deallocate( fnldets )
-  
+
 ! Compute number of determinants in ci expansion
   cidimension = (modalphalen*modbetalen) - remdet
 ! Allocate fnldets, but with adjusted size
-  print *, "cidim = ", cidimension, "vs ", cidim
   allocate(fnldets(cidimension))
 ! Read in determinant list from file
-  open( unit=40, file='det.list', status='old', position='rewind' )
-  read( unit=40, fmt=9 ) ( fnldets(i), i=1, cidimension )
-  close(unit=40)
+  open( unit=unit1, file='det.list', status='old', position='rewind' )
+  read( unit=unit1, fmt=9 ) ( fnldets(i), i=1, cidimension )
+  close(unit=unit1)
 ! ...FORM STRING PAIRS...
 ! String pairs (p,q)
 
@@ -181,46 +176,51 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   allocate( pdeterms(cidimension))
   allocate( qdeterms(cidimension))
 ! Generate alpha string pairs
-  call genstrpairs( modalpha, modalphalen, modbeta, modbetalen, &
-                    fnldets, cidimension, belec, orbitals, 'a', &
-                    strngpr1, cidimension, pstep, modalphalen,  &
-                    pdeterms, plocate )
-  call genstrpairs( modbeta, modbetalen, modalpha, modalphalen, &
-                    fnldets, cidimension, belec, orbitals, 'b', &
-                    strngpr2, cidimension, qstep, modbetalen,   &
-                    qdeterms, qlocate )
+!  call genstrpairs( modalpha, modalphalen, modbeta, modbetalen, &
+!                    fnldets, cidimension, belec, orbitals, 'a', &
+!                    strngpr1, cidimension, pstep, modalphalen,  &
+!                    pdeterms, plocate )
+!  call genstrpairs( modbeta, modbetalen, modalpha, modalphalen, &
+!                    fnldets, cidimension, belec, orbitals, 'b', &
+!                    strngpr2, cidimension, qstep, modbetalen,   &
+!                    qdeterms, qlocate )
+
+  call gen_alphastrpr( fnldets, cidimension, belec, orbitals, &
+                       strngpr1, pstep, plocate, modalphalen )
+  call gen_betastrpr(  strngpr1, cidimension, pstep, modalphalen, &
+                       plocate, strngpr2, qstep, qlocate, modbeta, modbetalen )
 
 ! ...WRITE strings to respective files...
-  open(unit=50,file='pstring.list',status='new')
+  open(unit=unit4,file='pstring.list',status='new')
   do i=1,cidimension
-    write(unit=50,fmt=10) strngpr1(i,1), strngpr1(i,2)
+    write(unit=unit4,fmt=10) strngpr1(i,1), strngpr1(i,2)
   end do
-  close(unit=50)
-  open(unit=70,file='pstep.list',status='new')
+  close(unit=unit4)
+  open(unit=unit8,file='pstep.list',status='new')
   do i=1,modalphalen
-    write(unit=70,fmt=9) pstep(i)
+    write(unit=unit8,fmt=9) pstep(i)
   end do
-  close(unit=70)
-  open(unit=110,file='plocate.list',status='new')
+  close(unit=unit8)
+  open(unit=unit9,file='plocate.list',status='new')
   do i=1,modalphalen
-    write(unit=110,fmt=9) plocate(i)
+    write(unit=unit9,fmt=9) plocate(i)
   end do
-  close(unit=110)
-  open(unit=60,file='qstring.list',status='new')
+  close(unit=unit9)
+  open(unit=unit5,file='qstring.list',status='new')
   do i=1,cidimension
-    write(unit=60,fmt=10) strngpr2(i,1), strngpr2(i,2)
+    write(unit=unit5,fmt=10) strngpr2(i,1), strngpr2(i,2)
   end do
-  close(unit=60)
-  open(unit=80,file='qstep.list',status='new')
+  close(unit=unit5)
+  open(unit=unit6,file='qstep.list',status='new')
   do i=1,modbetalen
-    write(unit=80,fmt=9) qstep(i)
+    write(unit=unit6,fmt=9) qstep(i)
   end do
-  close(unit=80)
-  open(unit=120,file='qlocate.list',status='new')
+  close(unit=unit6)
+  open(unit=unit7,file='qlocate.list',status='new')
   do i=1,modbetalen
-    write(unit=120,fmt=9) qlocate(i)
+    write(unit=unit7,fmt=9) qlocate(i)
   end do
-  close(unit=120)
+  close(unit=unit7)
 10 format(1x,I10,I10)
 
 
@@ -229,24 +229,24 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !  will list K'(K(p))
 
 ! Generate determinant list of determinants in stringpr1 list
-  allocate(qcrossreflist(cidimension))
-  allocate(pcrossreflist(cidimension))
-  call detcrossref( pdeterms, qdeterms, fnldets, cidimension, pcrossreflist, &
-                    qcrossreflist )
+!  allocate(qcrossreflist(cidimension))
+!  allocate(pcrossreflist(cidimension))
+!  call detcrossref( pdeterms, qdeterms, fnldets, cidimension, pcrossreflist, &
+!                    qcrossreflist )
 
 ! Write cross reference list to file
-  open(unit=90,file='pcross.ref',status='new')
-  do i=1, cidimension
-    write(unit=90,fmt=9) pcrossreflist(i)
-  end do
-  close(unit=90)
-  open(unit=100,file='qcross.ref',status='new')
-  do i=1, cidimension
-    write(unit=100,fmt=9) qcrossreflist(i)
-  end do
-  close(unit=100)
+!  open(unit=9,file='pcross.ref',status='new')
+!  do i=1, cidimension
+!    write(unit=9,fmt=9) pcrossreflist(i)
+!  end do
+!  close(unit=9)
+!  open(unit=10,file='qcross.ref',status='new')
+!  do i=1, cidimension
+!    write(unit=10,fmt=9) qcrossreflist(i)
+!  end do
+!  close(unit=10)
 ! Deallocate all arrays
-  deallocate(qcrossreflist, pcrossreflist,qstep,pstep,strngpr1,strngpr2,modalpha,&
+  deallocate(qstep,pstep,strngpr1,strngpr2,modalpha,&
              modbeta,qdeterms,pdeterms)
   return
 

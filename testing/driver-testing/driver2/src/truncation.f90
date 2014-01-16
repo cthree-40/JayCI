@@ -61,15 +61,13 @@ contains
 !--------------------------------------------------------------------
 ! Loop over determinants
     lpa: do i=1, determs
-
-         call genorbstring( string(i), elecs, orbitals, determs, string1)
-!      if ( i .eq. 1 ) then
-!        do j=1, elecs
-!          string1(j) = j
-!        end do
-!      else
-!        call nstrfnd( string2, elecs, orbitals, determs, string1 )
-!      end if
+      if ( i .eq. 1 ) then
+        do j=1, elecs
+          string1(j) = j
+        end do
+      else
+        call nstrfnd( string2, elecs, orbitals, determs, string1 )
+      end if
 ! Test if the first nfrozen orbitals are occupied
       test = 0
       lpb: do j=1, nfrozen
@@ -83,8 +81,8 @@ contains
           exit lpb
         end if
       end do lpb
-!      string2 = string1
-!      string1 = 0
+      string2 = string1
+      string1 = 0
     end do lpa
   end subroutine enffrozen
 !====================================================================
@@ -93,7 +91,7 @@ contains
 !  strings. Makes indices that do not satisfy DOCC restrictions 0.
 !--------------------------------------------------------------------
   subroutine enfdocc( string, determs, elecs, orbitals, nfrozen, &
-                      ndocc, xlevel )
+                      ndocc, nactive, xlevel )
 ! Input:
 !  string   = alpha/beta string indices         integer array  1-d
 !  determs  = alpha/beta determinants           integer scalar
@@ -106,7 +104,7 @@ contains
     implicit none
 ! ...input integer scalars...
     integer, intent(in) :: determs, elecs, orbitals, nfrozen, ndocc,&
-                           xlevel
+                           xlevel, nactive
 ! ...input/output integer arrays...
     integer, dimension(determs), intent(inout) :: string
 ! ...loop integer scalars...
@@ -118,35 +116,33 @@ contains
 !--------------------------------------------------------------------
 ! Loop through determinants
     lpa: do i=1, determs
-    
-      call genorbstring( string(i), elecs, orbitals, determs, string1 )
 ! Test if string is in expansion
-!      if ( string(i) .eq. 0 ) then
-!        cycle lpa
-!      end if
+      if ( string(i) .eq. 0 ) then
+        cycle lpa
+      end if
 ! Construct string for indice i
-!      if ( string(i) .eq. 1 ) then
-!        do j=1, elecs
-!          string1(j) = j
-!        end do
-!      else
-!        call nstrfnd( string2, elecs, orbitals, determs, string1 )
-!      end if
+      if ( string(i) .eq. 1 ) then
+        do j=1, elecs
+          string1(j) = j
+        end do
+      else
+        call nstrfnd( string2, elecs, orbitals, determs, string1 )
+      end if
       
       test=0
 ! Count excitations in string1
-      do j=1, nfrozen+ndocc
-        if ( string1(j) > xlevel ) then
+      do j=1, elecs
+        if ( string1(j) > nfrozen+ndocc ) then
           test=test+1
         end if
       end do
 
-      if ( test > xlevel ) then
+      if ( (test-nactive) > xlevel) then
         string(i) = 0   ! Remove from expansion
       end if
       
-!      string2 = string1
-!      string1 = 0
+      string2 = string1
+      string1 = 0
     end do lpa
     return
   end subroutine enfdocc
@@ -281,7 +277,7 @@ contains
 ! Subroutine to enforce docc restrictions on determinants
 !--------------------------------------------------------------------
   subroutine enfdoccdet( detlist, detlistlen, aelec, adets, belec, &
-    bdets, orbitals, nfrozen, ndocc, xlevel, remdet )
+    bdets, orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
 ! Input:
 !  detlist     = list of determinants                integer array  1-d
 !  detlistlen  = length of detlist()                 integer scalar
@@ -298,7 +294,7 @@ contains
     implicit none
 ! ...input integer scalars...
     integer, intent(in) :: detlistlen, aelec, belec, adets, bdets, &
-                           orbitals, nfrozen, ndocc, xlevel
+                           orbitals, nfrozen, ndocc, nactive, xlevel
 ! ...input/output integer scalars...
     integer, intent(inout) :: remdet
 ! ...input/output integer arrays...
@@ -319,19 +315,19 @@ contains
       call k2indc( detlist(i), belec, orbitals, p, q )
       test=0
 ! Check alpha string
-      do j=1, nfrozen+ndocc
+      do j=nfrozen+1, aelec
         if ( alphamat(p,j) > nfrozen + ndocc ) then
           test = test + 1
         end if
       end do
 ! Check beta string
-      do j=1, nfrozen+ndocc
+      do j= 1, belec
         if ( betamat(q, j) > nfrozen + ndocc ) then
           test = test + 1
         end if
       end do
 ! If test > xlevel, throw determinant away
-      if ( test > xlevel ) then
+      if ( (test-nactive) > xlevel ) then
         detlist(i) = 0
         remdet = remdet + 1
       end if
@@ -400,7 +396,7 @@ contains
 ! Test if test > xlevel
       if ( test > xlevel ) then
         detlist(i) = 0
-        remdet = remdet+1
+        remdet=remdet+1
       end if
     end do
     return
@@ -468,7 +464,7 @@ contains
 ! Test if index1 is in expansion
         do k=1, determlistlen
           if ( index1 .eq. determlist(k) ) then
-            stringpairs(l,1) = i
+            stringpairs(l,1) = i                 ! START FROM PREVIOUS INDEX
             stringpairs(l,2) = j
             stringdets(l) = index1
             l=l+1
@@ -535,4 +531,112 @@ contains
     return
   end subroutine detcrossref
 !====================================================================
+!====================================================================
+!>gen_alphastrpr
+!
+! Subroutine to generate alpha string paris
+!--------------------------------------------------------------------
+  subroutine gen_alphastrpr( determlist, determlistlen, belec, orbitals, &
+    alpha_strpair, alpha_step, alpha_locate, alpha_detlen )
+    implicit none
+    integer, intent(in)  :: determlistlen, belec, orbitals, alpha_detlen
+    integer, dimension( determlistlen ), intent(in)  :: determlist
+    integer, dimension( determlistlen,2 ), intent(out) :: alpha_strpair 
+    integer, dimension( alpha_detlen ),  intent(out) :: alpha_step, alpha_locate 
+    integer :: l, i, j, step, locate, p, q, tot_step
+  !--------------------------------------------------------------------
+  ! Loop through determinants generating alpha_strpair
+    alpha_step = 1   ! All determinants will have at least one step
+    do i=1, determlistlen
+      call k2indc( determlist(i), belec, orbitals, p, q )
+      alpha_strpair(i,1) = p
+      alpha_strpair(i,2) = q
+    end do
+  ! Loop through alpha_strpair generating step array and location array
+    tot_step=0
+    step = 1
+    j=1
+    l=1
+    do i=1, determlistlen-1
+      if ( alpha_strpair(i,1) .eq. alpha_strpair(i+1,1) ) then
+        step = step + 1
+      else
+        alpha_step(l) = step
+        tot_step = tot_step + step
+        step = 1
+        l = l+1
+        if ( l .eq. alpha_detlen ) then
+          alpha_step(l) = determlistlen - tot_step
+          exit
+        end if
+      end if
+    end do
+    do i=1, alpha_detlen
+      locate = 0
+      do j=1, i-1
+        locate = alpha_step(j) + locate
+      end do
+      alpha_locate(i) = locate
+    end do
+    return
+  end subroutine gen_alphastrpr
+!======================================================================
+!======================================================================
+!>gen_betastrpr
+!
+! Subroutine to generate beta string pairings
+!----------------------------------------------------------------------
+  subroutine gen_betastrpr( alpha_strpr, cidimension, alpha_step,  &
+    alpha_detlen, alpha_locate, beta_strpr, beta_step, beta_locate,&
+    beta_det, beta_detlen )        
+    implicit none
+    integer, intent(in) :: cidimension, alpha_detlen, beta_detlen
+    integer, dimension( cidimension, 2 ), intent(in) :: alpha_strpr
+    integer, dimension( alpha_detlen ),   intent(in) :: alpha_step, alpha_locate
+    integer, dimension( beta_detlen ),    intent(in) :: beta_det
+    integer, dimension( beta_detlen ),   intent(out) :: beta_step, beta_locate
+    integer, dimension( cidimension, 2 ),intent(out) :: beta_strpr
+    integer :: i, j, step, locate, l, tot_step
+  !--------------------------------------------------------------------
+  ! Loop over q strings
+    beta_step = 1 ! All strings will have at least one step
+    l=1
+    do i=1, beta_detlen
+      ! Loop over p string pairings
+      do j=1, cidimension
+        if ( alpha_strpr(j,2) .eq. beta_det(i) ) then
+          beta_strpr(l,1) = alpha_strpr(j,2)
+          beta_strpr(l,2) = alpha_strpr(j,1)
+          l=l+1
+        end if
+      end do
+    end do
+  ! Generate step array and location array1
+    step = 1
+    j=1
+    l = 1
+    tot_step = 0
+    do i=1, cidimension-1
+      if ( beta_strpr(i,1) .eq. beta_strpr(i+1, 1) ) then
+        step = step + 1
+      else
+        beta_step(l) = step
+        tot_step = tot_step + step
+        step=1
+        l = l+1
+        if ( l .eq. beta_detlen ) then
+          beta_step(l) = cidimension - tot_step
+          exit
+        end if
+      end if
+    end do
+    do i=1, beta_detlen
+      locate = 0
+      do j=1, i-1
+        locate = beta_step(j) + locate
+      end do
+      beta_locate(i) = locate
+    end do
+    return
+  end subroutine gen_betastrpr
 end module

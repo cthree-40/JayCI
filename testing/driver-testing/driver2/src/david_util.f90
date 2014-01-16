@@ -1,4 +1,3 @@
-!======================================================================
 module david_util
   implicit none
 contains
@@ -12,6 +11,7 @@ contains
     moints2, moints2len, pstring, pstep, plocate, qstring, qstep, qlocate,   &
     pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec, orbitals,  &
     diagonals, vectors2 )
+
     implicit none
     integer, intent(in) :: num_vecs, dim_vecs, moints1len, moints2len, pdetslen, &
                            qdetslen, adets, bdets, aelec, belec, orbitals
@@ -23,8 +23,19 @@ contains
     real*8,  dimension(moints2len),intent(in) :: moints2
     real*8,  dimension(dim_vecs, num_vecs), intent(inout) :: vectors2
     real*8,  dimension(dim_vecs, num_vecs), intent(in)    :: vectors1
-    integer :: i
+    integer :: i, j
+#ifdef DEBUGHV
+    real*8, dimension(:,:), allocatable :: hamiltonian
+    real*8, dimension(:,:), allocatable :: test_outvec
+    integer, dimension(:),  allocatable :: determs
+#endif
   !--------------------------------------------------------------------
+#ifdef DEBUGHV
+  ! Allocate arrays
+    allocate( hamiltonian( dim_vecs, dim_vecs ) )
+    allocate( test_outvec( dim_vecs, num_vecs ) )
+    allocate( determs( dim_vecs ) )
+#endif
   ! Loop over initial vectors
     do i=1, num_vecs
       call acthv( vectors1(1,i), moints1, moints2, moints1len, moints2len,    &
@@ -32,6 +43,28 @@ contains
                   pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec,&
                   orbitals, diagonals, vectors2(1,i) )
     end do
+#ifdef DEBUGHV
+    ! Build hamiltonian
+    do i=1, dim_vecs
+      determs(i) = i
+    end do
+
+    call exp_construct( moints1, moints1len, moints2, moints2len, dim_vecs, &
+                        aelec, belec, orbitals, determs, hamiltonian )
+    ! Perform Hv
+    do i=1, num_vecs
+      call dgemv( 'n', dim_vecs, dim_vecs, 1d0, hamiltonian, dim_vecs, vectors1(1,i),&
+                  1, 0d0, test_outvec(1,i), 1 )
+    end do
+    print *, "  ACTHV    .....   HV  "
+    do i=1, num_vecs
+      print *, " ---------- ", i, " ------------- "
+      do j=1, dim_vecs
+        print *, vectors2(j,i), test_outvec(j,i)
+      end do
+    end do
+    deallocate( hamiltonian, test_outvec, determs )
+#endif
     return
   end subroutine
   !====================================================================
@@ -43,8 +76,8 @@ contains
   subroutine build_subham( bs_vectors, hv_vectors, dim_ci, dim_bs, matrix )
     implicit none
     integer, intent(in) :: dim_ci, dim_bs
-    real*8, dimension( dim_ci, dim_bs ), intent(in)    :: bs_vectors, hv_vectors
-    real*8, dimension( dim_bs, dim_bs ), intent(inout) :: matrix
+    real*8, dimension( dim_ci, dim_bs ), intent(in)  :: bs_vectors, hv_vectors
+    real*8, dimension( dim_bs, dim_bs ), intent(out) :: matrix
     integer :: i, j
     real*8  :: ddot
   !--------------------------------------------------------------------
@@ -52,7 +85,7 @@ contains
     matrix = 0d0
     do i=1, dim_bs
       do j=1, dim_bs
-        matrix(j,i) = ddot( dim_ci, bs_vectors, 1, hv_vectors, 1 )
+        matrix(j,i) = ddot( dim_ci, bs_vectors(1,j), 1, hv_vectors(1,i), 1 )
       end do
     end do
     return
@@ -66,16 +99,16 @@ contains
   subroutine diagonalize( matrix, dim_mat, eig_vec, eig_val )
     implicit none
     integer, intent(in) :: dim_mat
-    real*8, dimension( dim_mat, dim_mat ), intent(in)    :: matrix
-    real*8, dimension( dim_mat, dim_mat ), intent(inout) :: eig_vec
-    real*8, dimension( dim_mat ),          intent(inout) :: eig_val
+    real*8, dimension( dim_mat, dim_mat ), intent(inout) :: matrix
+    real*8, dimension( dim_mat, dim_mat ), intent(out)   :: eig_vec
+    real*8, dimension( dim_mat ),          intent(out)   :: eig_val
   !...DSYEVR variables...
     character(len=1) :: uplo, jobz, rnge
     real*8           :: abstol, dlamch, vl, vu
     integer          :: lwork, liwork, il, iu, info, eigfound
-    integer, dimension( dim_mat )          :: isuppz
-    real*8,  dimension( 26*dim_mat + 10  ) :: work
-    real*8,  dimension( 11*dim_mat )       :: iwork 
+    integer, dimension(:), allocatable     :: isuppz
+    real*8,  dimension(:), allocatable     :: work
+    real*8,  dimension(:), allocatable     :: iwork 
   !--------------------------------------------------------------------
     jobz = 'v'            ! Return eigenvectors & eigenvalues
     rnge = 'a'            ! Return full range of eigenvectors & eigenvalues
@@ -83,10 +116,16 @@ contains
     abstol = dlamch( 'Safe minimum' ) 
     lwork  = 26*dim_mat + 10
     liwork = 11*dim_mat
+  ! Allocate arrays
+    allocate( isuppz( 2*dim_mat ) )
+    allocate( work( lwork ) )
+    allocate( iwork( liwork) )
     call dsyevr( jobz, rnge, uplo, dim_mat, matrix, dim_mat, vl, vu, il, &
                  iu, abstol, eigfound, eig_val, eig_vec, dim_mat, isuppz,&
                  work, lwork, iwork, liwork, info )
-    if ( info .ne. 0 ) stop " Diagonalization of v.Hv failed. Aborting..."
+    if ( info .ne. 0 ) stop " ***Diagonalization of v.Hv failed! "
+  ! Deallocate arrays
+    deallocate( isuppz, work, iwork )
     return
   end subroutine
   !====================================================================
@@ -102,15 +141,15 @@ contains
     real*8,  dimension( length, sp_dim ), intent(in) :: bs_vec, hv_vec
     real*8,  dimension( sp_dim, sp_dim ), intent(in) :: kry_vec
     real*8,  dimension( sp_dim ),         intent(in) :: kry_val
-    real*8,  dimension( length ),      intent(inout) :: residual
+    real*8,  dimension( length ),      intent(out) :: residual
     integer :: i, j
   !--------------------------------------------------------------------
   ! Construct residual
     residual = 0d0
-    do i=1, sp_dim
-      do j=1, length
-        residual(j) = residual(j) + kry_vec(i,root)*&
-                      ( hv_vec(j,i) - kry_val(root)*bs_vec(j,i) )
+    do i=1, length
+      do j=1, sp_dim
+        residual(i) = residual(i) + kry_vec(j,root)*&
+                      ( hv_vec(i,j) - kry_val(root)*bs_vec(i,j) )
       end do
     end do
     return
@@ -127,12 +166,11 @@ contains
     integer, intent(in) :: cidim
     real*8,  intent(in) :: currnt_eigval
     real*8,  dimension( cidim ), intent(in)    :: residual, diagonals
-    real*8,  dimension( cidim ), intent(inout) :: new_vector
+    real*8,  dimension( cidim ), intent(out) :: new_vector
     integer :: i
   !--------------------------------------------------------------------
-    new_vector = 0d0
     do i=1, cidim
-      new_vector(i) = - residual(i) / ( diagonals(i) - currnt_eigval + 1D-9 )
+      new_vector(i) = - residual(i) / ( diagonals(i) - currnt_eigval )
     end do
     return
   end subroutine
@@ -147,27 +185,32 @@ contains
     implicit none
     integer, intent(in)    :: length
     integer, intent(in)    :: space_dim
-    real*8, dimension( length),                  intent(in) :: new_vector
-    real*8, dimension( length, space_dim ), intent(inout) :: bs_vectors
+    real*8, dimension( length),                  intent(inout) :: new_vector
+    real*8, dimension( length, space_dim ),      intent(in) :: bs_vectors
     integer :: i, orth_iter
-    real*8, dimension( space_dim ) :: ovrlp_test
+    real*8, dimension(:), allocatable :: ovrlp_test
     real*8  :: ddot
     real*8, parameter :: max_ovrlp = 1.0D-15
+    real*8  :: norm
   !--------------------------------------------------------------------
+  ! Allocate arrays
+    allocate( ovrlp_test( space_dim ) )
   ! Orthogonalize
-    call orthogvector( bs_vectors, space_dim, space_dim+1, length, new_vector )
+    call orthogvector( bs_vectors, space_dim, space_dim, length, new_vector )
   ! Test orthogonality
     do i=1, space_dim
       ovrlp_test(i) = ddot( length, bs_vectors(1,i), 1, new_vector, 1 )
     end do
     orth_iter = 1
     do while ( maxval( ovrlp_test ) > max_ovrlp .and. orth_iter .le. 10 )
-      call orthogvector( bs_vectors, space_dim, space_dim+1, length, new_vector )
+      call orthogvector( bs_vectors, space_dim, space_dim, length, new_vector )
       do i=1, space_dim
         ovrlp_test(i) = ddot( length, bs_vectors(1,i), 1, new_vector, 1 )
       end do
       orth_iter = orth_iter + 1
     end do
+  ! Deallocate arrays
+    deallocate( ovrlp_test )
     return
   end subroutine
   !====================================================================
@@ -180,8 +223,8 @@ contains
     implicit none
     integer, intent(inout) :: space_dim
     integer, intent(in)    :: length
-    real*8,  dimension(length)             :: new_vector
-    real*8,  dimension(length,space_dim+1) :: basis
+    real*8,  dimension(length), intent(in)                :: new_vector
+    real*8,  dimension(length,space_dim+1), intent(inout) :: basis
     integer :: i
   !--------------------------------------------------------------------
     do i=1, length
@@ -198,10 +241,11 @@ contains
   !--------------------------------------------------------------------
   subroutine space_trunc( basis_vec, len_basis, kry_min, kry_max, root, &
     kry_vecs )
+    use orthogroutines
     implicit none
     integer, intent(in) :: len_basis, kry_min, kry_max, root
     real*8, dimension( len_basis, kry_max ), intent(inout) :: basis_vec
-    real*8, dimension( kry_max,   kry_max ), intent(inout) :: kry_vecs
+    real*8, dimension( kry_max,   kry_max ), intent(in)    :: kry_vecs
     integer :: i, j
     real*8  :: ddot
   !...DGEMM variables...
@@ -209,8 +253,14 @@ contains
     integer          :: m, n, k
     integer          :: lda, ldb, ldc
     real*8           :: alpha, beta
-    real*8, dimension( len_basis, kry_max ) :: c
+    real*8, dimension(:,:), allocatable :: c
+#ifdef DEBUG
+    real*8, dimension( len_basis, kry_max ) :: test_c
+    integer :: l
+#endif
   !--------------------------------------------------------------------
+  ! Allocate arrays
+    allocate( c( len_basis, kry_max ) )
   ! B_ij e_jk = A_ik
   ! Set DGEMM variables
     transa = 'n'
@@ -228,6 +278,19 @@ contains
     call dgemm( transa, transb, m, n, k, alpha, basis_vec, lda, kry_vecs, &
                 ldb, beta, c, ldc )
   
+
+#ifdef DEBUG   
+    do i=1, kry_max
+      do j=1, kry_max
+        do l=1, len_basis
+          test_c(l,i) = kry_vecs(j,i)*basis_vec(l,j)
+        end do
+      end do
+    end do
+#endif
+      
+!    call modgramschmidt( c, kry_min, kry_min, len_basis )
+
   ! Zero out basis space
     basis_vec = 0d0
 
@@ -237,11 +300,23 @@ contains
         basis_vec(j,i) = c(j,i)
       end do
     end do
+  ! 
+!    call modgramschmidt( c, kry_min, kry_min, len_basis )
+#ifdef DEBUG
+    print *, "================================================"
+    print *, "    DGEMM              vs.      LOOP            "
+    do i=1, kry_min
+      print *, " --------- ", i, "------------"
+      do j=1, len_basis
+        print *, basis_vec(j,i), test_c(j,i)
+      end do
+    end do
+#endif
+  ! Deallocate c
+    deallocate( c )
     return
   end subroutine
   !====================================================================
   !====================================================================
 end module
-!======================================================================
-!
-!============
+

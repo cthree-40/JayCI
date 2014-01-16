@@ -135,9 +135,6 @@ real*8 function ham_element( ind1, ind2, moints1, moints1len, moints2, &
     ham_element = dblexcitations( pstring1, pstring2, qstring1, qstring2, aelec, &
                          belec, moints1, moints1len, moints2, moints2len )
   else if ( diffs .eq. 1 ) then
-    if ( ind1 .eq. 1 .and. ind2 .eq. 729 ) then
-      print *, " Evaluating element (1,729)"
-    end if
     ham_element =  singlexcitations( pstring1, pstring2, qstring1, qstring2, aelec, &
                          belec, moints1, moints1len, moints2, moints2len )
   else 

@@ -2,6 +2,7 @@ program test
 ! PROGRAM TO TEST VARIOUS SUBROUTINES
   use detci2
   use detci5
+  use prediag
   implicit none
 
   integer :: adets, bdets, aelec, belec, orbitals, nfrozen, &
@@ -49,6 +50,15 @@ program test
 #ifdef GENPROBEL
   integer, dimension( 28, 2 ) :: probstr
   integer, dimension(1) :: apstring, bpstring
+#endif
+#if PREDIAG=2
+  integer :: initguessdim1, initdiagsguess, dim1, dim2, dim3
+  real*8, dimension(:,:),  allocatable :: outputvectors1, test_mat, test_vecs, &
+                                          mat_a, mat_b, mat_out
+#endif
+#if PREDIAG=3
+  real*8, dimension(:,:), allocatable :: outvectors
+  integer :: subblockdim, initgdim
 #endif
   integer :: testcol    ! Testing column for Hv
   integer :: probdet, probb, probp
@@ -143,8 +153,8 @@ program test
    allocate(qstep(tbdetslen))
    allocate(qlocate(tbdetslen))
    allocate(tdets(cidim))
-   allocate(pcrossref(cidim))
-   allocate(qcrossref(cidim))
+!   allocate(pcrossref(cidim))
+!   allocate(qcrossref(cidim))
 
 ! Read in determinants
    print *, " Reading in strings and determinants..."
@@ -190,14 +200,14 @@ program test
    close(unit=6)
 
 ! Read in cross reference list
-   open (unit=9,file=pxreffile,status='old',position='rewind',iostat=openstat)
-   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, pcross.ref. ****"
-   read(unit=9,fmt=13) (pcrossref(i), i=1, cidim )
-   close(unit=9)
-   open(unit=12,file=qxreffile,status='old',position='rewind',iostat=openstat)
-   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, qcross.ref. ****"
-   read(unit=12,fmt=13) (qcrossref(i), i=1, cidim )
-   close(unit=12)
+!   open (unit=9,file=pxreffile,status='old',position='rewind',iostat=openstat)
+!   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, pcross.ref. ****"
+!   read(unit=9,fmt=13) (pcrossref(i), i=1, cidim )
+!   close(unit=9)
+!   open(unit=12,file=qxreffile,status='old',position='rewind',iostat=openstat)
+!   if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCE FILE, qcross.ref. ****"
+!   read(unit=12,fmt=13) (qcrossref(i), i=1, cidim )
+!   close(unit=12)
 ! Read in locate lists
    open (unit=13,file='plocate.list',status='old',position='rewind',iostat=openstat)
    if ( openstat > 0 ) stop "**** CANNOT OPEN LOCATE FILE, plocate.list ****"
@@ -220,7 +230,7 @@ program test
    allocate(diagonals(cidim))
    call diagonal( pstring, pstep, tadetslen, qstring, qstep, tbdetslen, tadets, &
                   tadetslen, tbdets, tbdetslen, tdets, cidim, 3, orbitals, aelec, belec,&
-                  adets, bdets, moints1, moints1len, moints2, moints2len, pcrossref, qcrossref,cidim,&
+                  adets, bdets, moints1, moints1len, moints2, moints2len, &
                   plocate, qlocate, diagonals )
 !   print *, diagonals(1)
 !   print *, diagonals(2)
@@ -235,8 +245,8 @@ program test
     initialguess=0d0
     initialguess(729)=1d0
     print *, " Calling acthv()..."
-    call acthv( initialguess, moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, pcrossref, &
-                qstring, qstep, qlocate, qcrossref, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
+    call acthv( initialguess, moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, &
+                qstring, qstep, qlocate, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
                 aelec, belec, orbitals, diagonals, resultingvec )
     print *, "Resulting vector being printed to file: output_acthv.1"
     open( unit=15, file='output_acthv.1', status='new', position='rewind', iostat=openstat )
@@ -291,7 +301,7 @@ program test
     if ( openstat .ne. 0 ) stop "**** COULD NOT OPEN hamiltonian file ****"
     print *, " Printing column 729 of Hamiltonian... "
     do m=1, cidim
-      write( unit=30, fmt=20 ) hamiltonian(m,729), hamiltonian(729,m)
+      write( unit=30, fmt=20 ) hamiltonian(m,729)
     end do
 20 format(1x,F10.6,F10.6)
     close(unit=30)
@@ -322,8 +332,8 @@ program test
     print *, "Peforming Hv_i = M_ij for i=1,2,...,cidim ..."
     do i=1, cidim
       print *, i
-      call acthv( unitmat(1,i), moints1, moints2, moints1len, moints2len, pstring, pstep, plocate, pcrossref, &
-                qstring, qstep, qlocate, qcrossref, cidim, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
+      call acthv( unitmat(1,i), moints1, moints2, moints1len, moints2len, pstring, pstep, plocate,&
+                qstring, qstep, qlocate, tadets, tbdets, tadetslen, tbdetslen, adets, bdets,&
                 aelec, belec, orbitals, diagonals, hamiltonian(1,i) )
     end do
     open( unit=90, file='hv-hamiltonian.col729', status='new', iostat=openstat )
@@ -382,4 +392,73 @@ program test
     call k2indc( probdet, belec, orbitals, probp, probb )
     print *, " This det is composed of strings: ", probp, probb
 #endif    
+#if PREDIAG=2
+    print *, "Testing diagonalization subroutine..."
+    allocate( test_mat(4,4))
+   ! if ( allocated( test_mat) ) print *, "Allocated!"
+    allocate( test_vecs(4,4))
+   ! if ( allocated( test_mat) ) print *, "Allocated!"
+    do i=1,4
+      do j=1, 4
+        test_mat(i,j) = 1d0
+      end do
+    end do
+    print *, "Calling diag_hamsub..."
+    call diag_hamsub( test_mat, 4, 4, test_vecs )
+    print *, "Printing test_vecs"
+    do i=1, 4
+      print *, "________________________"
+      do j=1, 4
+  !      print *, test_vecs(j,i)
+      end do
+    end do
+    print *, "Calling ritz_vec..."
+    dim1 = 100
+    dim2 = 20
+    dim3 = 3
+    allocate( mat_b(dim2,dim2))
+    allocate( mat_a(dim1,dim2))
+    allocate( mat_out(dim1,dim3))
+    do i=1, 20
+      do j=1, 100
+        mat_a(j,i) = real(i)
+      end do
+    end do
+    mat_b = 0d0
+    do i=1, dim2
+      mat_b(i,i) = 1d0
+    end do
+    call ritz_vec( mat_b, dim1, dim2, dim3, mat_a, mat_out )
+    do i=1, dim3
+    !  print *, mat_out(:,i)
+    end do
+    print *, "Testing lowdiag preconditioner subroutine..."
+    initguessdim1 = 10
+    initdiagsguess= 5
+    allocate(outputvectors1( cidim, initdiagsguess ))
+    call lowdiagprecond( diagonals, cidim, moints1, moints1len, moints2, &
+                         moints2len, pstring, pstep, plocate, qstring, qstep, &
+                         qlocate, tadets, tbdets, tadetslen, tbdetslen, &
+                         adets, bdets, aelec, belec, orbitals, initguessdim1, &
+                         initdiagsguess, outputvectors1 )
+    print *, "Test complete."
+    deallocate( outputvectors1 )
+#endif
+#if PREDIAG=3
+    subblockdim = 20
+    initgdim = 4
+    if (allocated( outvectors)) deallocate(outvectors)
+    allocate( outvectors( cidim, initgdim ) )
+    print *, "Call prediag...."
+    call prediagsubblock( cidim, moints1, moints2, moints1len, &
+     moints2len, tadets, tadetslen, tbdets, tbdetslen, tdets, subblockdim, initgdim,&
+     aelec, belec, orbitals, outvectors )    
+    print *, "PRINTING PREDIAG OUTPUT "
+    do i=1, initgdim
+      print *, "----------------------------------------"
+      do j=1, cidim
+        print *, outvectors(j,i)
+      end do
+    end do
+#endif
 end program

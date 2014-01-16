@@ -44,6 +44,7 @@ program driver2
 
   use detci1
   use detci5
+  use orthogroutines
   implicit none
 
 ! ...file names...
@@ -307,7 +308,10 @@ program driver2
     write(unit=2,fmt=15) initgdim, " initial vectors generated."
     write(unit=2,fmt=9) " "
   end if
-!
+
+! Orthogonalize initial vectors
+  call modgramschmidt( initvectors, initgdim, initgdim, cidim )
+
 ! Call Davidson algorithm
   write(unit=2,fmt=9) " Calling Davidson algorithm..."
   call davidson( initgdim, initvectors, diagonals, moints1, moints1len, moints2, &

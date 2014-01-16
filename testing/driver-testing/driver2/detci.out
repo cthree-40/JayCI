@@ -1,31 +1,68 @@
+ ========================================================================
+ --------------------------DETERMINANT CI--------------------------------
+ ========================================================================
+  
+  By Christopher L. Malbon
+  Yarkony Group
+  Dept. of Chemistry, The Johns Hopkins University
+  
+  
+             ---------- Created on GENTOO LINUX ----------               
+                            www.gentoo.org                               
+ ------------------------------------------------------------------------
+ Send bug reports to cmalbon1@jhu.edu ------------
+ ------------------------------------------------------------------------
+                              RUN LEVEL 1                                
+  Namelist input: 
+   Electrons in system:          2
+   Orbitals in system:          28
+   Frozen orbitals:              0
+   DOCC   orbitals:              0
+   Active orbitals:             10
+   Excitation level:             2
+  
+  Alpha electrons:          1
+  Beta  electrons:          1
+  
+  Alpha determinants:         28
+  Beta  determinants:         28
+  
+  Size of Full-CI expansion:             784
+  Size of Truncated-CI expansion:        784
+  
+  Generating the necessary input for RUN LEVEL 2... 
+   Files: dets.list*, alpha.dets*, beta.dets*, input.2 
+        *These files are created in the space-truncating subroutine.
+  
+                         RUN LEVEL 1 COMPLETED                          
  ------------------------------------------------------------------------
                              RUN LEVEL 2                                 
   
   Input from &runlevel1 
-   electrons=        10
-   orbitals=        14
-   nfrozen=         1
-   ndocc=         1
-   nactive=         7
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
    xlevel=         2
   
   Input from &expinfo 
    moflnm=moints              
-   cidim=    161700
-   aelec=         5
-   belec=         5
-   adets=      2002
-   bdets=      2002
-   tadetslen=       715
-   tbdetslen=       715
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
   
   Input from &runlevel2 
    maxiter=       100
    krmin=         3
-   krmax=         7
+   krmax=        10
    rtoler=   1.0E-05
    roots=         1
-   nucrep=   9.2E+00
+   nucrep=   0.0E+00
    initgdim=         5
   
   Reading in MO's...
@@ -35,9 +72,4806 @@
   
   Diagonal matrix elements computed. 
   
-  -- Hartree Fock energy:    -70.527958
+  -- Hartree Fock energy:      -1.8E+00
   
-  Using unit vectors for initial guess...
+  Using the subdiag1 subroutine... 
    5 initial vectors generated.
   
   Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         1
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler=   1.0E-05
+   roots=         1
+   nucrep=   0.0E+00
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:      -1.8E+00
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000100
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000100
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        15
+   rtoler= 0.0000100
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        15
+   rtoler= 0.0000100
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        15
+   rtoler= 0.0000010
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        15
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        15
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         2
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8358528
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         2
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         2
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         2
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         2
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using the subdiag1 subroutine... 
+   2 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         2
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         2
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using the subdiag1 subroutine... 
+   2 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using the subdiag1 subroutine... 
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        20
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        40
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        40
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        40
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        40
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        40
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        40
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------
+ ------------------------------------------------------------------------
+                             RUN LEVEL 2                                 
+  
+  Input from &runlevel1 
+   electrons=         2
+   orbitals=        28
+   nfrozen=         0
+   ndocc=         0
+   nactive=        10
+   xlevel=         2
+  
+  Input from &expinfo 
+   moflnm=moints              
+   cidim=       784
+   aelec=         1
+   belec=         1
+   adets=        28
+   bdets=        28
+   tadetslen=        28
+   tbdetslen=        28
+  
+  Input from &runlevel2 
+   maxiter=       100
+   krmin=         3
+   krmax=        10
+   rtoler= 0.0000000
+   roots=         1
+   nucrep= 0.0000000
+   initgdim=         5
+  
+  Reading in MO's...
+  
+  Reading in strings and determinants...
+  Computing diagonal matrix elements...
+  
+  Diagonal matrix elements computed. 
+  
+  -- Hartree Fock energy:    -1.8399414
+  
+  Using prediagonalization of H subblock for initial guess...
+   5 initial vectors generated.
+  
+  Calling Davidson algorithm...
+ Total CI energy for root #  1 =  0.0000000
+ ----------------------------------------
+  Finished. 
+ -----------

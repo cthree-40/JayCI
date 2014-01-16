@@ -1,49 +1,71 @@
-# Makefile for driver1
+## Makefile for Determinant CI
 #
-NAME			:= $(shell hostname)
-JDIR			:= $(shell pwd)
-SOURCE		:= $(JDIR)/src
+## By Christopher L. Malbon
+## Yarkony Group
+## The Johns Hopkins University
+## 
+#
 
-# Set any preprocessing flags
-PREPROC		:=
+#######################################
+# Build environment
+JOBDIR	:= ./
+SOURCE	:= ./src
+COMPLR	:= ifort -i8
+PREFIX	:= sh -c
+LIBS1		:= -L$(MKLROOT)/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm
+LIBS2		:= $(SOURCE)/colib.a $(SOURCE)/blaswrapper.a
+CPOPS		:= -auto -c -assume byterecl -O3
+DEBUG		:= -g -traceback -fp-stack-check -check bounds -check all
+LKOPT		:= -auto -lpthread
 
-# Set any Debugging flags
-DEBUGFLG	:= -g -traceback -fp-stack-check -check bounds
+# Executables
+EXEC1		:= driver1.x
+EXEC2		:= driver2.x
 
-# Set any compiler options
-CPOPT			:= -auto -c -assume byterecl -O3
+# Clean up
+REMOVE	:= rm -f
 
-# Set compiler
-COMPILER	:= ifort -i8
-PREFIX		:= sh -c
+#######################################
+# Objects
 
-# Set libraries
-LIBS			:= -L$(MKLROOT)/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm
+OBJS1		:= detci1.o detci2.o detci5.o truncation.o citrunc.o hvdiag.o iwfmt.o possex1.o cannon.o \
+						singrepinfo.o doublerepinfo.o actionutil.o acthv.o
+OBJS2		:= $(OBJS1) construct.o
+OBJS3		:= $(OBJS2) cannonreal.o lowdiags.o prediag.o
 
-# Linking options
-LKOPT			:= -auto -lpthread
+DRIV1		:= $(OBJS3) driver1.o
+DRIV2		:= $(OBJS3) driver2.o
 
-# Objects for building
-OBJECTS		:= detci1.o detci2.o truncation.o citrunc.o driver1.o
+#######################################
+# Preprocessor flags
 
-# Executable
-EXEC1			:= driver.x
+PREPROC	:= 
 
-# Cleaning
-RM				:= rm -f
+#######################################
+# BUILD
+driver1:$(DRIV1)
+	@echo " Building driver1..."
+	@echo " ------------------------------------------------------------------------"
+	@echo " Building with $(PREPROC)..."
+	@echo " ------------------------------------------------------------------------"
+	@echo " Building $@..."
+	@echo " --- "
+	$(PREFIX) "$(COMPLR) -o $(EXEC1) $(DRIV1) $(LIBS1) $(LIBS2) "
+	@echo " ------------------------------------------------------------------------"
 
-#Building
-driver:$(OBJECTS)
-	@echo "Bulding on $(NAME) with: $(PREPROC)"
-	@echo "Building $@"
-	$(PREFIX) "$(COMPILER) -o $(EXEC1) $(OBJECTS) $(LIBS)"
-	@echo "Finished building $@"
+%.o:$(SOURCE)/%.f
+	@echo " Building $< "
+	$(PREFIX) "$(COMPLR) -o $@ $< $(CPOPS)"
 
 %.o:$(SOURCE)/%.f90
-	@echo "Building $<"
-	$(PREFIX) "$(COMPILER) -cpp -o $@ $< $(CPOPT)"
-	@echo "Finished building $<"
+	@echo " Building $< "
+	$(PREFIX) "$(COMPLR) -cpp -o $@ $< $(CPOPS) $(PREPROC) "
 
-clean:
-	$(RM) $(OBJECTS) ./*.o ./*.mod ./*.dets ./*.ref ./*.out ./*.list
-	@echo "Finished cleaning."
+clean1:
+	$(RM) $(DRIV1) ./*.o ./*.mod ./*.list ./*.dets ./input.2 ./detci.out
+	@echo " Finished cleaning."
+
+
+clean2:
+	$(RM) $(DRIV2) ./*.o ./*.mod
+	@echo " Finished cleaning."

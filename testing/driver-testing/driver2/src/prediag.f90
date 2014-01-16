@@ -7,7 +7,7 @@
 ! Last edit: 11-20-13
 !====================================================================
 module prediag
-
+  implicit none
 contains
 !====================================================================
 !====================================================================
@@ -17,10 +17,10 @@ contains
 !--------------------------------------------------------------------
   subroutine geninituvec( numvec, lenvec, initvecs )
 ! Input:
-!  numvec = number of desired vectors
-!  lenvec = length of desired vectors
+! numvec = number of desired vectors
+! lenvec = length of desired vectors
 ! Output:
-!  initvecs = numvec unit vectors
+! initvecs = numvec unit vectors
 !--------------------------------------------------------------------
     implicit none
 ! ...input integer scalars...
@@ -40,220 +40,351 @@ contains
 !====================================================================
 !> lowdiagprecond
 !
-! Subroutine to generate intial guess unit vectors by grabbing the 
-!  lowest energy diagonals, and diagonalizing the v.Hv matrix
+! Subroutine to generate intial guess unit vectors by grabbing the
+! lowest energy diagonals, and diagonalizing the v.Hv matrix
 !--------------------------------------------------------------------
-  subroutine lowdiagprecond( diagonals, cidim, moints1, moints2, moints1len,      &
-    moints2len, pstring, pstep, plocate, qstring, qstep, qlocate, pdets,          &
-    qdets, pdetslen, qdetslen, adets, bdets, aelec, belec, orbitals, initguessdim,&
-    intdiagsguess, outvectors )
-!Input:
-! diagonals          = <K|H|K>                                 real*8  array  1-d
-! cidim              = dimension of CI space                   integer scalar
-! moints1            = 1-e integtrals                          real*8  array  1-d
-! moints2            = 2-e integerals                          real*8  array
-! moints1len         = length of moints1                       integer scalar
-! moints2len         = length of moints2                       integer scalar
-! pstring            = det string pairs ( p leading )          integer array  2-d
-! pstep              = pstring step array                      integer array  1-d
-! plocate            = location of p in pstring                integer array  1-d
-! qstring            = det string pairs ( q leading )          integer array  2-d
-! qstep              = qstring step array                      integer array  1-d
-! qlocate            = location of q in qstring                integer array  1-d
-! pdets              = p-strings                               integer array  1-d
-! qdets              = q-strings                               integer array  1-d
-! pdetslen           = p-strings length                        integer scalar
-! qdetslen           = q-strings length                        integer scalar
-! adets              = # of untruncated alpha strings          integer scalar
-! bdets              = # of untruncated beta  strings          integer scalar
-! orbitals           = # of MO's                               integer scalar
-! intdiagsguess      = # of diagonals to generate guess with   integer scalar
-! initguessdim       = # of guess vectors to return            integer scalar
-!Output:
-! outvectors         = output guess vectors
-!--------------------------------------------------------------------
+  subroutine lowdiagprecond( diagonals, diaglen, moints1, moints1len, &
+    moints2, moints2len, pstring, pstep, plocate, qstring, &
+    qstep, qlocate, pdets, qdets, pdetslen, qdetslen, adets,&
+    bdets, aelec, belec, orbitals, num_diags, init_dim, outvectors )
     implicit none
-! ...input integer scalars...
-    integer, intent(in) :: cidim, moints1len, moints2len, pdetslen, qdetslen, adets, &
-                           bdets, orbitals, intdiagsguess, initguessdim
-! ...input integer arrays...
-    integer, dimension( cidim, 2 ), intent(in)           :: pstring, qstring
-    integer, dimension( pdetslen ), intent(in)           :: pdets, plocate
-    integer, dimension( qdetslen ), intent(in)           :: qdets, qlocate
-! ...input real*8 arrays...
-    real*8, dimension( moints1len ), intent(in)          :: moints1
-    real*8, dimension( moints2len ), intent(in)          :: moints2
-    real*8, dimension(   cidim    ), intent(in)          :: diagonals
-! ...output real*8 arrays...
-    real*8, dimension( cidim, initguessdim), intent(out) :: outvectors
-! ...loop integer scalars...
-    integer :: i, j
-! ...real*8 scalars...
-    real*8 :: ddot
-! ...real*8 arrays...
-    real*8, dimension( cidim, initguessdim )             :: intguess, hvectors
-    real*8, dimension( initguessdim, initguessdim )      :: subham
-! ...DSYEVR VARIABLES...
-    character(len=1)   :: uplo, jobz, rnge
-    real*8             :: abstol, dlamch, vl, vu
-    integer            :: lwork, liwork, il, iu, info, eigfound
-    integer, dimension(:),   allocatable :: isuppz 
-    real*8,  dimension(:,:), allocatable :: eigvectors
-    real*8,  dimension(:),   allocatable :: eigvalues, work, iwork
-! ...DGEMM VARIABLES...
-    character(len=1)   :: transa, transb
-    integer            :: lda, ldb, ldc, p, q, r
-    real*8             :: alpha, beta
-!--------------------------------------------------------------------
-! Get lowest diagonals
-    intguess = 0d0
-    call lowdiags( diagonals, cidim, intdiagsguess, intguess )
-! Perform Hv, generating hvectors
-    hvectors = 0d0
-    do i=1, intdiagsguess
-      call acthv( intguess(1,i), moints1, moints2, moints1len, moints2len, &
-                  pstring, pstep, plocate, qstring, qstep, qlocate, cidim,  &
-                  pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec,    &
-                  belec, orbitals, diagonals, hvectors(1,i) )
+    integer, intent(in) :: diaglen, moints1len, moints2len , pdetslen, &
+                           qdetslen, adets, bdets, aelec, belec, orbitals,&
+                           num_diags, init_dim
+    integer, dimension( pdetslen, 2 ), intent(in) :: pstring
+    integer, dimension( qdetslen, 2 ), intent(in) :: qstring
+    integer, dimension( pdetslen ), intent(in) :: pstep, plocate, pdets
+    integer, dimension( qdetslen ), intent(in) :: qstep, qlocate, qdets
+    real*8, dimension( moints1len ), intent(in) :: moints1
+    real*8, dimension( moints2len ), intent(in) :: moints2
+    real*8, dimension( diaglen ), intent(in) :: diagonals
+    real*8, dimension( diaglen, init_dim ), intent(out) :: outvectors
+    real*8, dimension(:,:), allocatable :: vectors1, hvectors
+    integer :: i,j, cidim
+    real*8, external :: ddot
+    real*8, dimension(:,:), allocatable :: sub_hammat
+    real*8, dimension(:,:), allocatable :: eig_vectors
+  !--------------------------------------------------------------------
+  ! Allocate arrays
+    allocate( vectors1( diaglen, num_diags ) )
+    allocate( hvectors( diaglen, num_diags ) )
+    allocate( sub_hammat( num_diags, num_diags ) )
+    allocate( eig_vectors( num_diags, init_dim ) )
+
+    cidim = diaglen
+    call lowdiags( diagonals, diaglen, num_diags, vectors1 )
+    ! Perform Hv on hvectors
+    do i=1, num_diags
+      call acthv( vectors1(1,i), moints1, moints2, moints1len, moints2len, &
+                  pstring, pstep, plocate, qstring, qstep, qlocate, &
+                  cidim, pdets, qdets, pdetslen, qdetslen, adets, &
+                  bdets, aelec, belec, orbitals, diagonals, hvectors(1,i) )
     end do
-! Construct v.Hv
-    do i=1, intdiagsguess
-      do j=1, intdiagsguess
-        subham(j,i) = ddot( cidim, intguess(1,j), 1, hvectors(1,i), 1 ) 
+    ! Construct vHv
+    do i=1, num_diags
+      do j=1, num_diags
+        sub_hammat(j,i) = ddot( cidim, vectors1(1,j), 1, hvectors(1,i), 1 )
       end do
     end do
-! Set DSYEVR variabls
-    jobz  = 'v'    ! Return eigenvalues
-    rnge  = 'a'    ! Return full range of eigenvectors and eigenvalues
-    uplo  = 'l'    ! Lower triangle is stored in matrix A
-    abstol= dlamch( 'Safe minimum' )
-    lwork = 26*intdiagsguess+10
-    liwork= 11*intdiagsguess
-    allocate( isuppz(intdiagsguess) )
-    allocate( eigvectors(intdiagsguess, intdiagsguess) )
-    allocate(  work( lwork) )
-    allocate( iwork(liwork) )
-    allocate( eigvalues(intdiagsguess) )
-    call dsyevr( jobz, rnge, uplo, intdiagsguess, subham, intdiagsguess, vl, &
-                vu, il, iu, abstol, eigfound, eigvalues, eigvectors, intdiagsguess,&
-                isuppz, work, lwork, iwork, liwork, info )
-! Generate eigenvector guess...
-    transa = 'n'
-    transb = 'n'
-    p = cidim
-    q = intdiagsguess
-    r = q
-    alpha = 1d0
-    beta  = 0d0
-    lda   = p
-    ldb   = initguessdim
-    ldc   = p
-    call dgemm( transa, transb, p, q, r, alpha, intguess, lda, eigvectors, ldb, beta, &
-                outvectors, ldc )
-! Return
+    ! Diagonalize this matrix. Return init_dim vectors
+    call diag_hamsub( sub_hammat, num_diags, init_dim, eig_vectors ) 
+
+    ! Generate vectors
+    call ritz_vec( eig_vectors, cidim, num_diags, init_dim, vectors1, outvectors )    
+  ! Deallocate arrays
+    deallocate( vectors1, hvectors, sub_hammat, eig_vectors )
+    
     return
   end subroutine
+!======================================================================
+!======================================================================
+!>ritz_vec
+!
+! Subroutine to generate the ritz vector. (E)_nxm (alpha)_mxo = (VEC)_nxo
+!----------------------------------------------------------------------
+  subroutine ritz_vec( alpha, n, m, o, Evec, VEC )
+    implicit none
+    integer, intent(in) :: n, m, o
+    real*8,  dimension( n, m ), intent(in) :: Evec 
+    real*8,  dimension( m, o ), intent(in) :: alpha
+    real*8,  dimension( n, o ), intent(out):: VEC
+    character(len=1) :: transa, transb
+    integer :: lda, ldb, ldc, p, q, r
+    real*8 :: a, b
+!----------------------------------------------------------------------
+    transa = 'n'   ! Use transpose of A
+    transb = 'n'   ! Use transpose of B
+    p = n
+    q = o
+    r = m
+    a = 1d0
+    b = 0d0
+    lda = n
+    ldb = m
+    ldc = n
+    call dgemm( transa, transb, p, q, r, a, Evec, lda, alpha, ldb, b, &
+                VEC, ldc )
+    return
+  end subroutine 
+!======================================================================
+!======================================================================
+!>diag_hamsub
+!
+! Subroutine to diagonalize subblock of hamiltonian using DSYEVR
+!----------------------------------------------------------------------
+  subroutine diag_hamsub( matrix, mat_dim, a, eig_vectors )
+    implicit none
+    integer, intent(in) :: mat_dim, a
+    real*8, dimension( mat_dim, mat_dim ),intent(inout) :: matrix
+    real*8, dimension( mat_dim, a ),        intent(out) :: eig_vectors
+    character*1 :: jobz, rnge, uplo
+    real*8 :: abstol, vl, vu
+    real*8, external :: dlamch
+    integer :: lwork, liwork, il, iu, info, eigfound
+    integer, dimension(:),  allocatable :: isuppz
+    real*8, dimension(:),   allocatable :: eig_values
+    real*8, dimension(:,:), allocatable :: dys_eigvec
+    real*8, dimension(:),   allocatable :: work
+    real*8, dimension(:),   allocatable :: iwork
+    integer :: i, j
+    integer :: ispzstat, eigstat, dysstat, workstat, iworkstat, &
+               allocstat
+!----------------------------------------------------------------------
+    ! Allocate arrays
+    allocate( isuppz( 2*mat_dim ),stat=allocstat )
+    print *, "isuppz=", allocstat
+    print *, size(isuppz)
+    allocate( eig_values( mat_dim ),stat=allocstat )
+    print *, "eig_values=", allocstat
+    allocate( dys_eigvec( mat_dim, mat_dim ), stat=allocstat )
+    print *, "dys_eigvec=", allocstat
+    allocate( work( 27*mat_dim ), stat=allocstat )
+    print *, "work=", allocstat
+    allocate(iwork( 12*mat_dim ),stat=allocstat )
+    print *, "iwork=", allocstat
+    ! Set dsyever variables
+    jobz = 'v'
+    rnge = 'a'
+    uplo = 'u'
+    abstol = dlamch( 'Safe minimum' )
+    lwork = 26*mat_dim
+    liwork = 11*mat_dim
+    open( unit=97, file='diag-debug', status='new' )
+    do i=1, mat_dim
+      do j=1, mat_dim
+        write(unit=97,fmt=10) j, i, matrix(j,i)
+      end do
+    end do
+10 format(1x,I4,I4,F10.6)
+    close(unit=97)
+    print *, " Calling dsyevr..."
+    call dsyevr( jobz, rnge, uplo, mat_dim, matrix, mat_dim, vl, &
+                 vu, il, iu, abstol, eigfound, eig_values, dys_eigvec, &
+                 mat_dim, isuppz, work, lwork, iwork, liwork, info )
+    print *, " Finished dsyevr..."
+    print *, "info=",info
+    print *, "eigfound=",eigfound
+    print *, "eigVALUE=",eig_values(1)
+    do i=1, mat_dim
+      print *, dys_eigvec(i,1)
+    end do
+    do i=1, a
+      do j=1, mat_dim
+        eig_vectors(j,i) = dys_eigvec(j,i)
+      end do
+    end do 
+  ! Deallocate
+    deallocate( isuppz, stat=ispzstat )
+    print *, " isuppz=", ispzstat
+    deallocate( eig_values, stat=eigstat)
+    print *, " eig_values=", eigstat
+    deallocate( dys_eigvec, stat=dysstat)
+    print *, " dys_eigvec=", dysstat
+    deallocate( work, stat=workstat )
+    print *, " work=", workstat
+    deallocate( iwork, stat=iworkstat)
+    print *, "iwork=", iworkstat
+
+    return
+  end subroutine
+!======================================================================
+!======================================================================
+    
 !====================================================================
 !====================================================================
 !> prediagsubblock
 !
 ! Subroutine that explicitly constructs matrix elements Hij and diagonalizes
-!  the subblock.
+! the subblock.
 !--------------------------------------------------------------------
-  subroutine prediagsubblock( diagonals, cidim, moints1, moints2, moints1len,  &
+  subroutine prediagsubblock( cidim, moints1, moints2, moints1len, &
     moints2len, pdets, pdetslen, qdets, qdetslen, tdets, subblockdim, initgdim,&
-    outvectors )
+    aelec, belec, orbitals, outvectors )
+    use construct, only: ham_element
 !Input:
-! diagonals        = <K|H|K>
-! cidim            = dimension of CI space
-! moints1          = 1-e integrals
-! moints2          = 2-e integrals
-! moints1len       = length of 1-e integrals
-! moints2len       = length of 2-e integrals
-! pdets            = alpha determinants (truncated)
-! pdetslen         = length of pdets
-! qdets            = beta determinants  (truncated)
-! qdetslen         = length of qdets
-! tdets            = determinants
-! initgdim         = number of vectors to return
-! subblockdim      = dimension of H subblock
+! diagonals = <K|H|K>
+! cidim = dimension of CI space
+! moints1 = 1-e integrals
+! moints2 = 2-e integrals
+! moints1len = length of 1-e integrals
+! moints2len = length of 2-e integrals
+! pdets = alpha determinants (truncated)
+! pdetslen = length of pdets
+! qdets = beta determinants (truncated)
+! qdetslen = length of qdets
+! tdets = determinant list ( truncated )
+! initgdim = number of vectors to return
+! subblockdim = dimension of H subblock
 !Output:
-! outvectors      = output vectors
+! outvectors = output vectors
     implicit none
 ! ...input integer scalars...
     integer, intent(in) :: cidim, moints1len, moints2len, pdetslen, qdetslen, &
-                           subblockdim, initgdim
+                           subblockdim, initgdim, aelec, belec, orbitals
 ! ...input integer arrays...
-    integer, dimension( pdetslen ), intent(in)   :: pdets
-    integer, dimension( qdetslen ), intent(in)   :: qdets
-    integer, dimension( cidim),     intent(in)   :: tdets
+    integer, dimension( pdetslen ), intent(in) :: pdets
+    integer, dimension( qdetslen ), intent(in) :: qdets
+    integer, dimension( cidim), intent(in) :: tdets
 ! ...input real*8 arrays...
-    real*8,  dimension( moints1len ), intent(in) :: moints1
-    real*8,  dimension( moints2len ), intent(in) :: moints2
+    real*8, dimension( moints1len ), intent(in) :: moints1
+    real*8, dimension( moints2len ), intent(in) :: moints2
 ! ...output real*8 arrays...
-    real*8, dimension( cidim, initgdim ), intent(inout) :: outvectors
+    real*8, dimension( cidim, initgdim ), intent(out) :: outvectors
 ! ...loop integer scalars...
     integer :: i, j
 ! ...real*8 arrays...
-    real*8, dimension( subblockdim, subblockdim ) :: hamblock
-    real*8, dimension( cidim, inigdim )           :: unitvecs
-! ...DSYEVR variables...
-    character(len=1) :: jobz, uplo, rnge
-    integer          :: lwork, liwork, il, iu, info, eigfound
-    real*8           :: abstol, dlamch, vl, vu
-    integer, dimension(:),   allocatable :: isuppz 
-    real*8,  dimension(:,:), allocatable :: eigvectors
-    real*8,  dimension(:),   allocatable :: eigvalues, work, iwork
-! ...DGEMM variables...
-! ...DGEMM VARIABLES...
-    character(len=1)   :: transa, transb
-    integer            :: lda, ldb, ldc, p, q, r
-    real*8             :: alpha, beta
+    real*8, dimension(:,:), allocatable    :: hamblock
+    real*8, dimension(:,:), allocatable    :: unitvecs
+    real*8, dimension(:,:), allocatable    :: vectors2
+! ...real*8 scalars...
+!    real*8 :: ham_element
 !--------------------------------------------------------------------
+! Allocate arrays
+    allocate( hamblock( subblockdim, subblockdim ) )
+    allocate( unitvecs( cidim, subblockdim ) )
+    allocate( vectors2( cidim, subblockdim ) )
+
 ! Construct subblockdim x subblockdim hamiltonian
     do i=1, subblockdim
       do j=1, subblockdim
         hamblock(j,i) = ham_element( tdets(j), tdets(i), moints1, moints1len, &
                                      moints2, moints2len, aelec, belec, orbitals )
+        print *, j, i, hamblock(j,i)
       end do
     end do
+   
+    print *, "Calling diag_hamsub..."
 ! Diagonalize hamblock using DSYEVR
-! Set DSYEVR variables
-    jobz  = 'v'    ! Return eigenvalues
-    rnge  = 'a'    ! Return full range of eigenvectors and eigenvalues
-    uplo  = 'l'    ! Lower triangle is stored in matrix A
-    abstol= dlamch( 'Safe minimum' )
-    lwork = 26*subblockdim+10
-    liwork= 11*subblockdim
-    allocate( isuppz(subblockdim) )
-    allocate( eigvectors(subblockdim, subblockdim) )
-    allocate(  work( lwork) )
-    allocate( iwork(liwork) )
-    allocate( eigvalues(subblockdim) )
-    call dsyevr( jobz, rnge, uplo, subblockdim, hamblock, subblockdim, vl, &
-                vu, il, iu, abstol, eigfound, eigvalues, eigvectors, subblockdim,&
-                isuppz, work, lwork, iwork, liwork, info )
+    call diag_hamsub( hamblock, subblockdim, initgdim, vectors2 ) 
+    print *, "Finished diag_hamsub..."
 ! Generate unit vectors
-    unitvec = 0d0
-    do i=1, initgdim
+    do i=1, subblockdim
+      do j=1, cidim
+        unitvecs(j,i) = 0d0
+      end do
       unitvecs(i,i) = 1d0
     end do
+    print *, "Calling ritz_vec..."
 ! Set DGEMM variables
-    transa = 'n'
-    transb = 'n'
-    p = cidim
-    q = subblockdim
-    r = q
-    alpha = 1d0
-    beta  = 0d0
-    lda   = p
-    ldb   = initgdim
-    ldc   = p
-    call dgemm( transa, transb, p, q, r, alpha, unitvecs, lda, eigvectors, ldb, beta, &
-                outvectors, ldc )
-! Return
+    call ritz_vec( vectors2, cidim, subblockdim, initgdim, unitvecs, outvectors )
+
+! Deallocate arrays
+    deallocate( hamblock, unitvecs, vectors2 )
+
     return
   end subroutine
 !====================================================================
 !====================================================================
+!>ovrlp_subspace
+!
+! Choose initial basis vectors based upon greatest overlap with HF
+!----------------------------------------------------------------------
+  subroutine ovrlp_subspace( m, initgdim, moints1, moints1len, moints2, &
+    moints2len, pstring, pstep, plocate, qstring, qstep, qlocate, cidim,&
+    pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec,      &
+    orbitals, diagonals, out_vectors )
+
+    implicit none
+  ! ...integer input scalars...
+    integer, intent(in) :: m, initgdim, moints1len, moints2len, cidim, &
+                           pdetslen, qdetslen, adets, bdets, aelec, belec, &
+                           orbitals
+  ! ...real*8 input arrays...
+    real*8,  dimension( moints1len ), intent(in) :: moints1  !1-e integrals
+    real*8,  dimension( moints2len ), intent(in) :: moints2  !2-e integrals
+  ! ...integer input arrays...
+    integer, dimension( cidim, 2 ),   intent(in) :: pstring, qstring  ! Det. string pairs
+    integer, dimension( pdetslen ),   intent(in) :: pdets, pstep, plocate
+    integer, dimension( qdetslen ),   intent(in) :: qdets, qstep, qlocate
+  ! ...real*8 input arrays... 
+    real*8,  dimension( cidim ),      intent(in) :: diagonals
+  ! ...real*8 OUTPUT arrays...
+    real*8,  dimension( cidim, initgdim ), intent(out) :: out_vectors
+  
+  ! ...loop control scalars...
+    integer :: i, j, k, l
+  ! ...real*8 scalars...
+    real*8, external :: ddot
+  ! ...real*8 arrays...
+    real*8, dimension(:,:),  allocatable     :: sub_block, eigvectors
+    real*8, dimension(:,:),  allocatable     :: unitguess, hv_vectors, bs_vectors
+    real*8, dimension(:),    allocatable     :: hartreefock, hv_hartree
+  !--------------------------------------------------------------------
+  ! Allocate arrays
+    allocate(  sub_block( m, m ) )
+    allocate( eigvectors( m, m ) )
+    allocate(  unitguess( cidim, m ))
+    allocate( hv_vectors( cidim, m) )
+    allocate( bs_vectors( cidim, m) )
+    allocate( hartreefock( cidim ) )
+    allocate(  hv_hartree( cidim ) )
+
+  ! Select m greatest elements of H on HF
+    hartreefock    = 0d0
+    hartreefock(1) = 1d0
+    call acthv( hartreefock, moints1, moints2, moints1len, moints2len, pstring, &
+                pstep, plocate, qstring, qstep, qlocate, cidim, pdets, qdets,   &
+                pdetslen, qdetslen, adets, bdets, aelec, belec, orbitals,       &
+                diagonals, hv_hartree )
+  
+  ! Construct vector guesses
+    unitguess = 0d0
+    call lowdiags( diagonals, cidim, m, unitguess )
+  
+  ! Perform Hv, generating hv_vectors
+    do i=1, m
+      call acthv( unitguess(1,i), moints1, moints2, moints1len, moints2len, &
+                  pstring, pstep, plocate, qstring, qstep, qlocate, cidim,  &
+                  pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec, &
+                  orbitals, diagonals, hv_vectors(1,i) )
+    end do
+
+  ! Construct upper triangle of v.Hv matrix
+    do i=1, m
+      do j=1, m
+        sub_block(j,i) = ddot( cidim, unitguess(1,i), 1, hv_vectors(1,i), 1 )
+      end do
+    end do
+
+  ! Diagonalize this matrix
+    call diag_hamsub( sub_block, m, m, eigvectors )
+  
+  ! Generate eigenvector guesses
+    call ritz_vec( eigvectors, cidim, m, m, unitguess, bs_vectors )
+
+  ! Generate output vectors
+    do i=1, initgdim
+      do j=1, cidim
+        out_vectors(j,i) = bs_vectors(j,i)
+      end do
+    end do
+
+  ! Deallocate arrays
+    deallocate( sub_block, eigvectors, unitguess, hv_vectors, bs_vectors, &
+                hartreefock, hv_hartree )
+
+    return
+  end subroutine
+!======================================================================
+!======================================================================
 end module 
