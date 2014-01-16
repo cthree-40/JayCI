@@ -35,31 +35,35 @@ contains
 
 !   ...loop real*8 scalars...
     real*8 :: overlap, ddot, norm
-
+!   ...loop real*8 arrays...
+    real*8, dimension( lda, matdim ) :: scratch
+    real*8, dimension( lda ) :: vec_scratch
 !--------------------------------------------------------------------
-    
-! Loop over vectors
+#ifdef GSDEBUG
+    print *, " Debugging the Gram-Schmidt procedure.  You chose the entire reorthogonalization."
+    print *, " Here are some overlaps:  "
     do i=1, matdim
-      print *, matrix(:,i)
-! Loop over orthogonalizing vectors
-      do j=1, i-1
-        overlap = ddot( lda, matrix(1,i), 1, matrix(1,j), 1 )
-        do k=1, lda
-          matrix(k,i) = matrix(k,i) - overlap*matrix(k,j)
-        end do
-      end do
-      norm = sqrt( ddot( lda, matrix(1,i), 1, matrix(1,i), 1 ) )
-      do j=1, lda
-        matrix(j,i) = matrix(j,i) / norm
+      do j=i, matdim
+         print *, ddot( lda, matrix(1,i), 1, matrix(1,j), 1)
       end do
     end do
-! Normalize
+    print *, " Debugging the Gram-Schmidt has finished. I hope you like what you saw. "
+#endif  
+
+!  Loop over vectors
     do i=1, matdim
-      norm = sqrt( ddot( lda, matrix(1,i), 1, matrix(1,i), 1))
+      norm =  sqrt( ddot( lda, matrix(1,i), 1, matrix(1,i), 1 ) )
       do j=1, lda
-        matrix(j,i) = matrix(j,i) / norm
+        vec_scratch(j) = matrix(j,i) / norm
+      end do
+      do j= 1, i-1
+        call orthogvector( matrix, j, matdim, lda, vec_scratch )
+      end do
+      do j=1, lda
+        matrix(j,i) = vec_scratch(j)
       end do
     end do
+
 
 #ifdef GSDEBUG
     print *, " Debugging the Gram-Schmidt procedure.  You chose the entire reorthogonalization."

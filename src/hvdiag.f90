@@ -30,7 +30,7 @@
 subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   & 
   pdets, pdetslen, qdets, qdetslen, detlist, cidim, totels, orbitals, aelec, belec, &
   adets, bdets, moints1, moints1len, moints2, moints2len, plocate, qlocate, diagonals )
-
+  use construct, only: ham_element_diag
   implicit none
 ! ...input integer scalars...
   integer,intent(in) :: psteplen, qsteplen, cidim, totels, orbitals, aelec, &
@@ -44,12 +44,10 @@ subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   &
   integer, dimension(pdetslen), intent(in) :: pdets
   integer, dimension(qdetslen), intent(in) :: qdets
 ! ...input real*8 arrays...
-  integer, dimension(moints1len), intent(in) :: moints1
-  integer, dimension(moints2len), intent(in) :: moints2
+  real*8, dimension(moints1len), intent(in) :: moints1
+  real*8, dimension(moints2len), intent(in) :: moints2
 ! ...output real*8 arrays...
   real*8, dimension(cidim), intent(inout) :: diagonals
-! ...real*8 scalars...
-  real*8 :: ham_element_diag
 ! ...integer scalars...
   integer :: i
 ! ...integer arrays...

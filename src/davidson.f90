@@ -51,6 +51,8 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
 ! eigvectors   = eigenvectors                                          real*8  array  2-d
 !--------------------------------------------------------------------
   use david_util
+
+
   implicit none
 ! ...input integer scalars...
   integer, intent(in) :: initgdim, moints1len, moints2len, cidim, pdetslen, qdetslen, &
@@ -67,8 +69,8 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
   integer, dimension( pdetslen ),        intent(in) :: pstep, plocate, pdets
   integer, dimension( qdetslen ),        intent(in) :: qstep, qlocate, qdets
 ! ...OUTPUT real*8 arrays...
-  real*8,  dimension( roots ),           intent(inout) :: eigvalues
-  real*8,  dimension( cidim, roots),     intent(inout) :: eigvectors
+  real*8,  dimension( roots ),           intent(out) :: eigvalues
+  real*8,  dimension( cidim, roots),     intent(out) :: eigvectors
 ! ...loop integer scalars...
   integer :: i, j, k, l, m
 ! ...davidson integer scalars...
@@ -82,6 +84,8 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
   real*8, dimension(:,:), allocatable :: sub_ham
   real*8, dimension(:,:), allocatable :: kry_eigvec
   real*8, dimension(:),   allocatable :: kry_eigval
+
+! ...TEST...
 !--------------------------------------------------------------------
 ! Make currnt_root = 1, for debugging and testing - CLM 12-13-13
   currnt_root = 1
@@ -132,7 +136,15 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
     
   ! Set space dimension, space_dim = krmin
     space_dim = krmin
-
+  
+#ifdef DEBUG
+    print *, " ============================================= "
+    print *, " Root # 1 eigenvector... "
+    do j=1, space_dim
+      print *, kry_eigvec(j,1)
+    end do
+    print *, " --------------------------------------------- "
+#endif
   ! Enter sub_loop
     sub_loop: do j=1, krmax+1
    
@@ -155,12 +167,6 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
     ! Generate new vector
       call gen_newvector( residual, diagonals, kry_eigval(currnt_root),&
                           cidim, new_vector )
-      print *, " ============================================ "
-      print *, "  Printing new vector... "
-      do k=1, cidim
-        print *, new_vector(k)
-      end do
-      print *, " "
      
     ! Orthogonalize new vector to basis space 
       call orthog_newvec( bs_vectors, new_vector, cidim, space_dim )

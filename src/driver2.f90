@@ -46,6 +46,7 @@ program driver2
   use detci5
   use orthogroutines
   use prediag
+
   implicit none
 
 ! ...file names...
@@ -107,8 +108,8 @@ program driver2
 
   namelist /runlevel2/ maxiter, krmin, krmax, rtoler, roots, nucrep, prediagr,&
                        initgdim
-#ifdef TESTGS
-  real*8, dimension(10,10) :: mat_a
+#ifdef DEBUG
+  real*8, dimension(10,3) :: mat_a
 #endif
 !--------------------------------------------------------------------
 
@@ -151,6 +152,7 @@ program driver2
 
   
 ! Read input file 1
+  openstat=0
   open(unit=infl1,file=inputfl1,status='old',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN INPUT FILE, detci.in. ****"
   read(unit=infl1,nml=runlevel1)
@@ -158,12 +160,14 @@ program driver2
   close(unit=infl1)
 
 ! Read input file 2
+  openstat=0
   open(unit=infl2,file=inputfl2,status='old',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN INPUT FILE, input.2 ****"
   read(unit=infl2,nml=expinfo)
   close(unit=infl2)
 
 ! Open outputfile, and begin writing output.
+  openstat=0
   open(unit=outfl,file=outputfl,status='old',iostat=openstat,position='append')
   if ( openstat > 0 ) stop "**** CANNOT OPEN OUTPUT FILE, detci.out ****"
 
@@ -201,7 +205,7 @@ program driver2
 9  format(1x,A)
 10 format(1x,A,I10)
 11 format(1x,A,A)
-12 format(1x,A,ES10.1)
+12 format(1x,A,F10.7)
 13 format(1x,I10)
 14 format(1x,I10,I10)
 15 format(1x,I3,A)
@@ -233,54 +237,63 @@ program driver2
   write(unit=outfl,fmt=9) " Reading in strings and determinants..."
 
 ! Alpha strings
+  openstat=0
   open(unit=astrfl,file=astringfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN ALPHA STRING FILE, alpha.dets. ****"
   read(unit=astrfl,fmt=13) ( tadets(i), i=1, tadetslen )
   close(unit=astrfl)
 
 ! Alpha string det list
+  openstat=0
   open(unit=strpfl,file=pstringfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN PSTRING DETERMINANT LIST, pstring.list. ****"
   read(unit=strpfl,fmt=14) ( (pstring(i,j),j=1,2), i=1, cidim )
   close(unit=strpfl)
 
 ! Alpha string step list
+  openstat=0
   open(unit=steppfl,file=pstepfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANOT OPEN PSTRING STEP FILE, pstep.list. ****"
   read(unit=steppfl,fmt=13) ( pstep(i), i=1, tadetslen )
   close(unit=steppfl)
 
 ! Alpha string locate list
+  openstat=0
   open(unit=locpfl,file=plocfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN PLOCATE FILE, plocate.list. *****"
   read(unit=locpfl,fmt=13) ( plocate(i), i=1, tadetslen)
   close(unit=locpfl)
 
 ! Beta strings
+  openstat=0
   open (unit=bstrfl,file=bstringfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN BETA STRING FILE, beta.dets. ****"
   read(unit=bstrfl,fmt=13) ( tbdets(i), i=1, tbdetslen )
   close(unit=bstrfl)
 
 ! Beta string det list
+  openstat=0
   open(unit=strqfl,file=qstringfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN QSTRING DETERMINANT LIST, qstring.list. ****"
   read(unit=strqfl,fmt=14) ( (qstring(i,j),j=1,2), i=1, cidim )
   close(unit=strqfl)
 
 ! Beta string step list
+  openstat=0
   open(unit=stepqfl,file=qstepfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN QSTRING STEP FILE, qstep.list. ****"
   read(unit=stepqfl,fmt=13) ( qstep(i), i=1, tbdetslen )
   close(unit=stepqfl)
 
 ! Beta sting locate list
+  openstat=0
   open(unit=locqfl,file=qlocfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "*** CANNOT OPEN QLOCATE FILE, qlocate.list. ****"
   read(unit=locqfl,fmt=13) ( qlocate(i), i=1, tbdetslen)
   close(unit=locqfl)
 
 ! Determinants
+  openstat=0
   open (unit=detfl,file=determfl,status='old',position='rewind',iostat=openstat)
   if ( openstat > 0 ) stop "**** CANNOT OPEN DETERMINANT FILE, dets.list. ****"
   read(unit=detfl,fmt=13) ( tdets(i), i=1, cidim )
@@ -288,6 +301,7 @@ program driver2
 
 
 ! Compute diagonal matrix elements
+  openstat=0
   write(unit=outfl,fmt=9) " Computing diagonal matrix elements..."
   allocate(diagonals(cidim))
   call diagonal( pstring, pstep, tadetslen, qstring, qstep, tbdetslen,       &
@@ -329,7 +343,7 @@ program driver2
     write(unit=outfl,fmt=9) " "
   else if ( prediagr .eq. 4) then
     write(unit=outfl,fmt=9) " Using the subdiag1 subroutine... "
-    call ovrlp_subspace( 80, initgdim, moints1, moints1len, moints2, moints2len, pstring, &
+    call ovrlp_subspace( 200, initgdim, moints1, moints1len, moints2, moints2len, pstring, &
                          pstep, plocate, qstring, qstep, qlocate, cidim, tadets, tbdets,    &
                          tbdetslen, tadetslen, adets, bdets, aelec, belec, orbitals,        &
                          diagonals, initvectors )
@@ -338,6 +352,7 @@ program driver2
   end if
 
 ! Orthogonalize initial vectors
+!  initvectors(1,1) = 1d0
   call modgramschmidt( initvectors, initgdim, initgdim, cidim )
 
 ! Call Davidson algorithm
@@ -347,7 +362,7 @@ program driver2
   call davidson( initgdim, initvectors, diagonals, moints1, moints1len, moints2, &
                  moints2len, cidim, pstring, pstep, plocate, qstring, qstep, qlocate,   &
                  tadets, tadetslen, tbdets, tbdetslen, adets, bdets, aelec, belec,   &
-                 orbitals, krmin, krmax, rtoler, roots, eigenvalues, eigenvectors )
+                 orbitals, krmin, krmax, rtoler, roots, maxiter, eigenvalues, eigenvectors )
   do i=1, roots
     write(unit=outfl,fmt=16) "Total CI energy for root # ", i," = ", (eigenvalues(i) - nucrep)
   end do
