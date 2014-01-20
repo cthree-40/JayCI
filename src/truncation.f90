@@ -639,4 +639,61 @@ contains
     end do
     return
   end subroutine gen_betastrpr
+!======================================================================
+!======================================================================
+!>xreflist_gen
+!
+! Generate cross reference list ! Scales like n!
+!----------------------------------------------------------------------
+  subroutine xreflist_gen( length, detlist1, qpairings, belec, &
+    orbitals, xreflist )
+    use detci2, only: indxk
+    implicit none
+    integer, intent(in) :: length, belec, orbitals
+    integer, dimension( length ),    intent(in)  :: detlist1
+    integer, dimension( length, 2),  intent(in)  :: qpairings
+    integer, dimension( length ),    intent(out) :: xreflist
+    integer, dimension(:,:),           allocatable :: temp
+    integer, dimension(:),             allocatable :: detlist2
+    integer :: k, i, j, trunc, element
+!----------------------------------------------------------------------
+    ! Use string pairings to generate det list2
+    allocate( detlist2( length ) )
+    do i=1, length
+      detlist2(i) = indxk( qpairings(i,2), qpairings(i,1), belec, orbitals )
+    end do
+    
+    ! Generate temp list
+    allocate( temp( length, 2 ) )
+    do i=1, length
+      temp(i,1) = detlist1(i)
+      temp(i,2) = i
+    end do
+    trunc = 0
+    element = 1
+   
+    ! Loop over detlist2
+    loopa: do i=1, length
+      ! Loop over detlist1
+      loopb: do j=1, length-trunc
+        if ( detlist2(i) .eq. temp(j,1) ) then
+          xreflist(element) = temp(j,2)
+          element = element + 1
+          trunc = trunc + 1
+          ! Move elements down
+          do k=j+1, length
+            temp(k-1,1) = temp(k,1)
+            temp(k-1,2) = temp(k,2)
+          end do
+          exit loopb
+        end if
+      end do loopb
+    end do loopa
+
+    deallocate(temp)
+
+    return
+  end subroutine xreflist_gen   
+          
+    
 end module
