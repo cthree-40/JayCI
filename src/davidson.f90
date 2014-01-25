@@ -15,8 +15,8 @@
 !--------------------------------------------------------------------
 subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    & 
   moints2, moints2len, cidim, pstring, pstep, plocate, qstring, qstep, qlocate, &
-  pdets, pdetslen, qdets, qdetslen, adets, bdets, aelec, belec, orbitals, krmin,&
-  krmax, rtol, roots, max_iter, eigvalues, eigvectors )
+  xreflist, pdets, pdetslen, qdets, qdetslen, adets, bdets, aelec, belec,       &
+  orbitals, krmin, krmax, rtol, roots, max_iter, eigvalues, eigvectors )
 !Input:
 ! initgdim     = number of initial vector guesses                      integer scalar
 ! init_vectors = initial vector guess                                  real*8  array  2-d
@@ -68,6 +68,7 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
   integer, dimension( cidim, 2 ),        intent(in) :: pstring, qstring
   integer, dimension( pdetslen ),        intent(in) :: pstep, plocate, pdets
   integer, dimension( qdetslen ),        intent(in) :: qstep, qlocate, qdets
+  integer, dimension( cidim ),           intent(in) :: xreflist
 ! ...OUTPUT real*8 arrays...
   real*8,  dimension( roots ),           intent(out) :: eigvalues
   real*8,  dimension( cidim, roots),     intent(out) :: eigvectors
@@ -105,8 +106,8 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
   ! Perform Hv on initial space to generate vectors v_i = Hb_i 
     call dvd_initial( bs_vectors, krmin, cidim, moints1, moints1len, moints2, &
                       moints2len, pstring, pstep, plocate, qstring, qstep,    &
-                      qlocate, pdets, qdets, pdetslen, qdetslen, adets, bdets,&
-                      aelec, belec, orbitals, diagonals, hv_vectors )
+                      qlocate, xreflist, pdets, qdets, pdetslen, qdetslen,    &
+                      adets, bdets, aelec, belec, orbitals, diagonals, hv_vectors )
  
   ! Construct subspace hamiltonian (v_i . H v_j ) = H_ij
     if (allocated( sub_ham )) deallocate(sub_ham)
@@ -183,7 +184,7 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
       print *, " Dimension of space is now  ", space_dim
     ! Perform Hv on new vector
       call acthv( bs_vectors(1,space_dim), moints1, moints2, moints1len, moints2len,    &
-                  pstring, pstep, plocate, qstring, qstep, qlocate, cidim, &
+                  pstring, pstep, plocate, qstring, qstep, qlocate, xreflist, cidim, &
                   pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec,&
                   orbitals, diagonals, hv_vectors(1,space_dim) )
 

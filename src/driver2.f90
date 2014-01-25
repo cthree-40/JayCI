@@ -52,7 +52,7 @@ program driver2
 ! ...file names...
   character*20 :: inputfl1, inputfl2, outputfl, astringfl, bstringfl, &
                   determfl, pstepfl, qstepfl, pstringfl, &
-                  qstringfl, moflnm, plocfl, qlocfl
+                  qstringfl, moflnm, plocfl, qlocfl, xreflsfl
 
 ! .....................
 ! ...NAMELIST INPUTS...
@@ -83,6 +83,7 @@ program driver2
   integer, dimension(:),   allocatable :: tadets, tbdets
   integer, dimension(:),   allocatable :: pstep, qstep, plocate, qlocate
   integer, dimension(:,:), allocatable :: pstring, qstring
+  integer, dimension(:),   allocatable :: xreflist
   
 ! ...driver real*8 arrays...
   real*8, dimension(:),    allocatable :: diagonals
@@ -95,7 +96,7 @@ program driver2
   integer :: i, j, k, l
   integer :: openstat
   integer :: infl1, infl2, outfl, astrfl, bstrfl, detfl, steppfl, &
-             stepqfl, locpfl, locqfl, strpfl, strqfl
+             stepqfl, locpfl, locqfl, strpfl, strqfl, xreffl
   integer :: subblockdim
   integer :: type1
 !................
@@ -114,42 +115,44 @@ program driver2
 !--------------------------------------------------------------------
 
 ! Assign file names and unit numbers
-  inputfl1 = 'detci.in'
-  infl1 = 1
+  inputfl1  = 'detci.in'
+  infl1     = 1
 
-  inputfl2 = 'input.2'
-  infl2 = 3
+  inputfl2  = 'input.2'
+  infl2     = 3
 
-  outputfl = 'detci.out'
-  outfl = 2
+  outputfl  = 'detci.out'
+  outfl     = 2
 
-  astringfl= 'alpha.dets'
-  astrfl = 8
+  astringfl = 'alpha.dets'
+  astrfl    = 8
 
-  bstringfl= 'beta.dets'
-  bstrfl = 7
+  bstringfl = 'beta.dets'
+  bstrfl    = 7
 
-  determfl = 'det.list'
-  detfl = 4
+  determfl  = 'det.list'
+  detfl     = 4
   
-  pstepfl  = 'pstep.list'
-  steppfl = 13
+  pstepfl   = 'pstep.list'
+  steppfl   = 13
 
-  qstepfl  = 'qstep.list'
-  stepqfl = 11
+  qstepfl   = 'qstep.list'
+  stepqfl   = 11
 
-  plocfl   = 'plocate.list'
-  locpfl = 14
+  plocfl    = 'plocate.list'
+  locpfl    = 14
 
-  qlocfl   = 'qlocate.list'
-  locqfl = 12
+  qlocfl    = 'qlocate.list'
+  locqfl    = 12
 
-  pstringfl= 'pstring.list'
-  strpfl = 9
+  pstringfl = 'pstring.list'
+  strpfl    = 9
 
-  qstringfl= 'qstring.list'
-  strqfl = 10
+  qstringfl = 'qstring.list'
+  strqfl    = 10
 
+  xreflsfl  = 'xref.list'
+  xreffl    = 15
   
 ! Read input file 1
   openstat=0
@@ -299,6 +302,11 @@ program driver2
   read(unit=detfl,fmt=13) ( tdets(i), i=1, cidim )
   close(unit=detfl)
 
+! Crossref list
+  open (unit=xreffl,file=xreflsfl,status='old',position='rewind',iostat=openstat)
+  if ( openstat > 0 ) stop "**** CANNOT OPEN CROSS REFERENCING FILE, xref.list. ****"
+  read(unit=xreffl,fmt=13) ( xreflist(i), i=1, cidim )
+  close(unit=xreffl)
 
 ! Compute diagonal matrix elements
   openstat=0
@@ -327,10 +335,11 @@ program driver2
     write(unit=outfl,fmt=9) " "
   else if ( prediagr .eq. 2 ) then
     write(unit=outfl,fmt=9) " Using lowest diagonals prediag. subroutine for initial guess..."
-    call lowdiagprecond( diagonals, cidim, moints1, moints1len, moints2, &
-                         moints2len, pstring, pstep, plocate, qstring, qstep,  &
-                         qlocate, tadets, tbdets, tadetslen, tbdetslen,adets,&
-                         bdets, aelec, belec, orbitals, diagsguess, initgdim ,initvectors )
+    call lowdiagprecond( diagonals, cidim, moints1, moints1len, moints2,      &
+                         moints2len, pstring, pstep, plocate, qstring, qstep, &
+                         qlocate, tadets, tbdets, tadetslen, tbdetslen,adets, &
+                         bdets, aelec, belec, orbitals, xreflist, diagsguess, &
+                         initgdim ,initvectors )
     write(unit=outfl,fmt=15) initgdim, " initial vectors generated."
     write(unit=outfl,fmt=9) " "
   else if ( prediagr .eq. 3 ) then 
@@ -343,9 +352,9 @@ program driver2
     write(unit=outfl,fmt=9) " "
   else if ( prediagr .eq. 4) then
     write(unit=outfl,fmt=9) " Using the subdiag1 subroutine... "
-    call ovrlp_subspace( 200, initgdim, moints1, moints1len, moints2, moints2len, pstring, &
-                         pstep, plocate, qstring, qstep, qlocate, cidim, tadets, tbdets,    &
-                         tbdetslen, tadetslen, adets, bdets, aelec, belec, orbitals,        &
+    call ovrlp_subspace( 200, initgdim, moints1, moints1len, moints2, moints2len, pstring,  &
+                         pstep, plocate, qstring, qstep, qlocate, xreflist, cidim, tadets,  &
+                         tbdets,tbdetslen, tadetslen, adets, bdets, aelec, belec, orbitals, &
                          diagonals, initvectors )
     write(unit=outfl,fmt=15) initgdim, " initial vectors generated."
     write(unit=outfl,fmt=9) " "
@@ -360,7 +369,7 @@ program driver2
   allocate(eigenvalues(roots))
   allocate(eigenvectors(cidim,roots))
   call davidson( initgdim, initvectors, diagonals, moints1, moints1len, moints2, &
-                 moints2len, cidim, pstring, pstep, plocate, qstring, qstep, qlocate,   &
+                 moints2len, cidim, pstring, pstep, plocate, qstring, qstep, qlocate, xreflist, &
                  tadets, tadetslen, tbdets, tbdetslen, adets, bdets, aelec, belec,   &
                  orbitals, krmin, krmax, rtoler, roots, maxiter, eigenvalues, eigenvectors )
   do i=1, roots

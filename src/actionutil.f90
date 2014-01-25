@@ -177,9 +177,11 @@ contains
                                    astring(j), pexits1(k), moints1, moints2, moints1len, &
                                    moints2len, int2e2 )
                   ! Find index of determinant C[r(pjv*,q)]
-                    vecindx1 = indxk( xindx1, pstring(plocate(l)+m,2), belec, orbitals )
+                  !  vecindx1 = indxk( xindx1, pstring(plocate(l)+m,2), belec, orbitals )
+                    vecindx1 = plocate(l)+m
                   ! Find index of determinant V[(p,q)]
-                    vecindx2 = indxk( pdets(i), pstring(plocate(l)+m,2), belec, orbitals )
+                  !  vecindx2 = indxk( pdets(i), pstring(plocate(l)+m,2), belec, orbitals )
+                    vecindx2 = plocate(i)+n
 !________________________________________________
 #ifdef HVACTION
 !                    if ( pdets(i) .eq. 28 ) then
@@ -194,7 +196,7 @@ contains
                     vector2(vecindx2) = vector2(vecindx2) + eps1*( int1e1 + int2e1 + int2e2 )*&
                                          vector1(vecindx1)
 !_______________________________________________
-#ifdef HVACTION
+#ifdef HVACTIONv
 !                    if ( pdets(i) .eq. 28 ) then
 !                      write( unit=debugunit,fmt=14) "         vector(1) is ", vector2(1)
 !                    end if
@@ -230,8 +232,10 @@ contains
                         do q=1, pstep(i)
                           if ( pstring(plocate(o)+p,2) .eq. pstring(plocate(i)+q,2) ) then
                           ! Do NOT generate orbital index strings. All that is needed is the indoex.
-                            vecindx1 = indxk( xindx2, pstring(plocate(o)+p,2), belec, orbitals )
-                            vecindx2 = indxk( pdets(i), pstring(plocate(o)+p,2), belec, orbitals )
+                          !  vecindx1 = indxk( xindx2, pstring(plocate(o)+p,2), belec, orbitals )
+                            vecindx1 = plocate(o)+p
+                          !  vecindx2 = indxk( pdets(i), pstring(plocate(o)+p,2), belec, orbitals )
+                            vecindx2 = plocate(i)+q
                             vector2(vecindx2) = vector2(vecindx2) + int3elweps*vector1(vecindx1)
 !_______________________________________________
 #ifdef HVACTION            
@@ -275,8 +279,11 @@ contains
                     test_p3: do p=1, pstep(l)  ! l is the indice of p* in our p string list
                       if ( xindx1 .eq. pstring(plocate(l)+p,2) ) then
                         int3e2 = moints2( index2e2( astring(j), pexits1(k), bstring(n), qexits1(o) ))
-                        vecindx1 = indxk(srepinfo(2), xindx1, belec, orbitals )
-                        vecindx2 = indxk( pdets(i),pstring(plocate(i)+m,2), belec, orbitals )
+!                        vecindx1 = indxk(srepinfo(2), xindx1, belec, orbitals )
+                        vecindx1 = plocate(l)+p   ! srepinfo = l-th pdet
+ 
+!                        vecindx2 = indxk( pdets(i),pstring(plocate(i)+m,2), belec, orbitals )
+                        vecindx2 = plocate(i)+m
                         vector2(vecindx2) = vector2(vecindx2) + srepinfo(1)*eps3*int3e2*vector1(vecindx1)
                         exit test_p3
                       end if
@@ -302,7 +309,7 @@ contains
 !--------------------------------------------------------------------
   subroutine acthv_beta( vector1, moints1, moints2, moints1len, moints2len,&
     pstring, pstep, plocate, pdets, qstring, qstep, qlocate,    &
-    qdets, cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec,  &
+    qdets, xreflist, cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec,  &
     belec, orbitals, vector2 )
     use detci2
     use detci5
@@ -314,6 +321,7 @@ contains
     integer, dimension(cidim, 2), intent(in)  :: pstring, qstring
     integer, dimension(pdetstrunc), intent(in):: pstep, plocate, pdets
     integer, dimension(qdetstrunc), intent(in):: qstep, qlocate, qdets
+    integer, dimension(cidim),      intent(in):: xreflist
     
     real*8, dimension(moints1len), intent(in) :: moints1
     real*8, dimension(moints2len), intent(in) :: moints2
@@ -339,7 +347,7 @@ contains
       call genorbstring ( qdets(i), belec, orbitals, bdets, bstring )
 
       ! Genererate list of excitations
-      call possex1( bstring, orbitals, belec, ( orbitals-belec ), pexits1 )
+      call possex1( bstring, orbitals, belec, ( orbitals-belec ), qexits1 )
 
       ! Allocate info array
       if ( allocated(srepinfo) ) deallocate(srepinfo)
@@ -347,7 +355,7 @@ contains
       ! Loop over single excitations
       loopelec: do j=1, belec
         loopexite: do k=1, orbitals - belec
-          call singrepinfo( bstring, belec, pexits1(k), j, orbitals, &
+          call singrepinfo( bstring, belec, qexits1(k), j, orbitals, &
                             eps1, xindx1 )
           ! Test if xindx1 is in qdets
           test_q: do l=1, qdetstrunc
@@ -355,7 +363,7 @@ contains
               srepinfo(1)=eps1
               srepinfo(2)=xindx1
 
-              call eval_singlex1( bstring, pexits1, belec, moints1, moints2, moints1len, &
+              call eval_singlex1( bstring, qexits1, belec, moints1, moints2, moints1len, &
                                   moints2len, orbitals, j, k, int1e1, int2e1 )
                 ! Loop over corresponding p strings
               do m=1, qstep(l)
@@ -364,12 +372,16 @@ contains
                   if ( qstring(qlocate(l)+m,2) .eq. qstring(qlocate(i)+n,2)) then
                     ! Compute contribution
                     call eval_singlex2( qstring(qlocate(l)+m,2), aelec, orbitals, adets, &
-                                        bstring(j), pexits1(k), moints1, moints2, moints1len, &
+                                        bstring(j), qexits1(k), moints1, moints2, moints1len, &
                                         moints2len, int2e2 )
                     ! Find index of determinant C[r(p,qjv*)]
-                    vecindx1 = indxk( qstring(qlocate(l)+m,2),xindx1, belec, orbitals )
+!                    vecindx1 = indxk( qstring(qlocate(l)+m,2),xindx1, belec, orbitals )
+                    vecindx1 = xreflist(qlocate(l)+m)
+
                     ! Find index of determinant V[(p,q)]
-                    vecindx2 = indxk( qstring(qlocate(l)+m,2),qdets(i), belec, orbitals )
+!                    vecindx2 = indxk( qstring(qlocate(l)+m,2),qdets(i), belec, orbitals )
+                    vecindx2 = xreflist(qlocate(i) +n)
+
                     ! Add the stored integerals and multiply by parity
                     vector2(vecindx2) = vector2(vecindx2) + eps1*(int1e1+int2e1+int2e2)*&
                                         vector1(vecindx1)
@@ -381,11 +393,11 @@ contains
               ! Loop over additional replacements in beta strings ( m > j; n> k )
               do m=j+1, belec
                 do n=k+1, orbitals-belec
-                  call doublerepinfo( bstring, belec, pexits1(k), j, pexits1(n), m, &
+                  call doublerepinfo( bstring, belec, qexits1(k), j, pexits1(n), m, &
                                       orbitals, eps2, xindx2 )
-                  int3elweps = eps2*( moints2(index2e2(bstring(j),pexits1(k),bstring(m), &
-                                        pexits1(n) ) ) - moints2( index2e2( bstring(j),   &
-                                        pexits1(n), bstring(m), pexits1(k) )))
+                  int3elweps = eps2*( moints2(index2e2(bstring(j),qexits1(k),bstring(m), &
+                                        qexits1(n) ) ) - moints2( index2e2( bstring(j),   &
+                                        qexits1(n), bstring(m), qexits1(k) )))
                   ! Test if xindx2 is in expansion
                   test_x2: do o=1, qdetstrunc
                     if ( xindx2 .eq. qdets(o) ) then
@@ -394,8 +406,11 @@ contains
                       do p=1, qstep(o)
                         do q=1, qstep(i)
                           if ( qstring(qlocate(o)+p,2) .eq. qstring(qlocate(i)+q,2) ) then
-                            vecindx1 = indxk( qstring(qlocate(o)+p,2), xindx2, belec, orbitals )
-                            vecindx2 = indxk( qstring(qlocate(o)+p,2), qdets(i),belec, orbitals)
+!                            vecindx1 = indxk( qstring(qlocate(o)+p,2), xindx2, belec, orbitals )
+                            vecindx1 = xreflist(qlocate(o)+p)
+
+!                            vecindx2 = indxk( qstring(qlocate(o)+p,2), qdets(i),belec, orbitals)
+                            vecindx2 = xreflist(qlocate(i)+q)
                             vector2(vecindx2) = vector2(vecindx2) + int3elweps*vector1(vecindx1)
                           end if
                         end do

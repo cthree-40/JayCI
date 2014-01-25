@@ -13,7 +13,7 @@ subroutine cannon( string, length, permind )
 !----------------------------
   implicit none
   integer, intent(in) :: length
-  integer, dimension(length) :: string
+  integer, dimension(length), intent(inout) :: string
   integer, intent(out) :: permind
 
   integer :: k, i, j, temp, temp2
@@ -41,7 +41,7 @@ subroutine cannon( string, length, permind )
           do k=i, j, -1
             string(k+1) = string(k)
 ! Multiply the permutational index by -1
-            permind = permind + 1
+            permind = permind*(-1)
           end do
 ! Now place i+1 in the jth position
           string(j) = temp 

@@ -35,7 +35,7 @@
 ! vector2         = Hv                                      real*8 array
 !====================================================================
 subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
-  pstring, pstep, plocate, qstring, qstep, qlocate,&
+  pstring, pstep, plocate, qstring, qstep, qlocate, xreflist,            &
   cidim, pdets, qdets, pdetstrunc, qdetstrunc, adets, bdets, aelec, belec, orbitals,  &
   diagonals, vector2 )
   use actionutil
@@ -47,6 +47,7 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
   integer, dimension(cidim,2), intent(in)    :: pstring, qstring
   integer, dimension(pdetstrunc), intent(in) :: pstep, plocate, pdets
   integer, dimension(qdetstrunc), intent(in) :: qstep, qlocate, qdets
+  integer, dimension(cidim),      intent(in) :: xreflist
 ! ...input real*8 arrays...
   real*8, dimension(moints1len), intent(in) :: moints1
   real*8, dimension(moints2len), intent(in) :: moints2
@@ -103,10 +104,10 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
 !  close(unit=20)
 #endif
 ! Single, double excitations in beta strings
-  call acthv_beta( vector1, moints1, moints2, moints2len, moints2len,        &
-                   pstring, pstep, plocate, pdets, qstring,       &
-                   qstep, qlocate, qdets, cidim, pdetstrunc,      &
-                   qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
+  call acthv_beta( vector1, moints1, moints2, moints2len, moints2len, pstring, &
+                   pstep, plocate, pdets, qstring, qstep, qlocate, qdets, xreflist,&
+                   cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec, belec,      &
+                   orbitals, vector2 )
 ! Return vector2
   return
 end subroutine

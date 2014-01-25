@@ -1,0 +1,37 @@
+ ========================================================================
+ --------------------------DETERMINANT CI--------------------------------
+ ========================================================================
+  
+  By Christopher L. Malbon
+  Yarkony Group
+  Dept. of Chemistry, The Johns Hopkins University
+  
+  
+             ---------- Created on GENTOO LINUX ----------               
+                            www.gentoo.org                               
+ ------------------------------------------------------------------------
+ Send bug reports to cmalbon1@jhu.edu ------------
+ ------------------------------------------------------------------------
+                              RUN LEVEL 1                                
+  Namelist input: 
+   Electrons in system:          2
+   Orbitals in system:          28
+   Frozen orbitals:              0
+   DOCC   orbitals:              0
+   Active orbitals:             10
+   Excitation level:             2
+  
+  Alpha electrons:          1
+  Beta  electrons:          1
+  
+  Alpha determinants:         28
+  Beta  determinants:         28
+  
+  Size of Full-CI expansion:             784
+  Size of Truncated-CI expansion:        784
+  
+  Generating the necessary input for RUN LEVEL 2... 
+   Files: dets.list*, alpha.dets*, beta.dets*, input.2 
+        *These files are created in the space-truncating subroutine.
+  
+                         RUN LEVEL 1 COMPLETED                          

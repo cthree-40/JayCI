@@ -46,7 +46,7 @@ contains
   subroutine lowdiagprecond( diagonals, diaglen, moints1, moints1len, &
     moints2, moints2len, pstring, pstep, plocate, qstring, &
     qstep, qlocate, pdets, qdets, pdetslen, qdetslen, adets,&
-    bdets, aelec, belec, orbitals, num_diags, init_dim, outvectors )
+    bdets, aelec, belec, orbitals, xreflist, num_diags, init_dim, outvectors )
     implicit none
     integer, intent(in) :: diaglen, moints1len, moints2len , pdetslen, &
                            qdetslen, adets, bdets, aelec, belec, orbitals,&
@@ -55,6 +55,7 @@ contains
     integer, dimension( qdetslen, 2 ), intent(in) :: qstring
     integer, dimension( pdetslen ), intent(in) :: pstep, plocate, pdets
     integer, dimension( qdetslen ), intent(in) :: qstep, qlocate, qdets
+    integer, dimension( diaglen ),  intent(in) :: xreflist
     real*8, dimension( moints1len ), intent(in) :: moints1
     real*8, dimension( moints2len ), intent(in) :: moints2
     real*8, dimension( diaglen ), intent(in) :: diagonals
@@ -76,7 +77,7 @@ contains
     ! Perform Hv on hvectors
     do i=1, num_diags
       call acthv( vectors1(1,i), moints1, moints2, moints1len, moints2len, &
-                  pstring, pstep, plocate, qstring, qstep, qlocate, &
+                  pstring, pstep, plocate, qstring, qstep, qlocate, xreflist,&
                   cidim, pdets, qdets, pdetslen, qdetslen, adets, &
                   bdets, aelec, belec, orbitals, diagonals, hvectors(1,i) )
     end do
@@ -300,8 +301,8 @@ contains
 ! Choose initial basis vectors based upon greatest overlap with HF
 !----------------------------------------------------------------------
   subroutine ovrlp_subspace( m, initgdim, moints1, moints1len, moints2, &
-    moints2len, pstring, pstep, plocate, qstring, qstep, qlocate, cidim,&
-    pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec,      &
+    moints2len, pstring, pstep, plocate, qstring, qstep, qlocate, xreflist, &
+    cidim, pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec,      &
     orbitals, diagonals, out_vectors )
 
     implicit none
@@ -316,6 +317,7 @@ contains
     integer, dimension( cidim, 2 ),   intent(in) :: pstring, qstring  ! Det. string pairs
     integer, dimension( pdetslen ),   intent(in) :: pdets, pstep, plocate
     integer, dimension( qdetslen ),   intent(in) :: qdets, qstep, qlocate
+    integer, dimension( cidim ),      intent(in) :: xreflist
   ! ...real*8 input arrays... 
     real*8,  dimension( cidim ),      intent(in) :: diagonals
   ! ...real*8 OUTPUT arrays...
@@ -343,7 +345,7 @@ contains
     hartreefock    = 0d0
     hartreefock(1) = 1d0
     call acthv( hartreefock, moints1, moints2, moints1len, moints2len, pstring, &
-                pstep, plocate, qstring, qstep, qlocate, cidim, pdets, qdets,   &
+                pstep, plocate, qstring, qstep, qlocate, xreflist, cidim, pdets, qdets,   &
                 pdetslen, qdetslen, adets, bdets, aelec, belec, orbitals,       &
                 diagonals, hv_hartree )
   
@@ -354,7 +356,7 @@ contains
   ! Perform Hv, generating hv_vectors
     do i=1, m
       call acthv( unitguess(1,i), moints1, moints2, moints1len, moints2len, &
-                  pstring, pstep, plocate, qstring, qstep, qlocate, cidim,  &
+                  pstring, pstep, plocate, qstring, qstep, qlocate, xreflist, cidim,  &
                   pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec, &
                   orbitals, diagonals, hv_vectors(1,i) )
     end do

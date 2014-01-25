@@ -43,7 +43,8 @@ program driver1
 
 ! ...unit numbers...
   integer :: input1, input2, output1, detlist, betadet, alphadet, &
-             pstrnglst, qstrnglst, qsteplst, psteplst, qlocatelst, plocatelst
+             pstrnglst, qstrnglst, qsteplst, psteplst, qlocatelst,&
+             plocatelst, xreflist
 ! -------------------------------------------------------------------
 ! Assign unit numbers...
   
@@ -59,6 +60,7 @@ program driver1
   qlocatelst= 12
   psteplst  = 13
   plocatelst= 14
+  xreflist  = 15
 
 
 ! Read input file
@@ -83,8 +85,8 @@ program driver1
   write(unit=output1,fmt=9) " Dept. of Chemistry, The Johns Hopkins University"
   write(unit=output1,fmt=9) " "
   write(unit=output1,fmt=9) " "
-  write(unit=output1,fmt=9) "            ---------- Created on GENTOO LINUX ----------               "
-  write(unit=output1,fmt=9) "                           www.gentoo.org                               "
+  write(unit=output1,fmt=9) "            ---------- Created on ARCH LINUX ----------               "
+  write(unit=output1,fmt=9) "                           www.archlinux.org                               "
   write(unit=output1,fmt=9) "------------------------------------------------------------------------"
   write(unit=output1,fmt=9) "Send bug reports to cmalbon1@jhu.edu ------------"
   write(unit=output1,fmt=9) "------------------------------------------------------------------------"
@@ -119,7 +121,7 @@ program driver1
   call citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
                 ndocc, nactive, xlevel, tadetslen, tbdetslen, cidimension, &
                 detlist, betadet, alphadet, pstrnglst, qstrnglst, qsteplst,&
-                qlocatelst, psteplst, plocatelst )
+                qlocatelst, psteplst, plocatelst, xreflist )
 
   write(unit=output1,fmt=11)" Size of Truncated-CI expansion: ", cidimension
 

@@ -25,10 +25,10 @@ subroutine doublerepinfo( string1, str1len, neworb1, indxswp1, neworb2, &
                          indxswp2 
 
 ! ...input integer arrays...
-  integer, dimension( str1len ) :: string1
+  integer, dimension( str1len ), intent(in) :: string1
 
 ! ...OUTPUT integer scalars...
-  integer :: eps1, indx
+  integer, intent(out) :: eps1, indx
 
 ! ...loop integer arrays...
   integer, dimension( str1len ) :: newstring
@@ -36,15 +36,21 @@ subroutine doublerepinfo( string1, str1len, neworb1, indxswp1, neworb2, &
 ! ...loop integer scalars...
   integer :: i, j, k
 !--------------------------------------------------------------------
+  newstring = string1
+  newstring(indxswp1)=neworb1
+  call cannon( newstring, str1len, i )
+  newstring=string1
+  newstring(indxswp2)=neworb2
+  call cannon( newstring, str1len, j)
+  eps1 = i*j
 
 ! Swap orbitals
   newstring = string1
   newstring(indxswp1) = neworb1
   newstring(indxswp2) = neworb2
-
 ! Get eps1 & return new string to cannonical ordering
-  call cannon( newstring, str1len, eps1 )
-
+  call cannon( newstring, str1len, k )
+!  eps1 = k
 ! Find new string index
   call adrfnd( newstring, str1len, orbitals, indx )
 

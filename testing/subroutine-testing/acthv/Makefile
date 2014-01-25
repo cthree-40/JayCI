@@ -38,7 +38,7 @@ test:$(OBJS)
 %.o:./%.f90
 	@echo "Building $<"
 	$(PREFIX) "$(COMPILER) -cpp -o $@ $< $(CPOPT) $(PREPROC2)"
-  
+# -o should be changed to -c 
 clean:
 	$(RM) $(OBJS) ./*.o ./*.mod ./*.dets ./*.list ./*.ref ./alpha-single.cont ./diag.cont ./output_acthv.1 ./alpha.cont
 	@echo "Finished cleaning."  

@@ -1,0 +1,8 @@
+&runlevel1
+ electrons = 4,
+ orbitals  = 15,
+ nfrozen   = 0,
+ ndocc     = 1,
+ nactive   = 3,
+ xlevel    = 2,
+/

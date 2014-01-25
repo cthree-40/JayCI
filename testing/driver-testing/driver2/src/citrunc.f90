@@ -21,7 +21,7 @@
 !====================================================================
 subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   ndocc, nactive, xlevel, modalphalen, modbetalen, cidimension, unit1, &
-  unit2, unit3, unit4, unit5, unit6, unit7, unit8, unit9 )
+  unit2, unit3, unit4, unit5, unit6, unit7, unit8, unit9, unit10 )
 
   use detci2
   use truncation
@@ -31,7 +31,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! ...input integer scalars...
   integer, intent(in) :: adets, bdets, aelec, belec, orbitals, nfrozen,&
                          ndocc, nactive, xlevel, unit1, unit2, unit3,  &
-                         unit4, unit5, unit6, unit7, unit8, unit9
+                         unit4, unit5, unit6, unit7, unit8, unit9, unit10
 
 ! ...OUTPUT integer scalars...
   integer :: cidimension
@@ -88,7 +88,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
                   ndocc, nactive, xlevel )
   call enfactive( betastrings, bdets, orbitals, belec, nfrozen, &
                   ndocc, nactive, xlevel )
-  
+
 ! Write out the alpha string indices
   open( unit=unit3, file='alpha.dets', status='new' )
   do i=1, adets
@@ -229,10 +229,11 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !  will list K'(K(p))
 
 ! Generate determinant list of determinants in stringpr1 list
-!  allocate(qcrossreflist(cidimension))
+  allocate(qcrossreflist(cidimension))
 !  allocate(pcrossreflist(cidimension))
 !  call detcrossref( pdeterms, qdeterms, fnldets, cidimension, pcrossreflist, &
 !                    qcrossreflist )
+  call xreflist_gen( cidimension, fnldets, strngpr2, belec, orbitals, qcrossreflist )
 
 ! Write cross reference list to file
 !  open(unit=9,file='pcross.ref',status='new')
@@ -240,14 +241,14 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !    write(unit=9,fmt=9) pcrossreflist(i)
 !  end do
 !  close(unit=9)
-!  open(unit=10,file='qcross.ref',status='new')
-!  do i=1, cidimension
-!    write(unit=10,fmt=9) qcrossreflist(i)
-!  end do
-!  close(unit=10)
+  open(unit=10,file='xref.list',status='new')
+  do i=1, cidimension
+    write(unit=10,fmt=9) qcrossreflist(i)
+  end do
+  close(unit=10)
 ! Deallocate all arrays
   deallocate(qstep,pstep,strngpr1,strngpr2,modalpha,&
-             modbeta,qdeterms,pdeterms)
+             modbeta,qdeterms,pdeterms,qcrossreflist)
   return
 
 end subroutine

@@ -1,0 +1,18 @@
+&runlevel1
+ electrons = 4,
+ orbitals  = 15,
+ nfrozen   = 0,
+ ndocc     = 1,
+ nactive   = 3,
+ xlevel    = 2,
+/
+&runlevel2
+ maxiter   = 100,
+ krmin     = 3,
+ krmax     = 10,
+ rtoler    = 1D-11,
+ roots     = 1,
+ nucrep    = 0d0,
+ prediagr  = 1,
+ initgdim  = 5,
+/

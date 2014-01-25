@@ -1,5 +1,5 @@
 program test
-
+  
   implicit none
   integer :: adets, bdets, aelec, belec, orbitals, nfrozen, &
              ndocc, nactive, xlevel, cidimension, adetlen, bdetlen
