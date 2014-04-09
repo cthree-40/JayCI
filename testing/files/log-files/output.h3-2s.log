@@ -1,0 +1,141 @@
+===========================================================
+===                   runc                              ===
+===           version 7.0 beta , Jan 2011               ===
+===          requires COLUMBUS version COL_7.0_beta     ===
+===                                                     ===
+===   written by: Thomas Mueller                        ===
+===   gradient ext. by: Michal Dallos                   ===
+===               Institute for Theoretical Chemistry   ===
+===               University of Vienna                  ===
+===               Waehringerstr. 17                     ===
+===               A-1090 Vienna, Austria                ===
+===   in revision by: Thomas Mueller, JSC, FZ Juelich   ===
+===               Felix Plasser, University of Vienna   ===
+===========================================================
+
+
+coremem. (seq.): 100 MB,  coremem. (par.): 100 MB
+Vdisk size: 0 DP
+Reading job control file control.run ...   done 
+Creating various directories ... 
+ done 
+Checking for illegal keywords and keyword combinations ... done 
+Checking for complete set of input files ... done
+
+ ++++++++++++++++++ input file generation +++++++++++++ 
+ runc start: Sun Mar 23 23:09:58 EDT 2014
+ 
+  runc start: Sun Mar 23 23:09:58 EDT 2014
+ 
+ starting unik.gets.x > unikls at Sun Mar 23 23:09:58 EDT 2014
+
+ -------------------- unik.gets.x ------------------------
+ --------------------------------------------------- 
+ starting hernew.x at Sun Mar 23 23:09:58 EDT 2014
+
+ -------------------- hernew.x ------------------------
+ --------------------------------------------------- 
+ ++++++++++++++++++++ ao integral calculation ++++++++++++++++
+starting dalton.x -m 100 > hermitls at Sun Mar 23 23:09:58 EDT 2014
+
+ -------------------- dalton.x ------------------------
+  Nuclear repulsion energy:        1.9140721622
+
+ Irred. repr. : A       
+ # orbitals  :  6 
+ --------------------------------------------------- 
+ ++++++++++++++++++++ SCF calculation +++++++++++++++
+starting scfpq.x -m 100 at Sun Mar 23 23:09:58 EDT 2014
+
+ -------------------- scfpq.x ------------------------
+  nuclear repulsion energy          1.9140721622
+  kinetic energy                    1.7907525163
+  potential energy                 -3.2951311483
+  total energy                     -1.5043786320
+  virial theorem                    2.1903602445
+ --------------------------------------------------- 
+  >>>>>>>>>>>>> info: preparing drt no 1 out of 1 <<<<<<
+starting mcdrt.x -m 100 < mcdrtin > mcdrtls at Sun Mar 23 23:09:58 EDT 2014
+
+ -------------------- mcdrt.x ------------------------
+  Spin multiplicity: doublet 
+  Spatial symmetry (#): 1
+  Number of Configurations:          3 
+  --------------------------------------------------- 
+ starting mcuft.x at Sun Mar 23 23:09:58 EDT 2014
+
+ -------------------- mcuft.x ------------------------
+ --------------------------------------------------- 
+ ++++++++++++++++++++ MCSCF calculation +++++++++++++++
+starting mcscf.x -m 100 at Sun Mar 23 23:09:58 EDT 2014
+
+ -------------------- mcscf.x ------------------------
+ Individual total energies for all states: 
+    DRT #1 state # 1 wt 0.500 total energy=       -1.502826888, rel. (eV)=   0.000000
+    DRT #1 state # 2 wt 0.500 total energy=        0.000000000, rel. (eV)=  40.894018
+  --------------------------------------------------- 
+ starting mcpc.x -m 100 < mcpcin > mcpcls at Sun Mar 23 23:09:59 EDT 2014
+
+ -------------------- mcpc.x ------------------------
+ --------------------------------------------------- 
+ starting mcpc.x -m 100 < mcpcin > mcpcls at Sun Mar 23 23:09:59 EDT 2014
+
+ -------------------- mcpc.x ------------------------
+ --------------------------------------------------- 
+  using the MCSCF MOs ... 
+starting cidrt.x -m 100 < cidrtin > cidrtls  at Sun Mar 23 23:09:59 EDT 2014
+
+ -------------------- cidrt.x ------------------------
+ total number of orbitals            :     6
+ number of frozen core orbitals      :     0
+ number of frozen virtual orbitals   :     0
+ number of internal orbitals         :     4
+ number of external orbitals         :     2
+ spatial symmetry:   a  
+ 
+ total number of configurations         68
+ number of reference configurations     3
+ --------------------------------------------------- 
+ starting tran.x -m 100  at Sun Mar 23 23:09:59 EDT 2014
+
+ -------------------- tran.x ------------------------
+ --------------------------------------------------- 
+ skipping cisrt.x call .... 
+starting ciudg.x -m 100 at Sun Mar 23 23:09:59 EDT 2014
+
+  waiting after driverwrap ....                     0
+ -------------------- ciudg.x ------------------------
+ type of calculation:          mr-sdci
+ number of configurations:     68
+ total mr-sdci energy               -1.5337365670 
+ last mr-sdci energy change           0.0000000001 
+ residual                             0.0000015699 
+  c0**2 =   0.97953982  c**2 (all zwalks) =   0.98701757
+ mr-sdci+(1-c0**2)*(eci-eref)             =      -1.534368984702 
+ mr-sdci+(1-c0**2)/(c0**2)*(eci-eref)     =      -1.534382194357 
+ mr-sdci+(1-c0**2)/(2*c0**2-1)*(eci-eref) =      -1.534395967618 
+ --------------------------------------------------- 
+ starting cipc.x -m 100 < cipcin > cipcls at Sun Mar 23 23:09:59 EDT 2014
+
+ -------------------- cipc.x ------------------------
+ --------------------------------------------------- 
+ 
+
+============== timings ===================
+
+   unik.gets.x    
+   hernew.x       
+   dalton.x       
+   scfpq.x        
+   mcdrt.x        
+   mcuft.x        
+   mcscf.x        
+   mcpc.x         
+   mcpc.x         
+   cidrt.x        
+   tran.x         
+   ciudg.x        
+   cipc.x         
+
+==========================================
+

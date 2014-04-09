@@ -70,7 +70,7 @@ subroutine diagonal( pstring, pstep, psteplen, qstring, qstep, qsteplen,   &
 !                     moints2, moints2len, pxreflist,qxreflist, xreflistlen, &
 !                     plocate, qlocate, diagonals )
   do i=1, cidim
-    diagonals(i) = ham_element_diag( i, moints1, moints1len, moints2, moints2len, &
+    diagonals(i) = ham_element_diag( detlist(i), moints1, moints1len, moints2, moints2len, &
                                      aelec, belec, orbitals )
   end do
   

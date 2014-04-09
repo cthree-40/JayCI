@@ -9,10 +9,10 @@
 &runlevel2
  maxiter   = 100,
  krmin     = 3,
- krmax     = 10,
- rtoler    = 1D-11,
+ krmax     = 7,
+ rtoler    =1D-7,
  roots     = 1,
  nucrep    = 0d0,
  prediagr  = 3,
- initgdim  = 5,
+ initgdim = 5,
 /

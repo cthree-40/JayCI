@@ -38,8 +38,8 @@ subroutine doublerepinfo( string1, str1len, neworb1, indxswp1, neworb2, &
 !--------------------------------------------------------------------
 !  newstring = string1
 !  newstring(indxswp1)=neworb1
-!  call cannon( newstring, str1len, i )
-!  newstring=string1
+ ! call cannon( newstring, str1len, i )
+ ! newstring=string1
 !  newstring(indxswp2)=neworb2
 !  call cannon( newstring, str1len, j)
 !  eps1 = i*j
@@ -52,10 +52,6 @@ subroutine doublerepinfo( string1, str1len, neworb1, indxswp1, neworb2, &
   call cannon( newstring, str1len, k )
   eps1 = k
 ! Find new string index
-! This if statement is for construct.f90 subroutine stringdiffs
-  if ( orbitals .eq. 0 ) then
-          return
-  end if
   call adrfnd( newstring, str1len, orbitals, indx )
 
 ! Return

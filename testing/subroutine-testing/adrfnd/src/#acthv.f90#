@@ -64,8 +64,7 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
 ! Zero out vector2
   vector2 = 0d0
 ! Diagonal contribution
-!*****************
- call acthv_diag( vector1, diagonals, cidim, vector2 )
+  call acthv_diag( vector1, diagonals, cidim, vector2 )
 
 #ifdef HVACTION
 !  open(unit=30,file='diag.cont',status='new',iostat=openstat)
@@ -82,22 +81,15 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
                     pstring, pstep, plocate, pdets, qstring,      &
                     qstep, qlocate, qdets, cidim, pdetstrunc,     &
                     qdetstrunc, adets, bdets, aelec, belec, orbitals, vector2 )
+
 #ifdef HVACTION
   vector3 = 0d0
-  vector3(755) = 1d0
-  vector4 = 0d0
-  call acthv_diag( vector3, diagonals, cidim, vector4)
-  print *, " Diagonal contribution: vector4(755) = ", vector4(755)
+  vector3(1) = 1d0
   call acthv_alpha( vector3, moints1, moints2, moints1len, moints2len,       &
                     pstring, pstep, plocate, pdets, qstring,      &
                     qstep, qlocate, qdets, cidim, pdetstrunc,     &
                     qdetstrunc, adets, bdets, aelec, belec, orbitals, vector4 )
-  print *, " Alpha contribution: vector4(755) = ", vector4(755)
-  call acthv_beta( vector3, moints1, moints2, moints2len, moints2len, pstring, &
-                   pstep, plocate, pdets, qstring, qstep, qlocate, qdets, xreflist,&
-                   cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec, belec,      &
-                   orbitals, vector4 )
-  print *, " Beta contribution: vector4(755) = ", vector4(755)
+  
 !  open(unit=20,file='alpha.cont',status='new',iostat=openstat)
 !  if ( openstat .ne. 0 ) stop "*** COULD NOT OPEN alpha.cont ***"
 !  do i=1, cidim
@@ -116,8 +108,6 @@ subroutine acthv( vector1, moints1, moints2, moints1len, moints2len,     &
                    pstep, plocate, pdets, qstring, qstep, qlocate, qdets, xreflist,&
                    cidim, pdetstrunc, qdetstrunc, adets, bdets, aelec, belec,      &
                    orbitals, vector2 )
-
 ! Return vector2
-  
   return
 end subroutine

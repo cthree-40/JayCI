@@ -111,8 +111,6 @@ program driver2
                        initgdim
 #ifdef DEBUG
   real*8, dimension(10,3) :: mat_a
-  integer,dimension(2) :: teststr
-  integer :: testlen, testeps
 #endif
 !--------------------------------------------------------------------
 
@@ -237,7 +235,6 @@ program driver2
   allocate(qstep(tbdetslen))
   allocate(qlocate(tbdetslen))
   allocate(tdets(cidim))
-  allocate(xreflist(cidim))
 
 ! Read in determinants
   write(unit=outfl,fmt=9) " Reading in strings and determinants..."
@@ -325,15 +322,7 @@ program driver2
   write(unit=outfl,fmt=9) " "
   write(unit=outfl,fmt=12)" -- Hartree Fock energy:    ", diagonals(1)-nucrep
   write(unit=outfl,fmt=9) " "
-  print *, " Diagonal num. 755= ", diagonals(755) 
-  print *, " Testing cannon()"
-  teststr(1) = 3
-  teststr(2) = 2
-  testlen = 2
-  call cannon( teststr, testlen, testeps )
-  print *, teststr
-  print *, testeps
-  print *, " "
+
 ! Generate initial guess vectors
 ! This can be done three ways: 1) unit vectors 
 !                              2) lowest diagonals
@@ -355,7 +344,7 @@ program driver2
     write(unit=outfl,fmt=9) " "
   else if ( prediagr .eq. 3 ) then 
     write(unit=outfl,fmt=9) " Using prediagonalization of H subblock for initial guess..."
-    subblockdim = 970
+    subblockdim = 200
     call prediagsubblock( cidim, moints1, moints2, moints1len, &
                           moints2len, tadets, tadetslen, tbdets, tbdetslen,   &
                           tdets, subblockdim, initgdim, aelec, belec, orbitals,initvectors )

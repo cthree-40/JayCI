@@ -164,9 +164,7 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
       if ( resid_norm  < rtol ) then
         exit main_loop
       end if
-    !+==================================
-    !   exit main_loop
-    !+==================================
+
     ! Generate new vector
       call gen_newvector( residual, diagonals, kry_eigval(currnt_root),&
                           cidim, new_vector )

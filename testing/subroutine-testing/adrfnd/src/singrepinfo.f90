@@ -22,10 +22,10 @@ subroutine singrepinfo( string1, str1len, neworb, indxswp, orbitals, &
   integer, intent(in) :: str1len, neworb, indxswp, orbitals
 
 ! ...input integer arrays...
-  integer, dimension( str1len ), intent(in) :: string1
+  integer, dimension( str1len ) :: string1
 
 ! ...OUTPUT integer scalars...
-  integer, intent(out) :: eps1, indx
+  integer :: eps1, indx
 
 ! ...loop integer arrays...
   integer, dimension( str1len ) :: newstring
@@ -42,10 +42,6 @@ subroutine singrepinfo( string1, str1len, neworb, indxswp, orbitals, &
   call cannon( newstring, str1len, eps1 )
 
 ! Find new string index
-! This if statement is for stringdiffs() in construct.f90
-  if ( orbitals .eq. 0 ) then
-          return
-  end if
   call adrfnd( newstring, str1len, orbitals, indx )
 
 ! Return

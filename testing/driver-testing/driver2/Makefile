@@ -39,7 +39,7 @@ DRIV2		:= $(OBJS3) driver2.o
 #######################################
 # Preprocessor flags
 
-PREPROC	:= -DHVACTION -DDEBUGHV -DDEBUG -DGSDEBUG -DTESTGS
+PREPROC	:= -DDEBUGHV -DDEBUG -DGSDEBUG -DTESTGS
 
 #######################################
 # BUILD
