@@ -210,7 +210,7 @@ program driver2
 9  format(1x,A)
 10 format(1x,A,I10)
 11 format(1x,A,A)
-12 format(1x,A,F10.7)
+12 format(1x,A,F12.8)
 13 format(1x,I10)
 14 format(1x,I10,I10)
 15 format(1x,I3,A)
@@ -323,7 +323,7 @@ program driver2
   write(unit=outfl,fmt=9) " "
   write(unit=outfl,fmt=9) " Diagonal matrix elements computed. "
   write(unit=outfl,fmt=9) " "
-  write(unit=outfl,fmt=12)" -- Hartree Fock energy:    ", diagonals(1)-nucrep
+  write(unit=outfl,fmt=12)" -- Hartree Fock energy:    ", (diagonals(1)-nucrep)
   write(unit=outfl,fmt=9) " "
 
 ! Generate initial guess vectors

@@ -137,7 +137,7 @@ contains
         end if
       end do
 
-      if ( (test-nactive) > xlevel) then
+      if ( test-nactive > xlevel) then
         string(i) = 0   ! Remove from expansion
       end if
       
@@ -197,12 +197,18 @@ contains
           test = test + 1
         end if
       end do
+      
+      if ( i .eq. 8855 ) then
+              print *, " 8855 test = ", test
+              print *, string1(:)
+      end if
+
       if ( test > xlevel ) then
         string(i) = 0
       end if
 ! Close loop
       string2=string1
-      string2=0
+      string1=0
     end do lpa
     return
   end subroutine enfactive
@@ -315,7 +321,7 @@ contains
       call k2indc( detlist(i), belec, orbitals, p, q )
       test=0
 ! Check alpha string
-      do j=nfrozen+1, aelec
+      do j=1, aelec
         if ( alphamat(p,j) > nfrozen + ndocc ) then
           test = test + 1
         end if
@@ -374,6 +380,7 @@ contains
 ! Generate spin string arrays
     call strfnd( adets, aelec, orbitals, adets, alphamat)
     call strfnd( bdets, belec, orbitals, bdets, betamat )
+    print *, alphamat(8855, : )
 ! Loop over determinants
     do i=1, detlistlen
       if ( detlist(i) .eq. 0 ) then
@@ -534,7 +541,7 @@ contains
 !====================================================================
 !>gen_alphastrpr
 !
-! Subroutine to generate alpha string paris
+! Subroutine to generate alpha string pairs
 !--------------------------------------------------------------------
   subroutine gen_alphastrpr( determlist, determlistlen, belec, orbitals, &
     alpha_strpair, alpha_step, alpha_locate, alpha_detlen )
@@ -571,6 +578,7 @@ contains
         end if
       end if
     end do
+    print *, " max length of alpha_step() should be: ", l-1
     do i=1, alpha_detlen
       locate = 0
       do j=1, i-1

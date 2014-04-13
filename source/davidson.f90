@@ -103,6 +103,7 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
 !
 ! Main Loop of Davidson algorithm
   main_loop: do i=1, int( max_iter / (krmax-krmin) )
+    print *, "Performing Hv on initial space..."
   ! Perform Hv on initial space to generate vectors v_i = Hb_i 
     call dvd_initial( bs_vectors, krmin, cidim, moints1, moints1len, moints2, &
                       moints2len, pstring, pstep, plocate, qstring, qstep,    &

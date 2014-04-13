@@ -51,6 +51,7 @@ contains
 #endif
   ! Loop over initial vectors
     do i=1, num_vecs
+      print *, "   Performing Hv on vector ", i
       call acthv( vectors1(1,i), moints1, moints2, moints1len, moints2len,    &
                   pstring, pstep, plocate, qstring, qstep, qlocate, xreflist, dim_vecs, &
                   pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec,&

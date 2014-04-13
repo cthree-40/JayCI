@@ -143,7 +143,6 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! ...ENFORCE CAS RESTRICTIONS ON DETERMINANTS...
   call enfactivedet( fnldets, fnldetslen, aelec, adets, belec, bdets,&
                      orbitals, nfrozen, ndocc, nactive, xlevel, remdet )
-
 ! Write determinant list to file
   open( unit=unit1, file='det.list', status='new', position='rewind' )
   do i=1, fnldetslen
