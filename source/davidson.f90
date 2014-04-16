@@ -149,7 +149,9 @@ subroutine davidson( initgdim, init_vectors, diagonals, moints1, moints1len,    
         eigvalues(currnt_root) = kry_eigval(currnt_root)
         exit main_loop
       end if
-
+#ifdef DEBUGHV
+      exit main_loop
+#endif
     ! Generate new vector
       call gen_newvector( residual, diagonals, kry_eigval(currnt_root),&
                           cidim, new_vector )

@@ -323,7 +323,7 @@ program driver2
   write(unit=outfl,fmt=9) " "
   write(unit=outfl,fmt=9) " Diagonal matrix elements computed. "
   write(unit=outfl,fmt=9) " "
-  write(unit=outfl,fmt=12)" -- Hartree Fock energy:    ", (diagonals(1)-nucrep)
+  write(unit=outfl,fmt=12)" -- Hartree Fock energy:    ", (diagonals(1)+nucrep)
   write(unit=outfl,fmt=9) " "
 
 ! Generate initial guess vectors
@@ -376,7 +376,7 @@ program driver2
                  tadets, tadetslen, tbdets, tbdetslen, adets, bdets, aelec, belec,   &
                  orbitals, krmin, krmax, rtoler, roots, maxiter, eigenvalues, eigenvectors )
   do i=1, roots
-    write(unit=outfl,fmt=16) "Total CI energy for root # ", i," = ", (eigenvalues(i) - nucrep)
+    write(unit=outfl,fmt=16) "Total CI energy for root # ", i," = ", (eigenvalues(i) + nucrep)
   end do
 16 format(1x, A,I2,A,F10.7 )
   write(unit=outfl,fmt=9) "----------------------------------------"

@@ -41,6 +41,7 @@ DRIV2		:= $(OBJS3) driver2.o
 # Preprocessor flags
 
 PREPROC	:= 
+PROFILE	:= -prof-gen -prof-dir$(JOBDIR)
 
 #######################################
 # BUILD

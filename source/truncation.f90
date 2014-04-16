@@ -198,10 +198,6 @@ contains
         end if
       end do
       
-      if ( i .eq. 8855 ) then
-              print *, " 8855 test = ", test
-              print *, string1(:)
-      end if
 
       if ( test > xlevel ) then
         string(i) = 0
@@ -380,7 +376,6 @@ contains
 ! Generate spin string arrays
     call strfnd( adets, aelec, orbitals, adets, alphamat)
     call strfnd( bdets, belec, orbitals, bdets, betamat )
-    print *, alphamat(8855, : )
 ! Loop over determinants
     do i=1, detlistlen
       if ( detlist(i) .eq. 0 ) then

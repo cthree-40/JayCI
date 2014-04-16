@@ -39,7 +39,7 @@ contains
 #endif
   !--------------------------------------------------------------------
 #ifdef DEBUGHV
-    testind = dim_vecs
+    testind = 2
   ! Allocate arrays
     allocate( hamiltonian( dim_vecs, dim_vecs ) )
     allocate( diag_vecs( dim_vecs, dim_vecs ))
@@ -83,25 +83,25 @@ contains
     end do
       
     print *, "  ACTHV    .....   HV  "
-    do i=testind, testind
+    do i=1, testind
       print *, " ---------- ", i, " ------------- "
-  !    do j=1, dim_vecs
-        if ( test_outvec1(i,i) .ne. test_outvec(i,i)) then
-          print *, " ERROR in ", i, "th element!!! ***"
-          call k2indc( determs(i), belec, orbitals, tp, tq )
-          print *, "p string=",tp, "q string=",tq
+      do j=1, dim_vecs
+        if ( test_outvec1(j,i) .ne. test_outvec(j,i)) then
+          print *, " ERROR in ", j, "th element!!! ***"
+          call k2indc( j, belec, orbitals, tp, tq )
+          print *, " p=",tp,"q=",tq 
         end if
-        print *, i, test_outvec1(i,i), test_outvec(i,i)
-   !   end do
+        print *, j, test_outvec1(j,i), test_outvec(j,i)
+      end do
     end do
     ! Diagonalize
     call diagonalize( hamiltonian, dim_vecs, diag_vecs, diag_vals )
-    print *, "EXPLICIT DIAGONALIZATOIN=", diag_vals(1)
+    print *, "EXPLICIT DIAGONALIZATOIN=", (diag_vals(1)+1.9140721622)
     deallocate(diag_vecs, diag_vals)
     allocate(diag_vecs(dim_vecs,dim_vecs))
     allocate(diag_vals(dim_vecs))
-    call diagonalize( test_outvec1,dim_vecs, diag_vecs, diag_vals )
-    print *, "HV DIAGONALIZATION=", diag_vals(1)
+   ! call diagonalize( test_outvec1,dim_vecs, diag_vecs, diag_vals )
+   ! print *, "HV DIAGONALIZATION=", diag_vals(1)
     deallocate( hamiltonian, test_outvec, determs )
 #endif
     return

@@ -229,7 +229,7 @@ contains
     end do
 ! 2-e contribution
     do i=1, aelec
-      do j=i, aelec
+      do j=1, i-1
         val = val + moints2( index2e2( pstring1(i), pstring1(i), &
                     pstring1(j), pstring1(j))) -                 &
                     moints2( index2e2( pstring1(i), pstring1(j), &
@@ -243,7 +243,7 @@ contains
     end do
 ! 2-e contribution
     do i=1, belec
-      do j=i, belec
+      do j=1, i-1
         val = val + moints2( index2e2( qstring1(i), qstring1(i), &
                     qstring1(j), qstring1(j))) -                 &
                     moints2( index2e2( qstring1(i), qstring1(j), &

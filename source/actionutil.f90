@@ -241,9 +241,6 @@ contains
       ! Genererate list of excitations
       call possex1( bstring, orbitals, belec, ( orbitals-belec ), qexits1 )
 
-      ! Allocate info array
-      if ( allocated(srepinfo) ) deallocate(srepinfo)
-      allocate( srepinfo(2))
       ! Loop over single excitations
       loopelec: do j=1, belec
         loopexite: do k=1, orbitals - belec
@@ -252,8 +249,10 @@ contains
           ! Test if xindx1 is in qdets
           test_q: do l=1, qdetstrunc
             if ( xindx1 .eq. qdets(l) ) then
+              ! Allocate info array
+              if ( allocated(srepinfo) ) deallocate(srepinfo)
+              allocate( srepinfo(2))
               srepinfo(1)=eps1
-              !srepinfo(1)=1
               srepinfo(2)=xindx1
 
               call eval_singlex1( bstring, qexits1, belec, moints1, moints2, moints1len, &
@@ -284,27 +283,29 @@ contains
               ! Loop over additional replacements in beta strings ( m > j; n> k )
               do m=j+1, belec
                 do n=k+1, orbitals-belec
-                  call doublerepinfo( bstring, belec, qexits1(k), j, pexits1(n), m, &
+                  call doublerepinfo( bstring, belec, qexits1(k), j, qexits1(n), m, &
                                       orbitals, eps2, xindx2 )
 
                   int3elweps = eps2*( moints2(index2e2(bstring(j),qexits1(k),bstring(m), &
                                         qexits1(n) ) ) - moints2( index2e2( bstring(j),   &
                                         qexits1(n), bstring(m), qexits1(k) )))
+
                   ! Test if xindx2 is in expansion
                   test_x2: do o=1, qdetstrunc
                     if ( xindx2 .eq. qdets(o) ) then
                     ! Loop over p string w/o generating orbital index set
                     ! p must correspond to both q and q**
                       do p=1, qstep(o)
-                        do q=1, qstep(i)
+                        test_q3: do q=1, qstep(i)
                           if ( qstring(qlocate(o)+p,2) .eq. qstring(qlocate(i)+q,2) ) then
                             vecindx1 = xreflist(qlocate(o)+p)
 
                             vecindx2 = xreflist(qlocate(i)+q)
                                     
                             vector2(vecindx2) = vector2(vecindx2) + int3elweps*vector1(vecindx1)
+                            exit test_q3
                           end if
-                        end do
+                          end do test_q3! test_q3
                       end do
                       exit test_x2
                     end if
