@@ -56,34 +56,37 @@ contains
 !--------------------------------------------------------------------
   real*8 function dblexcitations( pstring1, pstring2, qstring1, qstring2, &
     aelec, belec, moints1, moints1len, moints2, moints2len )
-    use detci5
+    use integral
     implicit none
     integer, intent(in) :: aelec, belec, moints1len, moints2len
     integer, dimension( aelec ),     intent(in) :: pstring1, pstring2
     integer, dimension( belec ),     intent(in) :: qstring1, qstring2
     real*8, dimension( moints1len ), intent(in) :: moints1
     real*8, dimension( moints2len ), intent(in) :: moints2
-    integer, dimension(2,2) :: pdiffs, qdiffs
+    integer, dimension(:,:),ALLOCATABLE :: pdiffs, qdiffs
     integer :: pd, qd, PermInd1, PermInd2
 !--------------------------------------------------------------------
+    ALLOCATE(pdiffs(2,2))
+    ALLOCATE(qdiffs(2,2))
 ! Find orbitals differing in alpha strings
     call stringdiffs( pstring1, pstring2, aelec, pdiffs, pd, PermInd1 )
 ! Find orbitals differing in beta strings
     call stringdiffs( qstring1, qstring2, belec, qdiffs, qd, PermInd2 )
     if ( pd .eq. 2 ) then
-      dblexcitations = PermInd1*(moints2( index2e2( pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)),&
+      dblexcitations = PermInd1*(moints2( Index2E( pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)),&
                               pstring1(pdiffs(2,1)), pstring2(pdiffs(2,2)))) - &
-                       moints2( index2e2( pstring1(pdiffs(1,1)), pstring2(pdiffs(2,2)),&
+                       moints2( Index2E( pstring1(pdiffs(1,1)), pstring2(pdiffs(2,2)),&
                               pstring1(pdiffs(2,1)), pstring2(pdiffs(1,2)))))
     else if ( qd .eq. 2 ) then
-      dblexcitations =PermInd2*( moints2( index2e2( qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)),&
+      dblexcitations =PermInd2*( moints2( Index2E( qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)),&
                                 qstring1(qdiffs(2,1)), qstring2(qdiffs(2,2)))) - &
-                       moints2( index2e2( qstring1(qdiffs(1,1)), qstring2(qdiffs(2,2)),&
+                       moints2( Index2E( qstring1(qdiffs(1,1)), qstring2(qdiffs(2,2)),&
                               qstring1(qdiffs(2,1)), qstring2(qdiffs(1,2)))))
     else
-      dblexcitations = PermInd1*PermInd2*( moints2( index2e2( pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)), &
+      dblexcitations = PermInd1*PermInd2*( moints2( Index2E( pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)), &
                                 qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)))))
     end if
+    DEALLOCATE(pdiffs,qdiffs)
   end function
 !====================================================================
 !====================================================================
@@ -93,6 +96,7 @@ contains
 !  differing orbitals
 !--------------------------------------------------------------------
   subroutine stringdiffs( string1, string2, length, diff_mat, diff_num, PermInd )
+    use string_util
     implicit none
     integer, intent(in)                       :: length
     integer, dimension( length ), intent(in)  :: string1, string2
@@ -133,12 +137,15 @@ contains
     ! Replace orbital with excitation to get permutation index
     TempString = string1
     if ( diff_num .eq. 1 ) then
-            call singrepinfo( TempString, length, string2( diff_mat(1,2) ), &
-                    diff_mat(1,1), 0, PermInd, DUMMY ) 
+            CALL cannon1swp(TempString,length,diff_mat(1,1),PermInd)
+!            call singrepinfo( TempString, length, string2( diff_mat(1,2) ), &
+!                    diff_mat(1,1), 0, PermInd, DUMMY ) 
     else if ( diff_num .eq. 2 ) then ! Should not be necessary to test again
-            call doublerepinfo( TempString, length, string2(diff_mat(1,2) ),&
-                    diff_mat(1,1), string2(diff_mat(2,2)), diff_mat(2,1), &
-                    0, PermInd, DUMMY )
+            CALL cannon2(TempString,length,diff_mat(1,1),diff_mat(1,2),&
+                  diff_mat(2,1),diff_mat(2,2),PermInd)
+!            call doublerepinfo( TempString, length, string2(diff_mat(1,2) ),&
+!                    diff_mat(1,1), string2(diff_mat(2,2)), diff_mat(2,1), &
+!                    0, PermInd, DUMMY )
     end if
     
     return
@@ -151,7 +158,7 @@ contains
 !--------------------------------------------------------------------
   real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
     aelec, belec, moints1, moints1len, moints2, moints2len )
-    use detci5
+    use integral
     implicit none
     integer, intent(in)   :: aelec, belec, moints1len, moints2len
     integer, dimension( aelec ),    intent(in) :: pstring1, pstring2     
@@ -162,8 +169,10 @@ contains
     integer :: i
     integer :: pd, qd
     integer :: PermInd1, PermInd2
-    integer, dimension( 2, 2 ) :: pdiffs, qdiffs
+    integer, dimension( :, : ),ALLOCATABLE :: pdiffs, qdiffs
 !--------------------------------------------------------------------
+    ALLOCATE(qdiffs(2,2))
+    ALLOCATE(pdiffs(2,2))
 ! Find orbitals differing in alpha strings
     call stringdiffs( pstring1, pstring2, aelec, pdiffs, pd , PermInd1)
 ! Find orbitals differing in beta strings
@@ -174,14 +183,14 @@ contains
       val = moints1( ind2val(pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2))))
       do i=1, aelec
         if ( pstring1(i) .ne. pstring1(pdiffs(1,1)) ) then
-          val = val + moints2( index2e2( pstring1(i), pstring1(i),           &
+          val = val + moints2( Index2E( pstring1(i), pstring1(i),           &
                       pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) ) -     &
-                      moints2( index2e2( pstring1(i), pstring1(pdiffs(1,1)), &
+                      moints2( Index2E( pstring1(i), pstring1(pdiffs(1,1)), &
                       pstring1(i), pstring2(pdiffs(1,2))))
         end if
       end do
       do i=1, belec
-        val = val + moints2( index2e2( qstring1(i), qstring1(i), &
+        val = val + moints2( Index2E( qstring1(i), qstring1(i), &
                     pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) ) !-       &
       end do
       val = PermInd1*val
@@ -189,19 +198,20 @@ contains
       val = moints1( ind2val(qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2))))
       do i=1, belec
         if ( qstring1(i) .ne. qstring1(qdiffs(1,1)) ) then
-          val = val + moints2( index2e2( qstring1(i), qstring1(i),           &
+          val = val + moints2( Index2E( qstring1(i), qstring1(i),           &
                       qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)))) -       &
-                      moints2( index2e2( qstring1(i), qstring1(qdiffs(1,1)), &
+                      moints2( Index2E( qstring1(i), qstring1(qdiffs(1,1)), &
                       qstring1(i), qstring2(qdiffs(1,2))))
         end if
       end do
       do i=1, aelec
-        val = val + moints2( index2e2( pstring1(i), pstring1(i), &
+        val = val + moints2( Index2E( pstring1(i), pstring1(i), &
                   qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)) ) ) !-       &
       end do
       val = PermInd2*val
     end if
     singlexcitations = val
+    DEALLOCATE(pdiffs,qdiffs)
   end function
 !====================================================================
 !====================================================================
@@ -209,9 +219,9 @@ contains
 !
 !
 !--------------------------------------------------------------------
-  real*8 function diagonal_mat( pstring1, qstring1,  aelec, &
+  real*8 function Diagonal_Mat( pstring1, qstring1,  aelec, &
                        belec, moints1, moints1len, moints2, moints2len )
-    use detci5
+    use integral
     implicit none
     integer, intent(in) :: belec, aelec, moints1len, moints2len
     integer, dimension( aelec ),    intent(in) :: pstring1
@@ -230,9 +240,9 @@ contains
 ! 2-e contribution
     do i=1, aelec
       do j=1, i-1
-        val = val + moints2( index2e2( pstring1(i), pstring1(i), &
+        val = val + moints2( Index2E( pstring1(i), pstring1(i), &
                     pstring1(j), pstring1(j))) -                 &
-                    moints2( index2e2( pstring1(i), pstring1(j), &
+                    moints2( Index2E( pstring1(i), pstring1(j), &
                     pstring1(i), pstring1(j)))
       end do
     end do
@@ -244,16 +254,16 @@ contains
 ! 2-e contribution
     do i=1, belec
       do j=1, i-1
-        val = val + moints2( index2e2( qstring1(i), qstring1(i), &
+        val = val + moints2( Index2E( qstring1(i), qstring1(i), &
                     qstring1(j), qstring1(j))) -                 &
-                    moints2( index2e2( qstring1(i), qstring1(j), &
+                    moints2( Index2E( qstring1(i), qstring1(j), &
                     qstring1(i), qstring1(j)))
       end do
     end do
 ! Alpha and beta 2-e contribution
     do i=1, aelec
       do j=1, belec
-        val = val + moints2( index2e2( pstring1(i), pstring1(i), &
+        val = val + moints2( Index2E( pstring1(i), pstring1(i), &
                     qstring1(j), qstring1(j)))
       end do
     end do
@@ -297,8 +307,8 @@ contains
 !--------------------------------------------------------------------
   real*8 function ham_element( ind1, ind2, moints1, moints1len, moints2, &
     moints2len, aelec, belec, orbitals)
-    use detci1
-    use detci2
+    use combinatorial,  only: Binom
+    use addressing,     only: K2Indc,GenOrbString
     implicit none
     integer, intent(in) :: ind1, ind2, moints1len, moints2len, &
                            aelec, belec, orbitals
@@ -310,16 +320,16 @@ contains
 
     integer :: diffs, adets, bdets
 !--------------------------------------------------------------------
-    adets = binom( orbitals, aelec )
-    bdets = binom( orbitals, belec )
+    adets = Binom( orbitals, aelec )
+    bdets = Binom( orbitals, belec )
 ! Find determinant string indices for ind1 and ind2
-    call k2indc( ind1, belec, orbitals, p1, q1 )
-    call k2indc( ind2, belec, orbitals, p2, q2 )
+    call K2Indc( ind1, belec, orbitals, p1, q1 )
+    call K2Indc( ind2, belec, orbitals, p2, q2 )
 ! Find respective strings for p1, q1, p2, q2
-    call genorbstring( p1, aelec, orbitals, adets, pstring1 )
-    call genorbstring( p2, aelec, orbitals, adets, pstring2 )
-    call genorbstring( q1, belec, orbitals, bdets, qstring1 )
-    call genorbstring( q2, belec, orbitals, bdets, qstring2 )
+    call GenOrbString( p1, aelec, orbitals, adets, pstring1 )
+    call GenOrbString( p2, aelec, orbitals, adets, pstring2 )
+    call GenOrbString( q1, belec, orbitals, bdets, qstring1 )
+    call GenOrbString( q2, belec, orbitals, bdets, qstring2 )
 ! Test differences in strings. If > 2 orbitals, element is 0
     call orbdiffs( pstring1, pstring2, qstring1, qstring2, aelec, belec, &
                    diffs )
@@ -347,8 +357,8 @@ contains
 !--------------------------------------------------------------------
   real*8 function ham_element_diag( ind1, moints1, moints1len, moints2, &
     moints2len, aelec, belec, orbitals)
-    use detci1
-    use detci2
+    use combinatorial,   only: Binom
+    use addressing,     only: GenOrbString,K2Indc
     implicit none
     integer, intent(in) :: ind1, moints1len, moints2len, &
                          aelec, belec, orbitals
@@ -360,16 +370,16 @@ contains
 
     integer :: diffs, adets, bdets
 !--------------------------------------------------------------------
-    adets = binom( orbitals, aelec )
-    bdets = binom( orbitals, belec )
+    adets = Binom( orbitals, aelec )
+    bdets = Binom( orbitals, belec )
 ! Find determinant string indices for ind1 and ind2
-    call k2indc( ind1, belec, orbitals, p1, q1 )
-    call k2indc( ind1, belec, orbitals, p2, q2 )
+    call K2Indc( ind1, belec, orbitals, p1, q1 )
+    call K2Indc( ind1, belec, orbitals, p2, q2 )
 ! Find respective strings for p1, q1, p2, q2
-    call genorbstring( p1, aelec, orbitals, adets, pstring1 )
-    call genorbstring( p2, aelec, orbitals, adets, pstring2 )
-    call genorbstring( q1, belec, orbitals, bdets, qstring1 )
-    call genorbstring( q2, belec, orbitals, bdets, qstring2 )
+    call GenOrbString( p1, aelec, orbitals, adets, pstring1 )
+    call GenOrbString( p2, aelec, orbitals, adets, pstring2 )
+    call GenOrbString( q1, belec, orbitals, bdets, qstring1 )
+    call GenOrbString( q2, belec, orbitals, bdets, qstring2 )
 ! Test differences in strings. If > 2 orbitals, element is 0
     ham_element_diag = diagonal_mat( pstring1, qstring1, aelec, &
                            belec, moints1, moints1len, moints2, moints2len )

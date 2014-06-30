@@ -8,7 +8,7 @@
 ! Last edit: 11-18-13
 !====================================================================
 module truncation
-  use detci2
+  use addressing
 contains
 !====================================================================
 !====================================================================
@@ -57,8 +57,11 @@ contains
 ! ...integer scalars...
     integer :: test
 ! ...integer arrays...
-    integer, dimension(elecs) :: string1, string2
+    integer, dimension(:),ALLOCATABLE :: string1, string2
 !--------------------------------------------------------------------
+! Allocate arrays
+    ALLOCATE(string1(elecs))
+    ALLOCATE(string2(elecs))
 ! Loop over determinants
     lpa: do i=1, determs
       if ( i .eq. 1 ) then
@@ -66,7 +69,7 @@ contains
           string1(j) = j
         end do
       else
-        call nstrfnd( string2, elecs, orbitals, determs, string1 )
+        call StrFind2( string2, elecs, orbitals, determs, string1 )
       end if
 ! Test if the first nfrozen orbitals are occupied
       test = 0
@@ -84,6 +87,8 @@ contains
       string2 = string1
       string1 = 0
     end do lpa
+    DEALLOCATE(string1,string2)
+    RETURN
   end subroutine enffrozen
 !====================================================================
 !====================================================================
@@ -112,8 +117,11 @@ contains
 ! ...integer scalars...
     integer :: test
 ! ...integer arrays...
-    integer, dimension(elecs) :: string1, string2
+    integer, dimension(:),ALLOCATABLE :: string1, string2
 !--------------------------------------------------------------------
+! Allocate arrays
+    ALLOCATE(string1(elecs))
+    ALLOCATE(string2(elecs))
 ! Loop through determinants
     lpa: do i=1, determs
 ! Test if string is in expansion
@@ -126,7 +134,7 @@ contains
           string1(j) = j
         end do
       else
-        call nstrfnd( string2, elecs, orbitals, determs, string1 )
+        call StrFind2( string2, elecs, orbitals, determs, string1 )
       end if
       
       test=0
@@ -144,6 +152,7 @@ contains
       string2 = string1
       string1 = 0
     end do lpa
+    DEALLOCATE(string1, string2)
     return
   end subroutine enfdocc
 !====================================================================
@@ -172,10 +181,13 @@ contains
 ! ...loop integer scalars...
     integer :: i, j
 ! ...integer arrays...
-    integer, dimension(elecs) :: string1, string2
+    integer, dimension(:),ALLOCATABLE :: string1, string2
 ! ...integer scalars...
     integer :: test
 !--------------------------------------------------------------------
+!Allocate arrays
+    ALLOCATE(string1(elecs))
+    ALLOCATE(string2(elecs))
 ! Loop over determinants
     lpa: do i=1, determs
 ! Test if string is in expansion
@@ -188,7 +200,7 @@ contains
           string1(j) = j
         end do
       else
-        call nstrfnd( string2, elecs, orbitals, determs, string1 )
+        call StrFind2( string2, elecs, orbitals, determs, string1 )
       end if
 ! Count excitations in string
       test = 0
@@ -206,6 +218,7 @@ contains
       string2=string1
       string1=0
     end do lpa
+    DEALLOCATE(string1,string2)
     return
   end subroutine enfactive
 !====================================================================
@@ -269,7 +282,7 @@ contains
 ! loop over beta strings
       do j=1, betalen
         k = ( i-1 )*betalen + j
-        determlist(k) = indxk( alphastring(i), betastring(j), belec, orbitals )
+        determlist(k) = IndexK( alphastring(i), betastring(j),orbitals,belec )
       end do
     end do
     return
@@ -304,27 +317,29 @@ contains
 ! ...loop integer scalars...
     integer :: i, j
 ! ...integer arrays...
-    integer, dimension(adets, aelec) :: alphamat
-    integer, dimension(bdets, belec) :: betamat
+    integer, dimension(:,:),ALLOCATABLE :: alphamat
+    integer, dimension(:,:),ALLOCATABLE :: betamat
 ! ...integer scalars...
     integer :: p, q, test
-!--------------------------------------------------------------------
+! Allocate arrays
+    ALLOCATE(alphamat(aelec,adets))
+    ALLOCATE(betamat(belec,bdets))
 ! Generate string lists
-    call strfnd( adets, aelec, orbitals, adets, alphamat )
-    call strfnd( bdets, belec, orbitals, bdets, betamat  )
+    call StrFind1( adets, aelec, orbitals, adets, alphamat )
+    call StrFind1( bdets, belec, orbitals, bdets, betamat  )
 ! Loop over determinants
     do i=1, detlistlen
-      call k2indc( detlist(i), belec, orbitals, p, q )
+      call K2Indc( detlist(i), belec, orbitals, p, q )
       test=0
 ! Check alpha string
       do j=1, aelec
-        if ( alphamat(p,j) > nfrozen + ndocc ) then
+        if ( alphamat(j,p) > nfrozen + ndocc ) then
           test = test + 1
         end if
       end do
 ! Check beta string
       do j= 1, belec
-        if ( betamat(q, j) > nfrozen + ndocc ) then
+        if ( betamat(j, q) > nfrozen + ndocc ) then
           test = test + 1
         end if
       end do
@@ -334,6 +349,8 @@ contains
         remdet = remdet + 1
       end if
     end do
+    !Deallocate arrays
+    DEALLOCATE(alphamat, betamat)
     return
   end subroutine enfdoccdet
 !====================================================================
@@ -368,30 +385,33 @@ contains
 ! ...loop integer scalars...
     integer :: i, j
 ! ...integer arrays...
-    integer, dimension(adets,aelec) :: alphamat
-    integer, dimension(bdets,belec) :: betamat 
+    integer, dimension(:,:),ALLOCATABLE :: alphamat
+    integer, dimension(:,:),ALLOCATABLE :: betamat 
 ! ...integer scalars...
     integer :: p, q, test
 !--------------------------------------------------------------------
+! Allocate spin arrays
+    ALLOCATE(alphamat(aelec,adets))
+    ALLOCATE(betamat(belec,bdets))
 ! Generate spin string arrays
-    call strfnd( adets, aelec, orbitals, adets, alphamat)
-    call strfnd( bdets, belec, orbitals, bdets, betamat )
+    call StrFind1( adets, aelec, orbitals, adets, alphamat)
+    call StrFind1( bdets, belec, orbitals, bdets, betamat )
 ! Loop over determinants
     do i=1, detlistlen
       if ( detlist(i) .eq. 0 ) then
         cycle
       end if
-      call k2indc( detlist(i), belec, orbitals, p, q )
+      call K2Indc( detlist(i), belec, orbitals, p, q )
       test=0
 ! Check alpha string
       do j=1, aelec
-        if ( alphamat(p,j) > nfrozen + ndocc + nactive ) then
+        if ( alphamat(j,p) > nfrozen + ndocc + nactive ) then
           test = test + 1
         end if
       end do
 ! Check beta string
       do j=1, belec
-        if ( betamat(q,j) > nfrozen + ndocc + nactive ) then
+        if ( betamat(j,q) > nfrozen + ndocc + nactive ) then
           test = test + 1
         end if
       end do
@@ -401,6 +421,7 @@ contains
         remdet=remdet+1
       end if
     end do
+    DEALLOCATE(alphamat,betamat)
     return
   end subroutine enfactivedet
 !====================================================================
@@ -457,9 +478,9 @@ contains
       do j=1, secondspinstrlen
 ! Find the index of the determinant composed of the two strings
         if ( leadspin .eq. 'a' ) then
-          index1 = indxk( leadspinstr(i), secondspinstr(j), belec, orbitals )
+          index1 = IndexK( leadspinstr(i), secondspinstr(j), belec, orbitals )
         else if ( leadspin .eq. 'b' ) then
-          index1 = indxk( secondspinstr(j), leadspinstr(i), belec, orbitals )
+          index1 = IndexK( secondspinstr(j), leadspinstr(i), belec, orbitals )
         else
           STOP " NO SPIN SPECFIED. EXITING."
         end if
@@ -550,7 +571,7 @@ contains
   ! Loop through determinants generating alpha_strpair
     alpha_step = 1   ! All determinants will have at least one step
     do i=1, determlistlen
-      call k2indc( determlist(i), belec, orbitals, p, q )
+      call K2Indc( determlist(i), belec, orbitals, p, q )
       alpha_strpair(i,1) = p
       alpha_strpair(i,2) = q
     end do
@@ -650,7 +671,6 @@ contains
 !----------------------------------------------------------------------
   subroutine xreflist_gen( length, detlist1, qpairings, belec, &
     orbitals, xreflist )
-    use detci2, only: indxk
     implicit none
     integer, intent(in) :: length, belec, orbitals
     integer, dimension( length ),    intent(in)  :: detlist1
@@ -663,7 +683,7 @@ contains
     ! Use string pairings to generate det list2
     allocate( detlist2( length ) )
     do i=1, length
-      detlist2(i) = indxk( qpairings(i,2), qpairings(i,1), belec, orbitals )
+      detlist2(i) = IndexK( qpairings(i,2), qpairings(i,1), orbitals,belec )
     end do
     
     ! Generate temp list

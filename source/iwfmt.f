@@ -464,7 +464,7 @@ c
 c
       real*8   moints(max1e)
       integer  l1rec,  n1max,  lenpl,  lenbv,  l1recx,
-     & lab1,   ifmtv,  i, j, h , l
+     & lab1,   ifmtv,  i, j, h , l,Ind2Val
 c
 c     # bummer error types.
       integer   wrnerr,  nfterr,  faterr
@@ -561,7 +561,7 @@ c9     continue
 8      continue
        do 9 h = 1, num
          do 10 i = 1, max1e
-           if ( ind2val(labels(1,h),labels(2,h)) == i ) then
+           if ( Ind2Val(labels(1,h),labels(2,h)) == i ) then
              moints(i) = values(h)
            end if
 10       continue
@@ -615,7 +615,7 @@ c
       integer  info(*), labels(nipv,*), ibitv(*)
 c
       integer  l2rec,  n2max,  lenpl,  lenbv,  l2recx,
-     & lab1,   ifmtv,  h, i, j, k, l, m
+     & lab1,   ifmtv,  h, i, j, k, l, m,Index2E
 c
 c     # bummer error types.
       integer   wrnerr,  nfterr,  faterr
@@ -704,7 +704,7 @@ c
 c      print *, num
 c      do 10 i = 1, max2e
       do 11 h = 1, num
-         i = index2e2(labels(1,h),labels(2,h),labels(3,h),labels(4,h))
+         i = Index2E(labels(1,h),labels(2,h),labels(3,h),labels(4,h))
          moints(i) = values(h)  
 c            go to 10
 c          end if
@@ -995,18 +995,18 @@ c
       return
       end
 c
-      integer function ind2val(i,j)
+      integer function Ind2Val(i,j)
          integer :: i, j
 c # ind2val = (i-1)i/2 + j
          if ( i .ge. j ) then
-	       ind2val = (i - 1)*i/2 + j
+	       Ind2Val = (i - 1)*i/2 + j
          else
-	       ind2val = (j - 1)*j/2 + i
+	       Ind2Val = (j - 1)*j/2 + i
 	     end if
-      end function ind2val
-      integer function index2e2(i,j,k,l)
+      end function Ind2Val
+      integer function Index2E(i,j,k,l)
          implicit none
-         integer :: i, j, k, l, ind2val
+         integer :: i, j, k, l, Ind2Val
 c
-         index2e2 = ind2val(ind2val(i,j),ind2val(k,l))
+         Index2E = Ind2val(Ind2Val(i,j),Ind2Val(k,l))
       end function

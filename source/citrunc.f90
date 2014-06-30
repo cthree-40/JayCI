@@ -5,6 +5,7 @@
 ! Yarkony Group
 ! Dept. of Chem., The Johns Hopkins University
 !
+! Added Mapping arrays: 04-30-2014
 ! Last edit: 11-13-13
 !====================================================================
 !Input:
@@ -21,9 +22,10 @@
 !====================================================================
 subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   ndocc, nactive, xlevel, modalphalen, modbetalen, cidimension, unit1, &
-  unit2, unit3, unit4, unit5, unit6, unit7, unit8, unit9, unit10 )
+  unit2, unit3, unit4, unit5, unit6, unit7, unit8, unit9, unit10 )!,      &
+  !unit11, unit12 )
 
-  use detci2
+  use addressing
   use truncation
 
   implicit none
@@ -31,14 +33,15 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 ! ...input integer scalars...
   integer, intent(in) :: adets, bdets, aelec, belec, orbitals, nfrozen,&
                          ndocc, nactive, xlevel, unit1, unit2, unit3,  &
-                         unit4, unit5, unit6, unit7, unit8, unit9, unit10
+                         unit4, unit5, unit6, unit7, unit8, unit9,     &
+                         unit10!, unit11, unit12
 
 ! ...OUTPUT integer scalars...
   integer :: cidimension
   integer :: modalphalen, modbetalen
 
 ! ...loop integer scalars...
-  integer :: i, j, k, l
+  integer :: i, j, k, l, m
   integer :: test, testa, testb
   integer :: p, q
   integer :: index1
@@ -69,6 +72,8 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   integer :: fnldetslen, remdet
   
   integer :: step
+
+!  integer, dimension(:), allocatable :: alphaMap, betaMap ! Mapping arrays
 !--------------------------------------------------------------------
 
 ! Generate alpha and beta string lists
@@ -90,22 +95,52 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
                   ndocc, nactive, xlevel )
 
 ! Write out the alpha string indices
+! Allocate mapping array
+!  if (allocated(alphaMap)) deallocate(alphaMap)
+!  allocate(alphaMap(adets))
+!  alphaMap=0      ! Zero out array
+!  m=1             ! Indexing integer for alphaMap 
   open( unit=unit3, file='alpha.dets', status='new' )
   do i=1, adets
     if ( alphastrings(i) .ne. 0 ) then
       write( unit=unit3, fmt=9 ) alphastrings(i)
+!      alphaMap(i) = m   ! Location in alpha strings of ith array
+!      m = m + 1
     end if
   end do
   close(unit=unit3)
 
+! Write out mapping array
+!  open( unit=unit11, file='alpha.Map', status='new' )
+!  do i=1, adets
+!    write( unit=unit11, fmt=9 ) alphaMap(i)
+!  end do
+!  close(unit=unit11)
+!  deallocate(alphaMap)
+
 ! Write out the beta string indices
+! Allocate mapping array
+ ! if (allocated(betaMap)) deallocate(betaMap)
+!  allocate(betaMap(bdets))
+!  betaMap=0      ! Zero out array
+!  m=1             ! Indexing integer for alphaMap 
   open( unit=unit2, file='beta.dets', status='new' )
   do i=1, bdets
     if ( betastrings(i) .ne. 0 ) then
       write( unit=unit2, fmt=9 ) betastrings(i)
+!      betaMap(i) = m
+!      m = m + 1
     end if
   end do
   close(unit=unit2)
+
+! Write out mapping array
+!  open( unit=unit12, file='beta.Map', status='new' )
+!  do i=1, bdets
+!    write( unit=unit12, fmt=9 ) betaMap(i)
+!  end do
+!  close(unit=unit12)
+!  deallocate(betaMap)
 
 9 format(1x,I10)
 
@@ -183,7 +218,7 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
 !                    fnldets, cidimension, belec, orbitals, 'b', &
 !                    strngpr2, cidimension, qstep, modbetalen,   &
 !                    qdeterms, qlocate )
-
+  print *, "Final dets=",cidimension
   call gen_alphastrpr( fnldets, cidimension, belec, orbitals, &
                        strngpr1, pstep, plocate, modalphalen )
   call gen_betastrpr(  strngpr1, cidimension, pstep, modalphalen, &
