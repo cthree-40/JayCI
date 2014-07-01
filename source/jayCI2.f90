@@ -18,8 +18,8 @@ PROGRAM jayCI2
       integer,parameter :: Diagional_Guess=30
       integer     :: M1Len,M2Len
       integer,dimension(:),ALLOCATABLE    :: Det_Exp,pDets,qDets,pStep,qStep,&
-            pLocate,qLocate,xRefList
-      integer,dimension(:,:),ALLOCATABLE  :: pString,qString
+            pLocate,qLocate,xRefList,pString,qString
+      integer,dimension(:,:),ALLOCATABLE  :: pString_temp,qString_temp
       real*8,dimension(:),ALLOCATABLE     :: Diagonals,Eig_Values,MOints1,MOints2
       real*8,dimension(:,:),ALLOCATABLE   :: Eig_Vectors,Init_Vectors
       integer     :: openStat, i,j
@@ -128,8 +128,8 @@ PROGRAM jayCI2
       !Allocate wavefunction information arrays
       ALLOCATE(pDets(pDLen))
       ALLOCATE(qDets(qDLen))
-      ALLOCATE(pString(ciDim,2))
-      ALLOCATE(qString(ciDim,2))
+      ALLOCATE(pString_temp(ciDim,2))
+      ALLOCATE(qString_temp(ciDim,2))
       ALLOCATE(pLocate(pDLen))
       ALLOCATE(qLocate(qDLen))
       ALLOCATE(pStep(pDLen))
@@ -148,8 +148,12 @@ PROGRAM jayCI2
       OPEN(unit=unit_pStr,file=file_pStr,status='old',position='rewind', &
             IOSTAT=openStat)
       if(openStat.GT.0) STOP "*** CANNOT OPEN PSTRING(:,2) FILE, pstring.list *** "
-      READ(unit=unit_pStr,fmt=14)((pString(i,j),j=1,2),i=1,ciDim)
+      READ(unit=unit_pStr,fmt=14)((pString_temp(i,j),j=1,2),i=1,ciDim)
       CLOSE(unit=unit_pStr)
+      ! Transfer second column of pString_temp to pString
+      ALLOCATE(pString(ciDim))
+      pString(1:ciDim)=pString_temp(1:ciDim,2)
+      DEALLOCATE(pString_temp)      !Deallocate pString_temp
       !alpha string step list
       OPEN(unit=unit_pStep,file=file_pStep,status='old',position='rewind', &
             IOSTAT=openStat)
@@ -172,8 +176,12 @@ PROGRAM jayCI2
       OPEN(unit=unit_qStr,file=file_qStr,status='old',position='rewind', &
             IOSTAT=openStat)
       if(openStat.GT.0) STOP "*** CANNOT OPEN QSTRING(:,2) FILE, qstring.list *** "
-      READ(unit=unit_qStr,fmt=14) ((qString(i,j),j=1,2),i=1,ciDim)
+      READ(unit=unit_qStr,fmt=14) ((qString_temp(i,j),j=1,2),i=1,ciDim)
       CLOSE(unit=unit_qStr)
+      ! Transfer second column of qString_temp to qString
+      ALLOCATE(qString(ciDim))
+      qString(1:ciDim)=qString_temp(1:ciDim,2)
+      DEALLOCATE(qString_temp)      !Deallocate qString_temp
       !beta string step list
       OPEN(unit=unit_qStep,file=file_qStep,status='old',position='rewind', &
             IOSTAT=openStat )

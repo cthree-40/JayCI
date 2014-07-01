@@ -46,7 +46,7 @@ CONTAINS
             integer,intent(IN)      ::M1Len,M2Len,ciDim,pDetsTrunc,     &
                   qDetsTrunc,aDets,bDets,aElec,bElec,Orbitals,  &
                   nFrozen,nDOCC,nActive
-            integer,dimension(ciDim,2),intent(IN)::pString,qString
+            integer,dimension(ciDim),intent(IN)::pString,qString
             integer,dimension(pDetsTrunc),intent(IN)::pStep,pLocate,pDets
             integer,dimension(qDetsTrunc),intent(IN)::qStep,qLocate,qDets
             real*8,dimension(M1Len),intent(IN)::MOints1
@@ -122,16 +122,33 @@ CONTAINS
                       CALL eval_singlex1(aString,pExct1,aElec,Moints1,Moints2,&
                         M1Len,M2Len,Orbitals,j,k,int1e1,int2e1)    
                       !Loop over corresponding q strings
-                      do m=1,pStep(cLoc)
-                        do n=1,pStep(i)
-                          if(pString(pLocate(cLoc)+m,2).EQ.pString(pLocate(i)+n,2))then
+                      !do m=pLocate(cLoc)+1,pLocate(cLoc)+pStep(cLoc)
+                      !  call int_search2(pString(m),pString(pLocate(i)+1),pStep(i),oVIndx)
+                      !  if(oVIndx.EQ.0)then
+                      !    cycle !m->m+1
+                      !  else
+                      !    !Compute contribution
+                      !    CALL eval_singlex2('A',pString(m),bElec,Orbitals,bDets,&
+                      !      aString(j),pExct1(k),Moints1,Moints2,M1Len,M2Len, &
+                      !      qDets(qDetsTrunc),int2e2)
+                      !    OutVector(oVIndx)=OutVector(oVIndx)+eps1*(int1e1+int2e1+&
+                      !      int2e2)*InVector(m)
+                      !    OutVector(m)=OutVector(m)+eps1*(int1e1+int2e1+int2e2)*InVector(oVIndx)
+                      !  end if !oVIndx.EQ.0
+                      !end do!
+                      
+                      
+                      !Loop over corresponding q strings
+                      do m=pLocate(cLoc)+1,pLocate(cLoc)+pStep(cLoc)
+                        do n=pLocate(i)+1, pLocate(i)+ pStep(i)
+                          if(pString(m).EQ.pString(n))then
                             !Compute contribution
-                            CALL eval_singlex2('A',pString(pLocate(cLoc)+m,2),bElec,&
+                            CALL eval_singlex2('A',pString(m),bElec,&
                                 Orbitals,bDets,aString(j),pExct1(k),Moints1,  &
                                 Moints2,M1Len,M2Len,qDets(qDetsTrunc),int2e2)
                             !Find index of determinant c[r(pjv*,q)]
-                            iVIndx=pLocate(cLoc)+m
-                            oVIndx=pLocate(i)+n
+                            iVIndx=m
+                            oVIndx=n
                             OutVector(oVIndx)=OutVector(oVIndx)+eps1*(int1e1+int2e1&
                                   +int2e2)*InVector(iVIndx)
                             OutVector(iVIndx)=OutVector(iVIndx)+eps1*(int1e1+int2e1&
@@ -164,11 +181,11 @@ CONTAINS
                           int1e3=eps2*(Moints2(Index2E(aString(j),pExct1(k),aString(m),pExct1(n))) &
                                 - Moints2(Index2E(aString(j),pExct1(n),aString(m),pExct1(k))))
                           !Loop over q's
-                          do o=1,pstep(cLoc2)
-                            do p=1,pstep(i)
-                              if(pString(pLocate(cLoc2)+o,2).EQ.pString(pLocate(i)+p,2))then
-                                    iVIndx=pLocate(cLoc)+o
-                                    oVIndx=pLocate(i)+p
+                          do o=pLocate(cLoc2)+1,pLocate(cLoc2)+pstep(cLoc2)
+                            do p=pLocate(i)+1,pLocate(i)+pstep(i)
+                              if(pString(o).EQ.pString(p))then
+                                    iVIndx=o
+                                    oVIndx=p
                                     OutVector(oVIndx)=OutVector(oVIndx)+int1e3*InVector(iVIndx)
                                     OutVector(iVIndx)=OutVector(iVIndx)+int1e3*InVector(oVIndx)
                                     EXIT !p
@@ -182,9 +199,9 @@ CONTAINS
                   ! Loop over single excitations stored from loop j
                   do j=1,sRIndx-1
                     ! Loop over q-strings: |p,q> and |p*,q*> must be in expansion
-                    do k=1,pstep(i)
+                    do k=pLocate(i)+1,pLocate(i)+pstep(i)
                       !Generate an orbital string for q
-                      CALL GenOrbString_Beta(pString(pLocate(i)+k,2),bElec,Orbitals,bDets, &
+                      CALL GenOrbString_Beta(pString(k),bElec,Orbitals,bDets, &
                         qDets(qDetsTrunc),bString)
                       !Generate a list of possible excitations
                       CALL possex1(bString,Orbitals,bElec,(Orbitals-bElec),qExct1)
@@ -194,11 +211,11 @@ CONTAINS
                           CALL SRepInfo(bString,bElec,qExct1(m),l,Orbitals,eps2,sxindx2)
                           !Loop over q indices that correpsond to the single excitation r(pjv*) in p strings
                           ! q*>q
-                          if(sxindx2.LT.pString(pLocate(i)+k,2))then
+                          if(sxindx2.LT.pString(k))then
                                 CYCLE !m->m+1
                           end if!sxindx2.LT.pString(pLocate(i)+k,2)
                           cLoc2=0
-                          call int_search2(sxindx2,pString(pLocate(SingleRepInfo(5,j))+1,2), &
+                          call int_search2(sxindx2,pString(pLocate(SingleRepInfo(5,j))+1), &
                               pStep(SingleRepInfo(5,j)),cLoc2)
                           !do n=1,pstep(SingleRepInfo(5,j))
                           !  if(sxindx2.EQ.pString(pLocate(SingleRepInfo(5,j))+n,2))then
@@ -211,7 +228,7 @@ CONTAINS
                           end if!cLoc2.EQ.0
                           int3e2=Moints2(Index2E(SingleRepInfo(3,j),SingleRepInfo(4,j),bString(l),qExct1(m)))
                           iVIndx=pLocate(SingleRepInfo(5,j))+cLoc2
-                          oVIndx=pLocate(i)+k
+                          oVIndx=k
                           OutVector(oVIndx)=OutVector(oVIndx)+int3e2*SingleRepInfo(2,j)*eps2*InVector(iVIndx)
                           OutVector(iVIndx)=OutVector(iVIndx)+int3e2*SingleRepInfo(2,j)*eps2*InVector(oVIndx)
                           EXIT !m
@@ -242,7 +259,7 @@ CONTAINS
                   aDets,bDets,aElec,bElec,Orbitals,nFrozen,nDOCC,nActive
             integer,dimension(pDetsTrunc),intent(IN)  ::pDets,pLocate,pStep
             integer,dimension(qDetsTrunc),intent(IN)  ::qDets,qLocate,qStep
-            integer,dimension(ciDim,2),intent(IN)     ::pString,qString
+            integer,dimension(ciDim),intent(IN)     ::pString,qString
             integer,dimension(ciDim),intent(IN)       ::XRefList
             real*8,dimension(M1Len),intent(IN)        ::Moints1
             real*8,dimension(M2Len),intent(IN)        ::Moints2
@@ -300,16 +317,16 @@ CONTAINS
                       CALL eval_singlex1(bString,qExct1,bElec,Moints1,Moints2,M1Len,&
                             M2Len,Orbitals,j,k,int1e1,int2e1)
                       !Loop over corresponding p strings
-                      do m=1,qStep(cLoc)
-                        do n=1,qStep(i)
-                          if(qString(qLocate(cLoc)+m,2).EQ.qString(qLocate(i)+n,2))then
+                      do m=qLocate(cLoc)+1,qLocate(cLoc)+qStep(cLoc)
+                        do n=qLocate(i)+1,qLocate(i)+qStep(i)
+                          if(qString(m).EQ.qString(n))then
                             !Compute contribution
-                            CALL eval_singlex2('B',qString(qLocate(cLoc)+m,2),bElec,Orbitals,bDets,&
+                            CALL eval_singlex2('B',qString(m),bElec,Orbitals,bDets,&
                                   bString(j),qExct1(k),Moints1,Moints2,M1Len,M2Len, &
                                   pDets(pDetsTrunc),int2e2)
                             !Index of element
-                            iVIndx=XRefList(qLocate(cLoc)+m)
-                            oVIndx=XRefList(qLocate(i)+n)
+                            iVIndx=XRefList(m)
+                            oVIndx=XRefList(n)
                             OutVector(oVIndx)=OutVector(oVIndx)+eps1*(int1e1+int2e1+int2e2)*&
                                   InVector(iVIndx)
                             OutVector(iVIndx)=OutVector(iVIndx)+eps1*(int1e1+int2e1+int2e2)*&
@@ -345,11 +362,11 @@ CONTAINS
                           int1e3=eps2*(Moints2(Index2E(bString(j),qExct1(k),bString(m),qExct1(n)))&
                                 - Moints2(Index2E(bString(j),qExct1(n),bString(m),qExct1(k))))
                           !Loop over p's
-                          do o=1,qstep(cLoc2)
-                            do p=1,qstep(i)
-                              if(qString(qLocate(cLoc2)+o,2).EQ.qString(qLocate(i)+p,2))then
-                                    iVIndx=XRefList(qLocate(cLoc)+o)
-                                    oVIndx=XRefList(qLocate(i)+p)
+                          do o=qLocate(cLoc2)+1,qLocate(cLoc2)+qstep(cLoc2)
+                            do p=qLocate(i)+1,qLocate(i)+qstep(i)
+                              if(qString(o).EQ.qString(p))then
+                                    iVIndx=XRefList(o)
+                                    oVIndx=XRefList(p)
                                     OutVector(oVIndx)=OutVector(oVIndx)+int1e3*InVector(iVIndx)
                                     OutVector(iVIndx)=OutVector(iVIndx)+int1e3*InVector(oVIndx)
                                     EXIT !p

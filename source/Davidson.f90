@@ -12,7 +12,7 @@ SUBROUTINE Davidson(initGuessDim,initGuess_vecs,Diagonals,MOints1,  &
             qDLen,aDets,bDets,aElec,bElec,Orbitals,KryMin,KryMax,Roots,&
             Max_Iter,nFrozen,nDocc,nActive
       real*8,intent(IN) :: res_tol
-      integer,dimension(ciDim,2),intent(IN)     ::qString,pString
+      integer,dimension(ciDim),intent(IN)     ::qString,pString
       integer,dimension(qDLen),intent(IN)       ::qDets,qLocate,qStep
       integer,dimension(pDLen),intent(IN)       ::pDets,pLocate,pStep
       integer,dimension(ciDim),intent(IN)       ::xRefList

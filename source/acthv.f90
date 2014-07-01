@@ -12,7 +12,7 @@ subroutine acthv(In_Vector,MOints1,MOints2,M1Len,M2Len,pString,    &
            bDets,aElec,bElec,Orbitals,nFrozen,nDocc,nActive
       integer,dimension(pDLen),intent(IN) ::pStep,pLocate,pDets
       integer,dimension(qDLen),intent(IN) ::qStep,qLocate,qDets
-      integer,dimension(ciDim,2),intent(IN)     :: pString,qString
+      integer,dimension(ciDim),intent(IN)     :: pString,qString
       integer,dimension(ciDim),intent(IN) ::xRefList
       real*8,dimension(M1Len),intent(IN)  ::MOints1
       real*8,dimension(M2Len),intent(IN)  ::MOints2

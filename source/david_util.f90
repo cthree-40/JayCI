@@ -18,7 +18,7 @@ contains
                           nfrozen, ndocc, nactive
     integer, dimension(pdetslen),    intent(in) :: pdets, plocate, pstep
     integer, dimension(qdetslen),    intent(in) :: qdets, qlocate, qstep
-    integer, dimension(dim_vecs,2),  intent(in) :: pstring, qstring
+    integer, dimension(dim_vecs),  intent(in) :: pstring, qstring
     integer, dimension(dim_vecs),    intent(in) :: xreflist
     real*8,  dimension(dim_vecs),    intent(in) :: diagonals
     real*8,  dimension(moints1len),  intent(in) :: moints1
