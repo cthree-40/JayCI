@@ -403,6 +403,117 @@ CONTAINS
       end function Index2E
 !====================================================================
 END MODULE integral
+MODULE search_fcns
+! This module contains functions for searching through lists
+      IMPLICIT NONE
+CONTAINS
+!=====================================================================
+!>int_search
+! Searches for an integer match in a list and locates the matching element
+! Returns 0if element is not found
+! ** int_list is ORDERED
+!---------------------------------------------------------------------
+      subroutine int_search( int_lookfor, int_list, list_length, int_found_el )
+            IMPLICIT NONE
+            integer,intent(IN)      :: int_lookfor, list_length
+            integer,dimension(list_length),intent(IN) :: int_list
+            integer,intent(OUT)     :: int_found_el
+            integer                 :: start_pt      !Where to begin searches
+            integer                 :: i,j
+            int_found_el=0
+
+            if(MOD(list_length,2).EQ.0)then     !If list length is even
+                  start_pt=(list_length)/2
+            else
+                  start_pt=(list_length+1)/2
+            end if
+            if(int_list(start_pt).EQ.int_lookfor)then !Match found
+                  int_found_el=start_pt
+                  RETURN !Leave
+            else if(int_list(start_pt).GT.int_lookfor)then !Search below
+                  do i=1,start_pt-1
+                        if(int_list(i).EQ.int_lookfor)then
+                              int_found_el=i
+                              RETURN      !Leave
+                        end if
+                  end do
+                  RETURN !Leave int_found_el=0
+            else
+                  do i=start_pt+1,list_length
+                        if(int_list(i).EQ.int_lookfor)then
+                              int_found_el=i
+                              RETURN      !Leave
+                        end if
+                  end do
+                  RETURN !Leave int_found_el=0
+            end if
+      end subroutine int_search
+!=====================================================================
+!>int_search2
+! Faster integer list searcher - Calls subroutine to truncate search space
+!  subroutine being called is str_search1
+!---------------------------------------------------------------------
+      subroutine int_search2(int_lookfor,int_list,list_length,int_found_el)
+            implicit none
+            integer,intent(IN)      ::int_lookfor,list_length
+            integer,dimension(list_length),intent(in) ::int_list
+            integer,intent(out)     ::int_found_el
+            integer     ::lwr_bnd,upp_bnd !upper and lower bounds (for sub call)
+            integer     ::len_substr      !length of substrings
+            integer     ::i
+            len_substr=list_length        !Initialize at full string
+            lwr_bnd=1
+            upp_bnd=list_length
+            int_found_el=0
+            do while(len_substr.GT.3)
+                  call str_search1(int_lookfor,int_list(lwr_bnd:upp_bnd), &
+                        (upp_bnd-lwr_bnd+1),lwr_bnd,upp_bnd,len_substr,   &
+                        int_found_el) 
+            end do
+            do i=lwr_bnd,upp_bnd
+                  if (int_list(i).eq.int_lookfor)then
+                        int_found_el=i
+                        RETURN
+                  end if
+            end do
+            RETURN
+      end subroutine int_search2
+      subroutine str_search1(int_lookfor,int_list,list_length,lower,upper, &
+            srch_length, matching_element)
+            IMPLICIT NONE
+            integer,intent(IN)      ::int_lookfor,list_length
+            integer,dimension(list_length),intent(in) ::int_list
+            integer,intent(in out)  ::lower,upper
+            integer,intent(in out)  ::srch_length,matching_element
+            integer     ::start_point
+            !real*8,parameter  ::golden_ratio=1.61803398875
+            !start_point=int(REAL(list_length)/golden_ratio)+1       !use golden ratio to search
+            start_point=list_length*2/3+1
+            !if(MOD(list_length,2).EQ.0)then
+            !      start_point=list_length/2
+            !else
+            !      start_point=(list_length+1)/2
+            !end if
+            
+            if(int_list(start_point).EQ.int_lookfor)then
+                  srch_length=0
+                  matching_element=start_point+lower-1
+                  RETURN      !Leave subroutine
+            else if(int_list(start_point).GT.int_lookfor)then !Search below
+                  upper=start_point-1+lower
+                  srch_length=upper-lower+1
+                  RETURN      !Leave subroutine with bounds adjusted for a
+                              ! search below the current midpoint
+            else if(int_list(start_point).LT.int_lookfor)then !Search above
+                  lower=start_point+lower-1
+                  srch_length=upper-lower+1
+                  RETURN      !Leave subroutine with bounds adjusted for a
+                              ! search above the current midpoint
+            end if
+            RETURN
+      end subroutine str_search1
+!====================================================================
+END MODULE search_fcns  
 !********************************************************************
 ! This module contains string manipulation utilities
 !====================================================================
@@ -516,48 +627,170 @@ CONTAINS
 !  swp2 = new value of string(indx2)
 !  permind = parity
 !
-!  NOTE: indx1<indx2
 !--------------------------------------------------------------------
       subroutine cannon2(string,length,indx1,swp1,indx2,swp2,permind)
+            use search_fcns,  only:int_search2
             IMPLICIT NONE
             integer, intent(IN) ::length,indx1,indx2,swp1,swp2
             integer, dimension(length), intent(INOUT) ::string
-            integer, intent(OUT)                    ::permind
-            integer ::i,j,k,tmp,tswp1,tswp2
-            !Initialize permind
+            integer, intent(OUT)                      ::permind
+            integer,dimension(:),allocatable          ::temp_list
+            integer ::i,j,k,tperm
+            !Initialize
             permind=1
-            tswp2=swp2
-            tswp1=swp1
-            if(swp1.GT.swp2)then 
+            ! Make subsitutions
+            if(swp1.gt.swp2)then    !Swap subsituting orbitals
                   permind=permind*(-1)
-                  tmp=swp2
-                  tswp2=swp1
-                  tswp1=tmp    !Permute swapped columns
-            end if!swp1.GT.swp2
-            !Make substitutions
-            string(indx1)=tswp1
-            string(indx2)=tswp2
-            !Loop through string
-            do i=1,length-1
-                  if(string(i).GT.string(i+1))then
-                        !Loop over prev. elements to see where string(i)+1 belongs
-                        do j=1,i
-                              if(string(i+1).LT.string(j))then
-                                    tmp=string(i+1)
-                                    do k=i,j,-1
-                                          string(k+1)=string(k)
-                                          permind=permind*(-1)
-                                    end do!k
-                                    string(j)=tmp
-                              else
-                                    CYCLE!j->j+1
-                              end if!string(i+1).GT.string(j)
-                        end do
-                  end if!string(i).GT.string(i+1)
-            end do!i
+                  string(indx1)=swp2
+                  string(indx2)=swp1
+            else
+                  string(indx1)=swp1
+                  string(indx2)=swp2
+            end if
+            ! Order second swap
+            call cannon3(string,length,indx2,tperm)
+            permind=permind*tperm
+            ! Order first swap
+            call cannon3(string,length,indx1,tperm)
+            permind=permind*tperm
+                  
             RETURN!Return ordered string and parity of permutation
       end subroutine cannon2
 !====================================================================
+!>cannon3
+! Returns cannonocalized string and parity
+!--------------------------------------------------------------------
+      subroutine cannon3(string,length,index_sub,permind)
+            implicit none
+            integer,intent(in)                        ::length,index_sub
+            integer,intent(out)                       ::permind
+            integer,dimension(length),intent(in out)  ::string
+            integer,dimension(:),allocatable          ::temp
+            integer                                   ::i,j,test
+            permind=1
+            !Check if index_sub is length or 1
+            if(index_sub.EQ.length)then !Element to change is last
+                  if(string(index_sub).GT.string(index_sub-1))then !Do nothing
+                        RETURN
+                  else if(string(index_sub).LT.string(1))then !Move last element to first position
+                        allocate(temp(length-1))
+                        temp(1:length-1)=string(1:length-1)
+                        string(1)=string(index_sub)
+                        string(2:length)=temp(1:length-1)
+                        deallocate(temp)
+                        permind=permind*(-1**(length-1))
+                        RETURN
+                  else
+                        do i=index_sub-2,1,-1
+                              if(string(i).LT.string(index_sub))then
+                                    allocate(temp(length-i-1))
+                                    temp(1:length-i-1)=string(i+1:index_sub-1)
+                                    string(i+1)=string(index_sub)
+                                    string(i+2:length)=temp(1:length-i-1)
+                                    deallocate(temp)
+                                    permind=permind*((-1)**(length-i-1))
+                                    RETURN
+                              end if
+                        end do
+                  end if
+            else if(index_sub.EQ.1)then!Element to change is first
+                  if(string(index_sub).LT.string(index_sub+1))then !Do nothing
+                        RETURN
+                  else if(string(index_sub).GT.string(length))then !Put first element last
+                        allocate(temp(length-1))
+                        temp(1:length-1)=string(2:length)
+                        string(length)=string(index_sub)
+                        string(1:length-1)=temp(1:length-1)
+                        deallocate(temp)
+                        permind=permind*((-1)**(length-1))
+                        RETURN
+                  else
+                        do i=3,length
+                              if(string(index_sub).LT.string(i))then
+                                    allocate(temp(1:i-2))
+                                    temp(1:i-2)=string(2:i-1)
+                                    string(i-1)=string(index_sub)
+                                    string(1:i-2)=temp(1:i-2)
+                                    deallocate(temp)
+                                    permind=permind*((-1)**(i-2))
+                                    RETURN
+                              end if
+                        end do
+                  end if
+            else
+                  if(string(index_sub).GT.string(index_sub+1))then!Go above
+                        call order('u',string(index_sub),(length-index_sub+1),permind)
+                        RETURN
+                  else if(string(index_sub).LT.string(index_sub-1))then!Go below
+                        call order('d',string(1),index_sub,permind)
+                        RETURN
+                  end if
+            end if
+            RETURN
+      end subroutine cannon3  
+!=====================================================================
+!>order
+! Subroutine to find location, and swap, first or last element in a list
+!---------------------------------------------------------------------
+      subroutine order(direction,string,length,permind)
+            implicit none
+            character(len=1),intent(IN)   ::direction
+            integer,intent(IN)            ::length
+            integer,intent(in out)        ::permind
+            integer,dimension(length),intent(in out)  :: string
+            integer,dimension(:),allocatable    ::temp
+            integer     ::i
+            !Up or down?
+            if(direction.eq.'d')then !string(length) is element to permute
+                  if(string(length).LT.string(1))then !Move element to first place
+                        allocate(temp(1:length-1))    !for string(1:length-1)
+                        temp(1:length-1)=string(1:length-1)
+                        string(1)=string(length)      !perform swap
+                        string(2:length)=temp(1:length-1)
+                        deallocate(temp)
+                        permind=permind*((-1)**(length-1))
+                        RETURN
+                  else
+                    do i=length-1,2,-1
+                        if(string(length).GT.string(i))then !Found spot
+                              allocate(temp(1:length-i))    !for string(i+1,length-1)
+                              temp(1:length-i)=string(i+1:length-1)
+                              string(i+1)=string(length)
+                              string(i+2:length)=temp(1:length-i)
+                              deallocate(temp)
+                              permind=permind*((-1)**(length-i-1))
+                              RETURN
+                        end if
+                    end do!i
+                  end if!string(length).lt.string(1)
+            else if(direction.eq.'u')then !string(1) is element to permute
+                  if(string(1).GT.string(length))then !Move elemnent to last place
+                        allocate(temp(1:length-1))    !for string(2:length)
+                        temp(1:length-1)=string(2:length)
+                        string(length)=string(1)
+                        string(1:length-1)=temp(1:length-1)
+                        deallocate(temp)
+                        permind=permind*((-1)**(length-1))
+                        RETURN
+                  else
+                    do i=2,length           !move up string
+                        if(string(i).GT.string(1))then      !Found spot
+                              allocate(temp(1:i-2))         !for string(2:i-1)
+                              temp(1:i-2)=string(2:i-1)
+                              string(i-1)=string(1)
+                              string(1:i-2)=temp(1:i-2)
+                              deallocate(temp)
+                              permind=permind*((-1)**(i-2)) !(i-2) is length of temp. aka num. of switches
+                              RETURN
+                        end if
+                    end do!i
+                  end if! string(1).gt.string(length)
+            else
+                  STOP "Error reading parameter1 in order()"
+            end if
+            RETURN
+      end subroutine order
+                                    
 END MODULE string_util
 !********************************************************************
 MODULE input_proc
@@ -679,111 +912,7 @@ CONTAINS
   end subroutine
 END MODULE orthogroutines
 !*********************************************************************
-MODULE search_fcns
-! This module contains functions for searching through lists
-      IMPLICIT NONE
-CONTAINS
-!=====================================================================
-!>int_search
-! Searches for an integer match in a list and locates the matching element
-! Returns 0if element is not found
-! ** int_list is ORDERED
-!---------------------------------------------------------------------
-      subroutine int_search( int_lookfor, int_list, list_length, int_found_el )
-            IMPLICIT NONE
-            integer,intent(IN)      :: int_lookfor, list_length
-            integer,dimension(list_length),intent(IN) :: int_list
-            integer,intent(OUT)     :: int_found_el
-            integer                 :: start_pt      !Where to begin searches
-            integer                 :: i,j
-            int_found_el=0
-            if(MOD(list_length,2).EQ.0)then     !If list length is even
-                  start_pt=(list_length)/2
-            else
-                  start_pt=(list_length+1)/2
-            end if
-            if(int_list(start_pt).EQ.int_lookfor)then !Match found
-                  int_found_el=start_pt
-                  RETURN !Leave
-            else if(int_list(start_pt).GT.int_lookfor)then !Search below
-                  do i=1,start_pt-1
-                        if(int_list(i).EQ.int_lookfor)then
-                              int_found_el=i
-                              RETURN      !Leave
-                        end if
-                  end do
-                  RETURN !Leave int_found_el=0
-            else
-                  do i=start_pt+1,list_length
-                        if(int_list(i).EQ.int_lookfor)then
-                              int_found_el=i
-                              RETURN      !Leave
-                        end if
-                  end do
-                  RETURN !Leave int_found_el=0
-            end if
-      end subroutine int_search
-!=====================================================================
-!>int_search2
-! Faster integer list searcher - Calls subroutine to truncate search space
-!  subroutine being called is str_search1
-!---------------------------------------------------------------------
-      subroutine int_search2(int_lookfor,int_list,list_length,int_found_el)
-            implicit none
-            integer,intent(IN)      ::int_lookfor,list_length
-            integer,dimension(list_length),intent(in) ::int_list
-            integer,intent(out)     ::int_found_el
-            integer     ::lwr_bnd,upp_bnd !upper and lower bounds (for sub call)
-            integer     ::len_substr      !length of substrings
-            len_substr=list_length        !Initialize at full string
-            lwr_bnd=1
-            upp_bnd=list_length
-            int_found_el=0
-            do while(len_substr.GE.1)
-                  call str_search1(int_lookfor,int_list(lwr_bnd:upp_bnd), &
-                        (upp_bnd-lwr_bnd+1),lwr_bnd,upp_bnd,len_substr,   &
-                        int_found_el)
-            end do
-            
-            RETURN
-      end subroutine int_search2
-      subroutine str_search1(int_lookfor,int_list,list_length,lower,upper, &
-            srch_length, matching_element)
-            IMPLICIT NONE
-            integer,intent(IN)      ::int_lookfor,list_length
-            integer,dimension(list_length),intent(in) ::int_list
-            integer,intent(in out)  ::lower,upper
-            integer,intent(in out)  ::srch_length,matching_element
-            integer     ::start_point
-            !real*8,parameter  ::golden_ratio=1.61803398875
-            !start_point=int(REAL(list_length)/golden_ratio)+1       !use golden ratio to search
-            start_point=list_length*2/3+1
-            !if(MOD(list_length,2).EQ.0)then
-            !      start_point=list_length/2
-            !else
-            !      start_point=(list_length+1)/2
-            !end if
-            if(int_list(start_point).EQ.int_lookfor)then
-                  srch_length=0
-                  matching_element=start_point+lower-1
-                  RETURN      !Leave subroutine
-            else if(int_list(start_point).GT.int_lookfor)then !Search below
-                  upper=upper-start_point
-                  srch_length=upper-lower+1
-                  RETURN      !Leave subroutine with bounds adjusted for a
-                              ! search below the current midpoint
-            else if(int_list(start_point).LT.int_lookfor)then !Search above
-                  lower=lower+start_point
-                  srch_length=upper-lower+1
-                  RETURN      !Leave subroutine with bounds adjusted for a
-                              ! search above the current midpoint
-            end if
-            RETURN
-      end subroutine str_search1
-            
-                  
 
-END MODULE search_fcns  
 
                   
                   
