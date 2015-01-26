@@ -4,17 +4,39 @@
 ## Yarkony Group
 ## The Johns Hopkins University
 ## 
+# Currently tested with Intel Fortran Compilers ONLY.
+# Currently tested on Linux ONLY.
+# Need LAPACK and BLAS. Tested for Intel MKL ONLY.
 #
-
+#
 #######################################
 # Build environment
 JOBDIR	:= ..
+
 #SOURCE	:= $(JOBDIR)/source2
 SOURCE	:= .
 BIN		:= $(JOBDIR)/bin
-COMPLR	:= ifort -i8
-PREFIX	:= sh -c
-LIBS1		:= -L$(MKLROOT)/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm
+
+# Set compiler
+# We build on edison
+ifeq ($(NERSC_HOST),edison)
+	COMPLR	:= ftn -i8
+# Or we are on Hyperion
+else
+	COMPLR	:= ifort -i8
+endif
+
+PREFIX		:= sh -c
+
+# Set Libraries
+# We build on edison
+ifeq ($(NERSC_HOST),edison)
+	LIBS1	:= 
+# Or we are on Hyperion
+else
+	LIBS1	:= -L$(MKLROOT)/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm
+endif
+
 LIBS2		:= $(SOURCE)/colib.a $(SOURCE)/blaswrapper.a
 CPOPS		:= -auto -c -assume byterecl -O3
 DEBUG		:= -debug -gen-interfaces -warn interfaces -g -traceback
@@ -24,7 +46,7 @@ VTUNE		:= -g -O3
 # Executables
 EXEC1		:= $(BIN)/jayCI1.x
 EXEC2		:= $(BIN)/jayCI2.x
-TESTEX	:= $(BIN)/test.x
+TESTEX		:= $(BIN)/test.x
 
 # Clean up
 REMOVE	:= rm -f
