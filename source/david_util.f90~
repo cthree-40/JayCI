@@ -83,9 +83,8 @@ contains
     rnge = 'a'            ! Return full range of eigenvectors & eigenvalues
     uplo = 'l'            ! Lower  triangle is stored in matrix A
     abstol = dlamch( 'Safe minimum' ) 
-    lwork  = 30*dim_mat + 10
-    liwork = 15*dim_mat
-    info = 0
+    lwork  = 26*dim_mat + 10
+    liwork = 11*dim_mat
   ! Allocate arrays
     allocate( isuppz( 2*dim_mat ) )
     allocate( work( lwork ) )

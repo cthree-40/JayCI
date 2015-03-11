@@ -68,7 +68,6 @@ CONTAINS
                   end do
             end do
             !Diagonalize ham_block using DSYEVR
-            print *, "Diagonalizing ham_block"
             CALL diag_dsyevr(ham_block,subBlockDim,tmp_eigvecs,tmp_eigvals)
             
             ALLOCATE(tmp_vecs(ciDim,initGuessDim))

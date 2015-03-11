@@ -111,7 +111,7 @@ test:	$(OBJSTEST) | $(BIN)
 
 %.o:$(SOURCE)/%.f90
 	@echo " Building $< "
-	$(PREFIX) "$(COMPLR) -cpp -o $@ $< $(CPOPS) $(VTUNE)"
+	$(PREFIX) "$(COMPLR) -cpp -o $@ $< $(CPOPS) $(DEBUG) $(PREPROC) $(VTUNE)"
 
 clean1:
 	$(RM) $(DRIV1) ./*genmod.f90./*.o ./*.mod 

@@ -221,7 +221,6 @@ PROGRAM jayCI2
       ALLOCATE(Init_Vectors(ciDim,initGuessDim))
       if(preDiagRoutine.EQ.1)then !Subblock diagonalization
             subBlockDim=200
-            print *, "Calling prediagonalization subroutine "
             CALL preDiagSubBlock(ciDim,MOints1,M1Len,MOints2,M2Len,&
                   Det_Exp,subBlockDim,initGuessDim,aElec,bElec,    &
                   Orbitals,Init_Vectors)
