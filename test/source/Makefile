@@ -80,7 +80,7 @@ driver1:	$(DRIV1) | $(BIN)
 	$(PREFIX) "$(COMPLR) -o $(EXEC1) $(DRIV1) $(LIBS1) $(LIBS2)"
 	@echo " ------------------------------------------------------------------------"
 	@echo " Cleaning... "
-	$(RM) $(DRIV1) ./genmod.f90 ./*.o ./*.mod
+	$(RM) $(DRIV1) ./*genmod.f90 ./*.o ./*.mod
 
 
 driver2:$(DRIV2) | $(BIN)
@@ -103,7 +103,7 @@ test:	$(OBJSTEST) | $(BIN)
 	$(PREFIX) "$(COMPLR) -o $(TESTEX) $(OBJSTEST) $(LIBS1) $(LIBS2) $(DEBUG)"
 	@echo " ------------------------------------------------------------------------"
 	@echo " Cleaning... "
-	$(RM) $(OBJSTEST) ./*genmod.f90 ./*.o ./*.mod
+	$(RM) $(OBJSTEST) ./*__genmod.f90 ./*.o ./*.mod
 
 %.o:$(SOURCE)/%.f
 	@echo " Building $< "
@@ -114,10 +114,10 @@ test:	$(OBJSTEST) | $(BIN)
 	$(PREFIX) "$(COMPLR) -cpp -o $@ $< $(CPOPS) $(DEBUG) $(PREPROC) $(VTUNE)"
 
 clean1:
-	$(RM) $(DRIV1) ./*genmod.f90./*.o ./*.mod 
+	$(RM) $(DRIV1) ./*__genmod.f90./*.o ./*.mod 
 	@echo " Finished cleaning."
 
 
 clean2:
-	$(RM) $(DRIV2) ./*.o ./*.mod ./*genmod.f90
+	$(RM) $(DRIV2) ./*.o ./*.mod ./*__genmod.f90
 	@echo " Finished cleaning."

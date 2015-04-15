@@ -59,10 +59,10 @@ subroutine acthv(In_Vector,MOints1,MOints2,M1Len,M2Len,pString,    &
      write(*, "(1x,f20.12,A,f20.12)") hcolumn(i), "  ", outvec(i)
   end do
   call GenOrbString(1, aElec, Orbitals, aDets, alphastr )
-  call GenOrbString(10263, bElec, Orbitals, bDets, betastr  )
+  call GenOrbString(16171, bElec, Orbitals, bDets, betastr  )
   write(*,"(1x,7i3)") alphastr
   write(*,"(1x,7i3)") betastr
-  call GenOrbString(571, bElec, Orbitals, bDets, betastr )
+  call GenOrbString(8856, belec, Orbitals, bDets, betastr )
   write(*,"(1x,7i3)") betastr
   stop
 #endif

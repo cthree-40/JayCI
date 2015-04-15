@@ -85,14 +85,14 @@ subroutine citrunc( adets, bdets, aelec, belec, orbitals, nfrozen, &
   call enffrozen( betastrings, nfrozen, belec, orbitals, bdets )
 ! ...ENFORCE DOCC RESTRICTIONS...
   call enfdocc( alphastrings, adets, aelec, orbitals, nfrozen, &
-                ndocc, nactive, xlevel )
+                ndocc, nactive, xlevel, 'A' )
   call enfdocc( betastrings, bdets, belec, orbitals, nfrozen, &
-                ndocc, nactive, xlevel )
+                ndocc, nactive, xlevel, 'B' )
 ! ...ENFORCE CAS RESTRICTIONS
   call enfactive( alphastrings, adets, orbitals, aelec, nfrozen,&
-                  ndocc, nactive, xlevel )
+                  ndocc, nactive, xlevel, 'A' )
   call enfactive( betastrings, bdets, orbitals, belec, nfrozen, &
-                  ndocc, nactive, xlevel )
+                  ndocc, nactive, xlevel, 'B' )
 
 ! Write out the alpha string indices
 ! Allocate mapping array

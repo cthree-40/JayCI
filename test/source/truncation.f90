@@ -96,7 +96,7 @@ contains
 !  strings. Makes indices that do not satisfy DOCC restrictions 0.
 !--------------------------------------------------------------------
   subroutine enfdocc( string, determs, elecs, orbitals, nfrozen, &
-                      ndocc, nactive, xlevel )
+                      ndocc, nactive, xlevel, spinval )
 ! Input:
 !  string   = alpha/beta string indices         integer array  1-d
 !  determs  = alpha/beta determinants           integer scalar
@@ -110,6 +110,7 @@ contains
 ! ...input integer scalars...
     integer, intent(in) :: determs, elecs, orbitals, nfrozen, ndocc,&
                            xlevel, nactive
+    character*1, intent(in) :: spinval
 ! ...input/output integer arrays...
     integer, dimension(determs), intent(inout) :: string
 ! ...loop integer scalars...
@@ -121,7 +122,6 @@ contains
 !--------------------------------------------------------------------
 ! Allocate arrays
     ALLOCATE(string1(elecs))
-    ALLOCATE(string2(elecs))
 ! Loop through determinants
     lpa: do i=1, determs
 ! Test if string is in expansion
@@ -129,13 +129,21 @@ contains
         cycle lpa
       end if
 ! Construct string for indice i
-      if ( string(i) .eq. 1 ) then
-        do j=1, elecs
-          string1(j) = j
-        end do
+
+      if ( spinval .eq. 'A' ) then
+         call GenOrbString_Alpha( string(i), elecs, orbitals, determs, &
+              determs, string1 )
       else
-        call StrFind2( string2, elecs, orbitals, determs, string1 )
+         call GenOrbString_Beta( string(i), elecs, orbitals, determs,  &
+              determs, string1 )
       end if
+!      if ( string(i) .eq. 1 ) then
+!        do j=1, elecs
+!          string1(j) = j
+!        end do
+!      else
+!        call StrFind2( string2, elecs, orbitals, determs, string1 )
+!      end if
       
       test=0
 ! Count excitations in string1
@@ -146,13 +154,12 @@ contains
       end do
 
       if ( test-nactive > xlevel) then
-        string(i) = 0   ! Remove from expansion
+         string(i) = 0   ! Remove from expansion
       end if
       
-      string2 = string1
       string1 = 0
     end do lpa
-    DEALLOCATE(string1, string2)
+    DEALLOCATE(string1)
     return
   end subroutine enfdocc
 !====================================================================
@@ -161,7 +168,7 @@ contains
 ! Makes indices that do not satisfy restrictions 0.
 !--------------------------------------------------------------------
   subroutine enfactive( string, determs, orbitals, elecs, nfrozen, &
-                        ndocc, nactive, xlevel )
+                        ndocc, nactive, xlevel, spinval )
 ! Input:
 !  string   = alpha/beta string indices           integer array  1-d
 !  determs  = alpha/beta determinants             integer scalar
@@ -176,6 +183,7 @@ contains
 ! ...input integer scalars...
     integer, intent(in) :: determs, orbitals, elecs, nfrozen, &
                            ndocc, nactive, xlevel
+    character*1, intent(in) :: spinval
 ! ...input integer arrays...
     integer, dimension(determs), intent(inout) :: string
 ! ...loop integer scalars...
@@ -187,7 +195,7 @@ contains
 !--------------------------------------------------------------------
 !Allocate arrays
     ALLOCATE(string1(elecs))
-    ALLOCATE(string2(elecs))
+
 ! Loop over determinants
     lpa: do i=1, determs
 ! Test if string is in expansion
@@ -195,13 +203,14 @@ contains
         cycle lpa
       end if
 ! Construct string
-      if ( string(i) .eq. 1 ) then
-        do j=1, elecs
-          string1(j) = j
-        end do
+      if ( spinval .eq. 'A' ) then
+         call GenOrbString_Alpha( string(i), elecs, orbitals, determs, &
+              determs, string1 )
       else
-        call StrFind2( string2, elecs, orbitals, determs, string1 )
+         call GenOrbString_Beta( string(i), elecs, orbitals, determs, &
+              determs, string1 )
       end if
+
 ! Count excitations in string
       test = 0
       do j=1, elecs
@@ -212,13 +221,12 @@ contains
       
 
       if ( test > xlevel ) then
-        string(i) = 0
+         string(i) = 0
       end if
 ! Close loop
-      string2=string1
       string1=0
     end do lpa
-    DEALLOCATE(string1,string2)
+    DEALLOCATE(string1)
     return
   end subroutine enfactive
 !====================================================================

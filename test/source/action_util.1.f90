@@ -406,6 +406,7 @@ contains
                 loop_Orbitals2: do n=k+1, Orbitals-bElec !
                    ! Note: m must always be less than j
                    ! get double replacement information
+
                    call DRepInfo( bString, bElec, qExct1(n), m, qExct1(k), j, &
                         Orbitals, eps2, dxindx1 )
                    !call DRepInfo( bString, bElec, qExct1(k), j, qExct1(n), m, &
@@ -432,12 +433,6 @@ contains
                    ! loop over p's
                    loop_pstring2: do o = qLocate(cLoc2) + 1, qLocate(cLoc2) + qStep(cLoc2)
                       ! find index in string: qLocate(i) .... qLocate (i + qStep(i) )
-#ifdef DEBUGGING
-                      if ( dxindx1 .eq. 10263 .or. qDets(i) .eq. 10263 ) then
-                         write(*,"(1x,A,i8,A,i8)") "dxindx1 = ", dxindx1, " qDets(i) = ", qDets(i) 
-                         write(*,"(1x,A,i8,A,i8)") "Looking for ", qString(o), " in list beginning with ", qString(qLocate(i)+1)
-                      end if
-#endif
                       p = 0
                       call int_search2( qString(o), qString(qLocate(i)+1), qStep(i), p )
                       if ( p .eq. 0 ) then
@@ -445,11 +440,6 @@ contains
                       end if
                       iVIndx = XRefList(o)
                       oVIndx = XRefList(p + qLocate(i))
-#ifdef DEBUGGING
-                      if ( oVIndx .eq. 573 .or. iVIndx .eq. 573 ) then
-                         print *, "Integral = ", int1e3," Element 573 = ", OutVector(573), " oVIndx = ", oVIndx, " iVIndx = ", iVIndx
-                      end if
-#endif
                       OutVector(oVIndx) = OutVector(oVIndx) + int1e3*InVector(iVIndx)
                       OutVector(iVIndx) = OutVector(iVIndx) + int1e3*InVector(oVIndx)
 
