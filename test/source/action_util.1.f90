@@ -134,13 +134,13 @@ contains
                 cycle loop_Orbitals
              end if
              ! search for determinant in string
-             call int_search2( sxindx1, pDets(i+1), (pDetsTrunc-i), cLoc )
+             call int_search2( sxindx1, pDets(1), (pDetsTrunc), cLoc )
              ! if determinant is not found, cycle
              if ( cLoc .eq. 0 ) then
                 cycle loop_Orbitals
              end if
              ! cLoc gives location of matching index above pDets(i) in pDets
-             cLoc = cLoc + i
+             !cLoc = i
              ! store single replacment information
              currsRep%exIndex  = sxindx1
              currsRep%parity   = eps1
@@ -163,6 +163,13 @@ contains
                 if ( oVIndx .eq. 0 ) then
                    cycle loop_qstring1
                 end if
+#ifdef DEBUGGING
+                if ( oVIndx + pLocate(i) .eq. 1806 ) then
+                   print *, "oVIndx = ", oVIndx, " q = ", pString(m)
+                   print *, "     i = ", i, " pLocate(i) = ", pLocate(i)
+                   print *, "pstring(plocate(i)+1)", pString(pLocate(i)+1)
+                end if
+#endif
                 oVIndx = oVIndx + pLocate(i)
                 ! compute contribution
                 call eval_singlex2('A', pString(m), bElec, Orbitals, bDets, &
@@ -178,7 +185,7 @@ contains
                 loop_Orbitals2: do n = k+1, Orbitals-aElec
                    ! Note: m must always be less than j
                    ! get double replacment information
-                   call DRepInfo( aString, aElec, pExct1(k), j, pExct1(n), m, &
+                   call DRepInfo( aString, aElec, pExct1(n), m, pExct1(k), j, &
                         Orbitals, eps2, dxindx1 )
                    cLoc2 = 0
                    ! Test if dxindx1 is in expansion and greater than pDets(i)
@@ -190,11 +197,11 @@ contains
                       cycle loop_Orbitals2
                    end if
                    ! search for determinant in string
-                   call int_search2( dxindx1, pDets(i+1), (pDetsTrunc - i), cLoc2 )
+                   call int_search2( dxindx1, pDets(1), (pDetsTrunc), cLoc2 )
                    if ( cLoc2 .eq. 0 ) then
                       cycle loop_Orbitals2
                    end if
-                   cLoc2 = i + cLoc2
+                   !cLoc2 =
                    ! Compute integral
                    int1e3 = eps2*( Moints2( Index2E(aString(m),pExct1(k),aString(j), &
                         pExct1(n)) ) - Moints2( Index2E(aString(m), pExct1(n),       &
@@ -246,7 +253,7 @@ contains
                       cycle loop_Orbitals3
                    end if
                    ! Check if sxindx2 is in expansion
-                   if ( sxindx2 .gt. qDets(qDetsTrunc) ) then
+                   if ( sxindx2 .gt. pString(pLocate(i) + pStep(i)) ) then
                       cycle loop_Orbitals3
                    end if
                    cLoc2=0
@@ -260,7 +267,7 @@ contains
                    ! Compute contribution
                    int3e2 = Moints2( Index2E( currsRep%orbital1, currsRep%orbital2, &
                         bString(l), qExct1(m) ) )
-                   iVIndx = pLocate( currsRep%detLoc ) + cLoc2 - 1 ! -1 because we start searh at %detLoc
+                   iVIndx = pLocate( currsRep%detLoc ) + cLoc2 + 1
                    oVIndx = k
                    OutVector(oVIndx) = OutVector(oVIndx) + int3e2 * currsRep%parity * eps2 * &
                         InVector(iVIndx)
