@@ -253,13 +253,13 @@ contains
                       cycle loop_Orbitals3
                    end if
                    ! Check if sxindx2 is in expansion
-                   if ( sxindx2 .gt. pString(pLocate(i) + pStep(i)) ) then
-                      cycle loop_Orbitals3
-                   end if
+                   !if ( sxindx2 .gt. pString(pLocate(i)+pStep(i)) ) then
+                   !   cycle loop_Orbitals3
+                   !end if
                    cLoc2=0
                    ! find determinant location in pString(sRepll%detLoc)...
                    !  ...pString(sRepll%detLoc + pStep(sRepll%detLoc))
-                   call int_search2( sxindx2, pString(currsRep%detLoc ), &
+                   call int_search2( sxindx2, pString(pLocate(currsRep%detLoc) + 1 ), &
                         pStep(currsRep%detLoc), cLoc2 )
                    if ( cLoc2 .eq. 0 ) then
                       cycle loop_Orbitals3
@@ -267,7 +267,7 @@ contains
                    ! Compute contribution
                    int3e2 = Moints2( Index2E( currsRep%orbital1, currsRep%orbital2, &
                         bString(l), qExct1(m) ) )
-                   iVIndx = pLocate( currsRep%detLoc ) + cLoc2 + 1
+                   iVIndx = pLocate( currsRep%detLoc ) + cLoc2
                    oVIndx = k
                    OutVector(oVIndx) = OutVector(oVIndx) + int3e2 * currsRep%parity * eps2 * &
                         InVector(iVIndx)
