@@ -85,7 +85,7 @@ contains
     type (sRep), pointer               :: sRepll, currsRep ! linked list, current node
     type (sRep), pointer               :: oldNode
     integer, dimension(:), allocatable :: aString, bString, pExct1, &
-         qExct1, tmpString
+         qExct1, tmpString, new_bstring, new_astring
     integer :: i, j, k, l, m, n, o, p
     integer :: eps1, eps2, oVIndx, iVIndx, cLoc, cLoc2, dxindx1, sxindx1, sxindx2
     real*8  :: int1e1, int2e1, int2e2, int1e3, int3e2
@@ -95,7 +95,9 @@ contains
     allocate(tmpString(aElec))
     ! allocate alpha string and beta string
     allocate(aString(aElec))
+    allocate(new_astring(aElec))
     allocate(bString(bElec))
+    allocate(new_bstring(bElec))
     ! allocate array of possible excitations
     allocate(pExct1(Orbitals - aElec))
     allocate(qExct1(Orbitals - bElec))
@@ -123,7 +125,7 @@ contains
           loop_Orbitals: do k = 1, Orbitals - aElec
              ! generate information for current single replacement
              call SRepInfo( aString, aElec, pExct1(k), j, Orbitals, &
-                  eps1, sxindx1 )
+                  eps1, sxindx1, new_astring )
              cLoc = 0
              ! Test if sxindx1 is in expansion and is greater than pDets(i)
              if ( sxindx1 .lt. pDets(i) ) then
@@ -246,7 +248,7 @@ contains
                 loop_Orbitals3: do m = 1, Orbitals - bElec
                    ! Generate single replacement information
                    call SRepInfo( bString, bElec, qExct1(m), l, Orbitals, &
-                        eps2, sxindx2 )
+                        eps2, sxindx2, new_bstring )
                    ! loop over q indices that correspond to the single excitation
                    !  r(pjv*) in q*>q
                    if ( sxindx2 .lt. pString(k) ) then
@@ -299,7 +301,7 @@ contains
     write(*,"(A)") "Finished alpha contribution computation. Deallocating arrays"
 #endif
     ! deallocate arrays
-    deallocate( aString, bString, pExct1, qExct1, tmpString )
+    deallocate( aString, bString, pExct1, qExct1, tmpString, new_astring )
     return
   end subroutine hv_alpha
 !====================================================================
@@ -332,7 +334,7 @@ contains
     real*8,  dimension(ciDim),      intent(in) :: InVector                    
     real*8,  dimension(ciDim),  intent(in out) :: OutVector                   
     integer, dimension(:), allocatable :: aString, bString, pExct1, &  
-     qExct1, tmpString                                             
+     qExct1, tmpString, new_bString                                             
     integer :: i, j, k, l, m, n, o, p
     integer :: eps1, eps2, oVIndx, iVIndx, sxindx1, sxindx2, cLoc, cLoc2, dxindx1
     real*8  :: int1e1, int2e1, int1e2, int2e2, int1e3
@@ -342,6 +344,7 @@ contains
     ! allocate alpha string and beta string
     allocate(aString(aElec))
     allocate(bString(bElec))
+    allocate(new_bString(bElec))
     ! allocate array of possible excitations
     allocate(pExct1(Orbitals - aElec))
     allocate(qExct1(Orbitals - bElec))
@@ -363,11 +366,17 @@ contains
        call possex1( bString, Orbitals, bElec, (Orbitals - bElec), &
             qExct1 )
        ! loop over single excitations
+       ! Allocate replacement string new_bstring
        loop_elec: do j = 1, bElec
           loop_Orbitals: do k = 1, Orbitals - bElec
-             ! generate information for curren replacement
+             ! generate information for current replacement
              call SRepInfo( bString, bElec, qExct1(k), j, Orbitals, eps1, &
-                  sxindx1 )
+                  sxindx1, new_bstring )
+#ifdef DEBUGGING
+             if ( sxindx1 .eq. 21 ) then
+                write(*,"(A,i10,A,i10)") "qstring = ", i, "eps1 = ", eps1
+             end if
+#endif
              ! Test if sxindx1 is in expansion and is greater than qDets(i)
              if ( sxindx1 .lt. qDets(i) ) then
                 cycle loop_Orbitals
@@ -458,7 +467,7 @@ contains
        tmpString = bString
     end do bstrings
     ! deallocate arrays
-    deallocate( bString, aString, pExct1, qExct1,tmpString )
+    deallocate( bString, aString, pExct1, qExct1,tmpString, new_bstring )
     return
   end subroutine hv_beta
 !===========================================================================
@@ -474,24 +483,23 @@ contains
 !  Eps1     =parity of excitation                                          
 !  Indx     =New string address                                            
 !--------------------------------------------------------------------      
-  subroutine SRepInfo(String,SLen,NewOrb,IndxSwp,Orbitals,Eps1,Indx)   
+  subroutine SRepInfo(String,SLen,NewOrb,IndxSwp,Orbitals,Eps1,Indx, &
+       newString )   
     use addressing, only: AdrFind                                  
     use string_util, only: cannon1swp                              
     IMPLICIT NONE                                                  
     integer,intent(IN)      ::SLen,NewOrb,IndxSwp,Orbitals         
-    integer,dimension(SLen),intent(IN)  ::String                   
-    integer,intent(OUT)     ::Eps1,Indx                            
-    integer,dimension(:),ALLOCATABLE    ::newString                
-    !Allocate newString                                            
-    ALLOCATE(newString(SLen))                                      
+    integer,dimension(SLen),intent(IN)    ::String 
+    integer,intent(OUT)                   ::Eps1,Indx                            
+    integer,dimension(SLen),intent(INOUT) ::newString                
+    !Allocate newString                   
     newString=String                                               
     !Swap orbitals                                                 
     newString(IndxSwp)=NewOrb                                      
     !Return to cannonical ordering                                 
     CALL cannon1swp(newString,SLen,IndxSwp,Eps1)                   
     !Locate address                                                
-    CALL AdrFind(newString,SLen,Orbitals,Indx)                     
-    DEALLOCATE(newString)                                          
+    CALL AdrFind(newString,SLen,Orbitals,Indx)                      
     RETURN                                                         
   end subroutine SRepInfo
 !======================================================================
@@ -570,28 +578,36 @@ contains
     real*8,dimension(M2Len),intent(IN)        ::MOints2                                   
     real*8,intent(OUT)                        ::contr_1elec,contr_2elec                   
     integer     ::i,j,k                                                                   
-    integer,dimension(:),ALLOCATABLE    ::tmp_string                                      
-    ALLOCATE(tmp_string(sp_elecs))                                                        
+!    integer,dimension(:),ALLOCATABLE    ::tmp_string                                      
+!    ALLOCATE(tmp_string(sp_elecs))                                                        
     !One electron contribution                                                            
     contr_1elec=MOints1(Ind2Val(sp_string(bound_elec),sp_excites(excited_elec)))          
     !Two electron contribution                                                            
-    tmp_string=sp_string                                                                  
-    tmp_string(bound_elec)=sp_excites(excited_elec)                                       
+!    tmp_string=sp_string                                                                  
+!    tmp_string(bound_elec)=sp_excites(excited_elec)                                       
     !Compute contribution                                                                 
     contr_2elec=0d0                                                                       
     do i=1, bound_elec-1                                                                  
-       contr_2elec=contr_2elec+MOints2(Index2E(sp_string(bound_elec),                   &
-            sp_excites(excited_elec),sp_string(i),sp_string(i))) - &          
-            MOints2(Index2E(sp_string(bound_elec),sp_string(i),sp_string(i),            &        
-            sp_excites(excited_elec)))                                                
+!       contr_2elec=contr_2elec+MOints2(Index2E(sp_string(bound_elec),                   &
+!            sp_excites(excited_elec),sp_string(i),sp_string(i))) - &          
+!            MOints2(Index2E(sp_string(bound_elec),sp_string(i),sp_string(i),            &        
+!            sp_excites(excited_elec)))                                                
+       contr_2elec = contr_2elec + MOints2(Index2E(sp_string(i),sp_string(i),   &
+            sp_string(bound_elec),sp_excites(excited_elec))) -                  &
+            MOints2(Index2E(sp_string(i),sp_string(bound_elec),sp_string(i),    &
+            sp_excites(excited_elec)))
     end do
     do i=bound_elec+1,sp_elecs                                                            
-       contr_2elec=contr_2elec+MOints2(Index2E(sp_string(bound_elec),                   &                                                                                                                                                                                 
-            sp_excites(excited_elec),sp_string(i),sp_string(i))) - &                                                                                                                                                                                                      
-            MOints2(Index2E(sp_string(bound_elec),sp_string(i),sp_string(i),            &                                                                                                                                                                                 
-            sp_excites(excited_elec))) 
+!       contr_2elec=contr_2elec+MOints2(Index2E(sp_string(bound_elec),                   &
+!            sp_excites(excited_elec),sp_string(i),sp_string(i))) - &          
+!            MOints2(Index2E(sp_string(bound_elec),sp_string(i),sp_string(i),            &        
+!            sp_excites(excited_elec)))                                                
+       contr_2elec = contr_2elec + MOints2(Index2E(sp_string(i),sp_string(i),   &
+            sp_string(bound_elec),sp_excites(excited_elec))) -                  &
+            MOints2(Index2E(sp_string(i),sp_string(bound_elec),sp_string(i),    &
+            sp_excites(excited_elec)))
     end do
-    DEALLOCATE(tmp_string)                                                                
+!    DEALLOCATE(tmp_string)                                                                
     RETURN !Return values                                                                 
   end subroutine eval_singlex1
 !=====================================================================                              

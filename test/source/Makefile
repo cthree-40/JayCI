@@ -23,7 +23,7 @@ ifeq ($(NERSC_HOST),edison)
 	COMPLR	:= ftn -i8
 # Or we are on Hyperion
 else
-	COMPLR	:= ifort -i8
+	COMPLR	:= gfortran -fdefault-integer-8
 endif
 
 PREFIX		:= sh -c
@@ -34,14 +34,22 @@ ifeq ($(NERSC_HOST),edison)
 	LIBS1	:= 
 # Or we are on Hyperion
 else
-	LIBS1	:= -L$(MKLROOT)/lib/intel64 -lmkl_intel_ilp64 -lmkl_sequential -lmkl_core -lpthread -lm
+	LIBS1	:= -L/usr/lib64 -llapack64 -lblas
 endif
 
 LIBS2		:= $(SOURCE)/colib.a $(SOURCE)/blaswrapper.a
-CPOPS		:= -auto -c -assume byterecl -O3 
-DEBUG		:= -debug -check all -check bounds -check uninit -gen-interfaces -warn interfaces -g -traceback
-LKOPT		:= -auto -lpthread
-VTUNE		:= -g -O3
+
+ifneq ($(findstring gfortran,$(COMPLR)),)
+#GNU compilers
+	CPOPS	:= -c -frecord-marker=8 -O3
+	DEBUG	:= -g -fcheck=all -g -fbacktrace
+else
+#Intel compilers
+	CPOPS	:= -auto -c -assume byterecl -O3
+	DEBUG	:= -debug -check all -check bounds -check uninit -gen-interfaces -warn interfaces -g -traceback
+	LKOPT	:= -auto -lpthread
+	VTUNE	:= -g -O3
+endif
 
 # Executables
 EXEC1		:= $(BIN)/jayCI1.x

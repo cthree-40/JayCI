@@ -70,7 +70,12 @@ CONTAINS
             !Diagonalize ham_block using DSYEVR
             print *, "Diagonalizing ham_block"
             CALL diag_dsyevr(ham_block,subBlockDim,tmp_eigvecs,tmp_eigvals)
-            
+
+! PP Block for explicit hamiltonian diagonalization
+#ifdef HAMILTONIAN
+            write(*,"(A,F15.8)") "Eigenvalue 1 = ", tmp_eigvals(1)
+#endif
+
             ALLOCATE(tmp_vecs(ciDim,initGuessDim))
             tmp_vecs(1:ciDim,1:initGuessDim)=tmp_eigvecs(1:ciDim,1:initGuessDim)
             DEALLOCATE(tmp_eigvecs,tmp_eigvals)
