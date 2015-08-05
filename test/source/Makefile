@@ -15,15 +15,25 @@ JOBDIR	:= ..
 
 #SOURCE	:= $(JOBDIR)/source2
 SOURCE	:= .
-BIN		:= $(JOBDIR)/bin
+COLIBDIR:= $(SOURCE)/colib
+UNIXDIR	:= $(SOURCE)/UNIX
+BIN	:= $(JOBDIR)/bin
 
 # Set compiler
 # We build on edison
 ifeq ($(NERSC_HOST),edison)
 	COMPLR	:= ftn -i8
+	COLIBFC := ftn -i8
+	CC	:= cc
+	AR	:= ar rv
+	RANL	:= ranlib
 # Or we are on Hyperion
 else
 	COMPLR	:= gfortran -fdefault-integer-8
+	COLIBFC	:= gfortran -fdefault-integer-8 
+	CC	:= gcc
+	AR	:= ar rv
+	RANL	:= ranlib
 endif
 
 PREFIX		:= sh -c
@@ -37,12 +47,14 @@ else
 	LIBS1	:= -L/usr/lib64 -llapack64 -lblas
 endif
 
-LIBS2		:= $(SOURCE)/colib.a $(SOURCE)/blaswrapper.a
+LIBS2		:= $(SOURCE)/colib.a
 
 ifneq ($(findstring gfortran,$(COMPLR)),)
 #GNU compilers
-	CPOPS	:= -c -frecord-marker=8 -O3
+	CPOPS	:= -c -frecord-marker=4 -O3
+	CLIBOPS	:= -c -frecord-marker=4 -O3
 	DEBUG	:= -g -fcheck=all -g -fbacktrace
+	CDEF	:= -c -DFLUSH -DINT64 -DEXTNAME
 else
 #Intel compilers
 	CPOPS	:= -auto -c -assume byterecl -O3
@@ -62,9 +74,14 @@ REMOVE	:= rm -f
 #######################################
 # Objects
 
+COLIBO	:= blaswrapper.o colib1.o colib2.o colib3.o colib4.o colib5.o colib6.o colib7.o \
+			colib8.o colib9.o colib10.o
+COLIBF	:= blaswrapper.f colib1.f colib2.f colib3.f colib4.f colib5.f colib6.f colib7.f \
+			colib8.f colib9.f colib10.f
+UNIXO	:= fdate.o falloc.o fwtime.o hostnm.o flushstdout.o fsize.o
+UNIXC	:= fdate.c falloc.c fwtime.c hostnm.c flushstdout.c fsize.c
 OBJS1		:= common_util.o truncation.o citrunc.o
-OBJS2		:= $(OBJS1) construct.o action_util.1.o acthv.o david_util.o initial_guess.o Davidson.o \
-			iwfmt.o
+OBJS2		:= $(OBJS1) construct.o action_util.1.o acthv.o david_util.o initial_guess.o Davidson.o
 OBJSTEST	:= common_util.o construct.o action_util.1.o acthv.o test.o
 DRIV1		:= $(OBJS1) jayCI1.o
 DRIV2		:= $(OBJS2) jayCI2.o
@@ -113,6 +130,19 @@ test:	$(OBJSTEST) | $(BIN)
 	@echo " Cleaning... "
 	$(RM) $(OBJSTEST) ./*__genmod.f90 ./*.o ./*.mod
 
+colib:	$(COLIBO) $(UNIXO)
+	$(AR) colib.a $(COLIBO) $(UNIXO)
+	$(RANL) colib.a
+
+%.o:$(SOURCE)/$(UNIXDIR)/%.c
+	@echo " Building $< "
+	$(CC) $(CDEF) -o $@ $<
+
+%.o:$(SOURCE)/$(COLIBDIR)/%.f
+	@echo " Building $< "
+	$(PREFIX) "$(COLIBFC) -o $@ $< $(CPOPS) $(VTUNE) $(DEBUG)"
+	chmod +x colib.a
+
 %.o:$(SOURCE)/%.f
 	@echo " Building $< "
 	$(PREFIX) "$(COMPLR) -o $@ $< $(CPOPS) $(VTUNE)"
@@ -128,4 +158,8 @@ clean1:
 
 clean2:
 	$(RM) $(DRIV2) ./*.o ./*.mod ./*__genmod.f90
+	@echo " Finished cleaning."
+
+cleancolib:
+	$(RM) ./blaswrapper.o ./colib/colib*.o ./colib*.o ./fwtime.o ./hostnm.o ./falloc.o ./fdate.o ./fsize.o ./flushstdout.o
 	@echo " Finished cleaning."

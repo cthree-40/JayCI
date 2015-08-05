@@ -68,7 +68,7 @@ PROGRAM test
       !-----------------------------
       integer     ::srI_sLen,srI_NewOrb,srI_IndxSwp,srI_Orbitals,srI_Eps,srI_Indx,&
                   srI_test_Eps,srI_test_Indx
-      integer,dimension(:),ALLOCATABLE    ::srI_String
+      integer,dimension(:),ALLOCATABLE    ::srI_String, sri_temp
       !-----------------------------
       integer     ::drI_sLen,drI_no1,drI_no2,drI_ind1,drI_ind2,drI_Orbitals,drI_eps1,&
                   drI_indx,drI_test_indx,drI_test_eps1
@@ -416,12 +416,13 @@ PROGRAM test
       srI_test_Eps=-1
       srI_test_Indx=6
       ALLOCATE(srI_String(srI_sLen))
+      allocate(sri_temp(srI_sLen))
       do i=1,srI_sLen
             srI_String(i)=i
       end do
       srI_String(srI_IndxSwp)=srI_NewOrb
       CALL SRepInfo(srI_String,srI_sLen,srI_NewOrb,srI_IndxSwp,srI_Orbitals,&
-            srI_Eps,srI_Indx)
+            srI_Eps,srI_Indx, sri_temp)
       if(srI_Eps.NE.srI_test_Eps)then
             print *, "  SRepInfo() test of Eps  value failed... "
       else

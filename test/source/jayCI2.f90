@@ -124,7 +124,9 @@ PROGRAM jayCI2
   type1=1
   INQUIRE(file=MOfile,EXIST=moints_exists)!Check if moints is in directory
   IF(.NOT.moints_exists)STOP " No molecular integral file. "
-  CALL iwfmt(MOints1,MOints2,type1,Orbitals,MOfile,M1Len,M2Len)
+  MOints1=0d0
+  MOints2=0d0
+  CALL readmoints(MOints1,MOints2,type1,Orbitals,MOfile,M1Len,M2Len)
   !Allocate wavefunction information arrays
   ALLOCATE(pDets(pDLen))
   ALLOCATE(qDets(qDLen))
