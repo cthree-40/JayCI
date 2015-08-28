@@ -3,14 +3,14 @@
 !====================================================================
 MODULE combinatorial
   IMPLICIT NONE
-  PUBLIC      :: Binom
+  PUBLIC      :: binom
   integer,dimension(:,:),ALLOCATABLE  :: Binom_Data
   integer     :: Binom_Data_MaxN,Binom_Data_MaxK
 CONTAINS
   !=====================================================================
   !>Factl(m,n) returns the product of m-->n
   !---------------------------------------------------------------------
-  integer function Factl(m,n)
+  integer function factl(m,n)
     IMPLICIT NONE
     integer,intent(IN)                  ::m,n
     integer                             ::i
@@ -21,11 +21,11 @@ CONTAINS
     else
        Factl=PRODUCT((/ (i,i=m,n)/))
     end if
-  end function Factl
+  end function factl
   !====================================================================
   !>Binom(n,k) returns binomial coefficient of n and k
   !--------------------------------------------------------------------
-  integer function Binom(n,k)
+  integer function binom(n,k)
     IMPLICIT NONE
     integer,intent(IN)                  ::n,k
     !integer,dimension(:,:),ALLOCATABLE  ::tmp_BD
@@ -47,8 +47,8 @@ CONTAINS
        end do
     end if
     !if(n.LE.Binom_Data_MaxN .AND. k.LE.Binom_Data_MaxK)then
-    Binom=Binom_Data(n,k)
-  end function Binom
+    binom=Binom_Data(n,k)
+  end function binom
   !====================================================================
 END MODULE combinatorial
 !********************************************************************
@@ -318,17 +318,19 @@ CONTAINS
   !  read 1-e integrals
   !  read 2-e integrals
   ! Input:
-  !  type = type of integrals to read
+  !  type     = type of integrals to read
   !  orbitals = number of orbitals in system
-  !  mofile = name of molecular orbital file
-  !  m1len = length of moints1
-  !  m2len = length of moints2
+  !  mofile   = name of molecular orbital file
+  !  m1len    = length of moints1
+  !  m2len    = length of moints2
   ! Output:
-  !  moints1 = 1-e integrals
-  !  moints2 = 2-e integrals
+  !  moints1  = 1-e integrals
+  !  moints2  = 2-e integrals
+  !  nuc_rep  = nuclear repulsion energy
+  !  fcenergy = frozen core energy (array, size = 10)
   !--------------------------------------------------------------------
   subroutine readmoints (moints1, moints2, type, orbitals, mofile, &
-    m1len, m2len )
+    m1len, m2len, nuc_rep, fcenergy)
     implicit none
 
     ! **input
@@ -338,7 +340,9 @@ CONTAINS
     ! **output
     real*8, dimension(m1len), intent(out) :: moints1
     real*8, dimension(m2len), intent(out) :: moints2
-
+    real*8,                   intent(out) :: fcenergy
+    real*8,                   intent(out) :: nuc_rep
+    
     ! **header 1 variables for SIFS file
     ! version = sifs version number
     ! ntitle  = number of character*80 titles
@@ -380,9 +384,11 @@ CONTAINS
     !**dword variables
     integer :: num, itypea, itypeb, last, ifmt, ibvtyp, lab1
     !**record variables
-    real*8,  dimension(:), allocatable :: vals, ibitv, buf
+    real*8,  dimension(:),   allocatable :: vals, ibitv, buf
+    integer, dimension(:),   allocatable :: symb
     integer, dimension(:,:), allocatable :: labels
-    real*8 :: fcore
+    real*8,  dimension(:,:), allocatable :: s1h1
+    real*8 :: fcore, score, hcore
     integer, parameter :: msame = 0, nmsame = 1, nomore = 2
     integer, parameter :: iretbv =-1
 
@@ -430,6 +436,9 @@ CONTAINS
       nbpsy, slabel, info, bfnlab, ietype, energy, imtype, map, ierr )
     if (ierr .ne. 0) stop "*** Error reading header 2! ***"
 
+    ! set nuclear repulsion energy
+    nuc_rep = energy(1)
+    
     ! allocate arrays
     allocate (buf(info(2)), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating buf()!***"
@@ -439,38 +448,69 @@ CONTAINS
     if (ierr .ne. 0) stop "*** Error allocating vals()!***"
     allocate (ibitv(info(3) + 63), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating ibitv()!***"
+    allocate (s1h1(info(3), 2), stat = ierr)
+    if (ierr .ne. 0) stop "*** Error allocating s1h1()!***"
+    allocate (symb(nbft))
+    
     ! read 1 electron record
     moints1 = 0d0
     nipv = 2
+    fcenergy = 0d0
+
     do while (last .ne. nomore)
             call sifrd1(aoints, info, nipv, iretbv, buf, num, last, itypea,&
               itypeb, ibvtyp, vals, labels, fcore, ibitv, ierr)
             if (ierr .ne. 0) stop "*** Error reading integral record! ***"
-            
+            print *, "a, b, v = ", itypea, itypeb, ibvtyp
             if (type .eq. 1) then ! we are after T1 + V1
+    
                     if (ibvtyp .eq. 0 .and. itypea .eq. 0 .and. &
-                      itypeb .eq. 2 .and. last .eq. 1 .and. nipv .eq. 2) then
+                      itypeb .eq. 2 .and. last .eq. 1) then
+                            
+                            ! collect values
                             do i = 1, num
                                     l1 = labels(1,i)
                                     l2 = labels(2,i)
                                     index = Ind2Val(l1,l2)
                                     moints1(index) = moints1(index) + vals(i)
                             end do
+                            ! add frozen core contributions
+                            fcenergy = fcenergy + fcore
+
                     else if (ibvtyp .eq. 0 .and. itypea .eq. 0 .and. &
-                      itypeb .eq. 1 .and. last .eq. 1 .and. nipv .eq. 2 ) then
+                      itypeb .eq. 1 .and. last .eq. 1) then
+
+                            ! collect values
                             do i = 1, num
                                     l1 = labels(1,i)
                                     l2 = labels(2,i)
                                     index = Ind2Val(l1,l2)
                                     moints1(index) = moints1(index) + vals(i)
                             end do
+                            ! add frozen core contributions
+                            fcenergy = fcenergy + fcore
+
+                    else if (ibvtyp .eq. 0 .and. itypea .eq. 0 .and. &
+                      itypeb .eq. 4 .and. last .eq. 2) then
+                            ! collect values
+                            do i = 1, num
+                                    l1 = labels(1,i)
+                                    l2 = labels(2,i)
+                                    index = Ind2Val(l1,l2)
+                                    moints1(index) = moints1(index) + vals(i)
+                            end do
+                            ! add frozen core contributions
+                            fcenergy = fcenergy + fcore
+
                     end if
             end if
     end do
+
+    
     ! deallocate arrays
     deallocate (buf, labels, vals, ibitv)
 
-    ! allocate arrays
+        ! allocate arrays
     allocate (buf(info(4)))
     allocate (labels(4,info(5)))
     allocate (vals(info(5)))

@@ -159,9 +159,6 @@ contains
   real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
     aelec, belec, moints1, moints1len, moints2, moints2len, ind1, ind2 )
     use integral
-#ifdef DEBUGGING
-    use addressing, only: AdrFind
-#endif
     implicit none
     integer, intent(in)   :: aelec, belec, moints1len, moints2len, ind1, ind2
     integer, dimension( aelec ),    intent(in) :: pstring1, pstring2     
@@ -173,9 +170,6 @@ contains
     integer :: pd, qd
     integer :: PermInd1, PermInd2
     integer, dimension( :, : ),ALLOCATABLE :: pdiffs, qdiffs
-#ifdef DEBUGGING
-    integer :: address
-#endif
 !--------------------------------------------------------------------
     ALLOCATE(qdiffs(2,2))
     ALLOCATE(pdiffs(2,2))
@@ -183,12 +177,6 @@ contains
     call stringdiffs( pstring1, pstring2, aelec, pdiffs, pd , PermInd1)
 ! Find orbitals differing in beta strings
     call stringdiffs( qstring1, qstring2, belec, qdiffs, qd , PermInd2)
-#ifdef DEBUGGING
-    call AdrFind( qstring2, belec, 24, address )
-    if ( address .eq. 21 ) then
-       write(*,"(A,i10)") " PermInd2 = ", PermInd2
-    end if
-#endif
 ! Test which string has excitation
     val = 0d0
     if ( pd .eq. 1 ) then

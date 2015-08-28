@@ -99,10 +99,10 @@ SUBROUTINE Davidson(initGuessDim,initGuess_vecs,Diagonals,MOints1,  &
                   CALL append_newvec(basis_vecs,curr_dim,ciDim,new_Vector)
                   !Perform Hv on new vector
                   CALL acthv(basis_vecs(1,curr_dim),MOints1,MOints2,M1Len,M2Len,    &
-                        pString,pStep,pLocate,qString,qStep,qLocate,xRefList,       &
-                        ciDim,pDets,pDLen,qDets,qDLen,aDets,bDets,aElec,bElec,      &
-                        Orbitals,Diagonals,nFrozen,nDocc,nActive,hv_vectors(1,      &
-                        curr_dim))
+                    pString,pStep,pLocate,qString,qStep,qLocate,xRefList,       &
+                    ciDim,pDets,pDLen,qDets,qDLen,aDets,bDets,aElec,bElec,      &
+                    Orbitals,Diagonals,nFrozen,nDocc,nActive,hv_vectors(1,      &
+                    curr_dim))
                   !Build vHv subspace matrix
                   ALLOCATE(subsp_ham(curr_dim,curr_dim))
                   CALL build_subham(basis_vecs,hv_vectors,ciDim,curr_dim,subsp_ham)

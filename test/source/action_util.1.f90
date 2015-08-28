@@ -165,13 +165,6 @@ contains
                 if ( oVIndx .eq. 0 ) then
                    cycle loop_qstring1
                 end if
-#ifdef DEBUGGING
-                if ( oVIndx + pLocate(i) .eq. 1806 ) then
-                   print *, "oVIndx = ", oVIndx, " q = ", pString(m)
-                   print *, "     i = ", i, " pLocate(i) = ", pLocate(i)
-                   print *, "pstring(plocate(i)+1)", pString(pLocate(i)+1)
-                end if
-#endif
                 oVIndx = oVIndx + pLocate(i)
                 ! compute contribution
                 call eval_singlex2('A', pString(m), bElec, Orbitals, bDets, &
@@ -372,11 +365,6 @@ contains
              ! generate information for current replacement
              call SRepInfo( bString, bElec, qExct1(k), j, Orbitals, eps1, &
                   sxindx1, new_bstring )
-#ifdef DEBUGGING
-             if ( sxindx1 .eq. 21 ) then
-                write(*,"(A,i10,A,i10)") "qstring = ", i, "eps1 = ", eps1
-             end if
-#endif
              ! Test if sxindx1 is in expansion and is greater than qDets(i)
              if ( sxindx1 .lt. qDets(i) ) then
                 cycle loop_Orbitals

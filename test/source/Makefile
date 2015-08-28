@@ -53,7 +53,7 @@ ifneq ($(findstring gfortran,$(COMPLR)),)
 #GNU compilers
 	CPOPS	:= -c -frecord-marker=4 -O3
 	CLIBOPS	:= -c -frecord-marker=4 -O3
-	DEBUG	:= -g -fcheck=all -g -fbacktrace
+	DEBUG	:= -g -fcheck=all -g -fbacktrace 
 	CDEF	:= -c -DFLUSH -DINT64 -DEXTNAME
 else
 #Intel compilers
@@ -63,12 +63,12 @@ else
 	VTUNE	:= -g -O3
 endif
 
-# Executables
-EXEC1		:= $(BIN)/jayCI1.x
-EXEC2		:= $(BIN)/jayCI2.x
+# Executables ------------------------------------------------------------------
+EXEC1		:= $(BIN)/jayci_exp.x
+EXEC2		:= $(BIN)/jayci.x
 TESTEX		:= $(BIN)/test.x
 
-# Clean up
+# Clean up ---------------------------------------------------------------------
 REMOVE	:= rm -f
 
 #######################################
@@ -80,16 +80,16 @@ COLIBF	:= blaswrapper.f colib1.f colib2.f colib3.f colib4.f colib5.f colib6.f co
 			colib8.f colib9.f colib10.f
 UNIXO	:= fdate.o falloc.o fwtime.o hostnm.o flushstdout.o fsize.o
 UNIXC	:= fdate.c falloc.c fwtime.c hostnm.c flushstdout.c fsize.c
-OBJS1		:= common_util.o truncation.o citrunc.o
-OBJS2		:= $(OBJS1) construct.o action_util.1.o acthv.o david_util.o initial_guess.o Davidson.o
+OBJS1		:= common_util.o truncation1.o
+OBJS2		:= $(OBJS1) construct.o  action_util.1.o acthv.o david_util.o initial_guess.o davidson.o
 OBJSTEST	:= common_util.o construct.o action_util.1.o acthv.o test.o
-DRIV1		:= $(OBJS1) jayCI1.o
-DRIV2		:= $(OBJS2) jayCI2.o
+DRIV1		:= $(OBJS1) jayci_exp.o
+DRIV2		:= $(OBJS2) jayci.o
 
 #######################################
 # Preprocessor flags
 
-PREPROC	:= -DDEBUGGING
+PREPROC	:= -DHAMSOLVE -DDEBUGTRUNC
 PROFILE	:= -prof-gen -prof-dir$(JOBDIR)/Profile_Info
 PROFILE2	:= -prof-use -ipo -prof-dir$(JOBDIR)/Profile_Info
 
@@ -115,7 +115,7 @@ driver2:$(DRIV2) | $(BIN)
 	@echo " ------------------------------------------------------------------------"
 	@echo " Building $@..."
 	@echo " --- "
-	$(PREFIX) "$(COMPLR) -o $(EXEC2) $(DRIV2) $(LIBS1) $(LIBS2) $(VTUNE) "
+	$(PREFIX) "$(COMPLR) -o $(EXEC2) $(DRIV2) $(LIBS1) $(LIBS2) $(DEBUG) $(VTUNE) "
 	@echo " ------------------------------------------------------------------------"
 
 test:	$(OBJSTEST) | $(BIN)
