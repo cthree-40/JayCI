@@ -1,0 +1,7 @@
+&expansion
+ ci_orbitals   =             23
+ ci_electrons  =              8
+ astr_len   =           1103
+ bstr_len   =           1103
+ dtrm_len   =           7981
+/

@@ -1,0 +1,17 @@
+&general
+electrons=10
+orbitals=24
+nfrozen=1
+ndocc=4
+nactive=0
+xlevel=2
+/
+&dalginfo
+maxiter=25
+krymax = 8
+krymin = 3
+restol = 1d-5
+nroots = 1
+prediagr = 1
+iguessdim = 4
+/
