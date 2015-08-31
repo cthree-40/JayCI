@@ -9,9 +9,12 @@ program jayci
   ! Written by: cthree-40
   ! Dept. of Chemistry, The Johns Hopkins University
   !=============================================================================
-  use input_proc,  only: alpha_beta
-  use integral,    only: ind2val, index2e, readmoints
-  use construct,   only: ham_element_diag
+  use input_proc,     only: alpha_beta
+  use combinatorial,  only: binom
+  use integral,       only: ind2val, index2e, readmoints
+  use construct,      only: ham_element_diag
+  use initialguess,   only: diagrefblock
+  use orthogroutines, only: modgramschmidt
   implicit none
 
   ! -- IN/OUT FILES ------------------------------------------------------------
@@ -38,8 +41,12 @@ program jayci
   ! ndocc     = number of doubly-occupied orbitals
   ! nactive   = number of active orbitals
   ! xlevel    = excitation level
-  integer :: electrons, orbitals, nfrozen, ndocc, nactive, xlevel
-  namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, xlevel
+  ! printlvl  = level of output printing:    0 = minimal
+  !                                       1..5 = reserved
+  !                                         >5 = debugging
+  integer :: electrons, orbitals, nfrozen, ndocc, nactive, xlevel, printlvl
+  namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, xlevel, &
+    printlvl
 
   ! -- expansion NAMELIST ------------------------------------------------------
   ! ci_electrons = electrons subject to excitations in CI expansion
@@ -58,10 +65,11 @@ program jayci
   ! nroots    = number of roots to converge
   ! prediagr  = prediagonalization routine
   ! iguessdim = dimension of initial guess
-  integer :: maxiter, krymin, krymax, nroots, prediagr, iguessdim
+  ! refdim    = reference space dimension
+  integer :: maxiter, krymin, krymax, nroots, prediagr, iguessdim, refdim
   real*8  :: restol
   namelist /dalginfo/ maxiter, krymin, krymax, nroots, prediagr, iguessdim, &
-    restol
+    restol, refdim
 
   ! .. LOCAL scalars ..
   ! m1len    = number of 1-e integrals
@@ -71,11 +79,14 @@ program jayci
   ! ci_belec = ci beta  electrons
   ! nuc_rep  = nuclear repulsion energy
   ! frz_core = frozen core energy
+  ! astrings   = binom(ci_orbitals, ci_aelec)
+  ! bstrings   = binom(ci_orbitals, ci_belec)
   integer :: m1len, m2len
   integer :: ierr
   integer :: ci_aelec, ci_belec
   integer :: i
   real*8  :: nuc_rep, frz_core, tot_frz
+  integer :: astrings, bstrings
   
   ! .. LOCAL arrays ..
   ! moints1   = 1-e integrals
@@ -116,6 +127,7 @@ program jayci
   ndocc     = 0
   nactive   = 0
   xlevel    = 2 ! This won't return error. Default CI program is SDCI.
+  printlvl  = 0 ! Minimal printing by default.
 
   ! default &expansion namelist values
   ci_electrons = 0
@@ -125,12 +137,13 @@ program jayci
   dtrm_len     = 0
 
   ! default &dalginfo namelist values
-  maxiter   = 25
-  krymin    =  3
-  krymax    =  8
-  nroots    =  1
-  prediagr  =  1
-  iguessdim =  4
+  maxiter   =  25
+  krymin    =   3
+  krymax    =   8
+  nroots    =   1
+  prediagr  =   1
+  iguessdim =   4
+  refdim    = 500
   restol    = 1.0d-5
 
   ! open input file. read &general and &dalginfo namelists
@@ -161,11 +174,13 @@ program jayci
   call write_expinml(ci_electrons, ci_orbitals, astr_len, bstr_len, dtrm_len, &
     outfl_unit)
   call write_dainml(maxiter, krymin, krymax, nroots, prediagr, iguessdim, &
-    restol, outfl_unit)
+    restol, refdim, outfl_unit)
 
   ! compute ci_aelec and ci_belec
   call alpha_beta(ci_electrons, ci_aelec, ci_belec)
-
+  astrings = binom(ci_orbitals, ci_aelec)
+  bstrings = binom(ci_orbitals, ci_belec)
+  
   ! read in molecular orbitals
   m1len = ind2val(ci_orbitals, ci_orbitals)
   m2len = index2e(ci_orbitals, ci_orbitals, ci_orbitals, ci_orbitals)
@@ -194,20 +209,20 @@ program jayci
   allocate(astr_list(astr_len))
   allocate(bstr_list(bstr_len))
   call read_exp_info2(astr_list, bstr_list, astr_len, bstr_len, ierr)
-  
+
   ! generate dtrm_beta_listp, qstep and xreflist
   allocate(dtrm_beta_listp(dtrm_len))
   allocate(qstep(bstr_len))
   allocate(xreflist(dtrm_len))
   call gen_exp_info1(dtrm_beta_listp, qstep, bstr_list, astr_list, &
     dtrm_len, bstr_len, astr_len, xreflist, dtrm_list, ierr)
-  
+
   ! generate qlocate and plocate
   allocate(plocate(astr_len))
   allocate(qlocate(bstr_len))
   call gen_locate(pstep, astr_len, plocate)
   call gen_locate(qstep, bstr_len, qlocate)
-
+  
   ! compute diagonal matrix elements
   allocate(diagvals(dtrm_len))
   do i = 1, dtrm_len
@@ -216,7 +231,45 @@ program jayci
   end do
   write(outfl_unit, "(1x,A,2f15.8)") "Hartree Fock Energy: ", &
     (diagvals(1) + tot_frz)
-  
+
+  ! allocate initial vectors
+  allocate(init_vecs(dtrm_len, iguessdim))
+
+  ! perform prediagonalization routine
+  if (prediagr .eq. 1) then
+          ! diagonalization of a reference block of hamiltonian
+          call diagrefblock(dtrm_len, refdim, moints1, m1len, moints2, m2len, &
+            dtrm_list, ci_aelec, ci_belec, ci_orbitals, iguessdim, init_vecs, &
+            tot_frz)
+
+  else if (prediagr .eq. 3) then
+          ! diagonalize ENTIRE hamiltonian. This is done to check Hv.
+          call diagrefblock(dtrm_len, dtrm_len, moints1, m1len, moints2, m2len,&
+            dtrm_list, ci_aelec, ci_belec, ci_orbitals, iguessdim, init_vecs,   &
+            tot_frz)
+  else
+          ! unknown prediagonalization routine
+          stop " *** Unknown prediagonalization routine! ***"
+          
+  end if
+
+  ! orthogonalize initial guess vectors
+  call modgramschmidt(init_vecs, iguessdim, 0, dtrm_len)
+
+  ! call davidson algorithm
+  allocate(eigvals(nroots))
+  allocate(eigvecs(dtrm_len, nroots))
+
+  call davidson(iguessdim, init_vecs, diagvals, moints1, m1len, moints2, m2len, &
+    dtrm_len, dtrm_alpha_listq, plocate, pstep, dtrm_beta_listp, qlocate, qstep,&
+    xreflist, astr_list, astr_len, bstr_list, bstr_len, astrings, bstrings,     &
+    ci_aelec, ci_belec, ci_orbitals, krymin, krymax, restol, nroots, maxiter,   &
+    nfrozen, ndocc, nactive, tot_frz, eigvals, eigvecs)
+
+  ! write out final energy
+  write(*,"(1x,'Final CI energy = ',f15.8)") (eigvals(1) + tot_frz)
+
+  deallocate(eigvals, eigvecs, init_vecs)
 contains
 
   subroutine cmp_arrays(array1, array2, length, xref)
@@ -296,7 +349,7 @@ contains
     
     ! .. LOCAL scalars ..
     integer :: p, q, pi, qi, deti
-    integer :: i, j, iter
+    integer :: i, j, iter, cntr
     
     ! .. LOCAL arrays ..
     integer, dimension(:,:,:), allocatable :: scr
@@ -328,14 +381,18 @@ contains
     ! add p values in columns to dblistp and determinant indexes to qdetlist
     iter = 1
     do i = 1, nbstr
+    
+            cntr = 0
             do j = 1, nastr
 
                     if (scr(j, i, 1) .ne. 0) then
                             dblistp(iter) = scr(j, i, 1)
                             qdetlist(iter)= scr(j, i, 2)
                             iter = iter + 1
+                            cntr = cntr + 1
                     end if
             end do
+            qstep(i) = cntr ! add step quantity
     end do
 
     ! build cross reference list
@@ -419,7 +476,7 @@ contains
     if (ierr .ne. 0) return
 
     ! read in arrays
-    cntr = 1
+    cntr = 0
     pi   = 1
     ai2  = 1
     ai1  = 1
@@ -490,7 +547,8 @@ contains
 11  format(i15)
   end subroutine read_exp_info2
 
-  subroutine write_dainml(miter, kmin, kmax, nrts, pdr, igd, rstl, outfl_unit)
+  subroutine write_dainml(miter, kmin, kmax, nrts, pdr, igd, rstl, refdim, &
+    outfl_unit)
     !===========================================================================
     ! write_dainml
     ! ------------
@@ -499,7 +557,7 @@ contains
     implicit none
 
     ! .. INPUT arguments ..
-    integer, intent(in) :: miter, kmin, kmax, nrts, pdr, igd, outfl_unit
+    integer, intent(in) :: miter, kmin, kmax, nrts, pdr, igd, refdim, outfl_unit
     real*8,  intent(in) :: rstl
     
     ! write input values
@@ -512,6 +570,7 @@ contains
     write(outfl_unit, 11) "prediagr     = ", pdr
     write(outfl_unit, 11) "iguessdim    = ", igd
     write(outfl_unit, 12) "restol       = ", rstl
+    write(outfl_unit, 11) "refdim       = ", refdim
     write(outfl_unit, 10) ""
     
     return

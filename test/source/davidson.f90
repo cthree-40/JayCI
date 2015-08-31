@@ -5,7 +5,7 @@ SUBROUTINE Davidson(initGuessDim,initGuess_vecs,Diagonals,MOints1,  &
             M1Len,MOints2,M2Len,ciDim,pString,pLocate,pStep,qString,&
             qLocate,qStep,xRefList,pDets,pDLen,qDets,qDLen,aDets,   &
             bDets,aElec,bElec,Orbitals,KryMin,KryMax,res_tol,Roots, &
-            Max_Iter,nFrozen,nDocc,nActive,Eig_Values,Eig_Vectors)
+            Max_Iter,nFrozen,nDocc,nActive,tot_frz,Eig_Values,Eig_Vectors)
       use david_util
       IMPLICIT NONE
       integer,intent(IN)      ::initGuessDim,M1Len,M2Len,ciDim,pDLen, &
@@ -22,6 +22,7 @@ SUBROUTINE Davidson(initGuessDim,initGuess_vecs,Diagonals,MOints1,  &
       real*8,dimension(ciDim,initGuessDim),intent(IN) ::initGuess_vecs
       real*8,dimension(Roots),intent(OUT)       ::Eig_Values
       real*8,dimension(ciDim,Roots),intent(OUT) ::Eig_Vectors
+      real*8, intent(in)                        :: tot_frz
       integer     ::i,j,k
       integer     ::curr_dim,curr_root
       real*8      ::resid_norm,ddot
@@ -49,15 +50,19 @@ SUBROUTINE Davidson(initGuessDim,initGuess_vecs,Diagonals,MOints1,  &
                   qLocate,xRefList,pDets,qDets,pDLen,qDLen,aDets,bDets,&
                   aElec,bElec,Orbitals,Diagonals,nFrozen,nDocc,nActive,&
                   hv_vectors)
+            print *, "Constructing subspace"
             !Construct subspace hamiltonian
             if(ALLOCATED(subsp_ham))DEALLOCATE(subsp_ham)
             ALLOCATE(subsp_ham(KryMin,KryMin))
+
             CALL build_subham(basis_vecs,hv_vectors,ciDim,KryMin,subsp_ham)
             !Diagonalize this matrix
             if(ALLOCATED(Kry_eigvec))DEALLOCATE(Kry_eigvec)
             if(ALLOCATED(Kry_eigval))DEALLOCATE(Kry_eigval)
             ALLOCATE(Kry_eigvec(KryMin,KryMin))
             ALLOCATE(Kry_eigval(KryMin))
+            print *, "Diagonalizing subspace"
+
             CALL diag_dsyevr(subsp_ham,KryMin,Kry_eigvec,Kry_eigval)
             !Deallocate subsp_ham, it has been destroyed by DSYEVR()
             DEALLOCATE(subsp_ham)
@@ -68,6 +73,7 @@ SUBROUTINE Davidson(initGuessDim,initGuess_vecs,Diagonals,MOints1,  &
                   !From residual vector
                   if(ALLOCATED(Residual))DEALLOCATE(Residual)
                   ALLOCATE(Residual(ciDim))
+                  print *, "Generating residual vector"
                   CALL gen_ResidVec(basis_vecs,hv_vectors,ciDim,curr_dim,&
                         Kry_eigvec,Kry_eigval,curr_root,Residual)
                   !Compute norm of residual
@@ -75,7 +81,7 @@ SUBROUTINE Davidson(initGuessDim,initGuess_vecs,Diagonals,MOints1,  &
                   print *, "========================================="
                   print *, "Iteration ",(i-1)*(KryMax+1)+j
                   print *, "Solving for root # ", curr_root
-                  print *, "Eigenvalue:        ",Kry_eigval(curr_root)
+                  print *, "Eigenvalue:        ",(Kry_eigval(curr_root) + tot_frz)
                   print *, "Residual norm:     ",resid_norm
                   print *, "Current dimension: ",curr_dim
                   !Test if ||r|| < res_tol 

@@ -28,12 +28,13 @@ contains
     integer :: i
   ! Loop over initial vectors
     do i=1, num_vecs
-            print *, "    Vector 1"
+            print *, "    Vector ", i
             CALL acthv (vectors1(1,i),moints1,moints2,moints1len,moints2len,&
                   pstring,pstep,plocate,qstring,qstep,qlocate,xreflist,dim_vecs,&
                   pdets,pdetslen,qdets,qdetslen,adets,bdets,aelec,belec,&
                   orbitals,diagonals,nfrozen,ndocc,nactive,vectors2(1,i))
     end do
+    print *, "Finished initialization."
     RETURN
   end subroutine
   !====================================================================

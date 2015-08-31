@@ -7,6 +7,7 @@ module truncation
   !
   ! Subroutines:
   !   citrunc1
+  !   det_occ
   !   enf_actv_det
   !   enf_actv_str
   !   enf_docc_det
@@ -19,6 +20,8 @@ module truncation
   !-----------------------------------------------------------------------------
   implicit none
 contains
+  !*
+  !*
   subroutine citrunc1 (aelec, belec, orb, nfrzn, ndocc, nactv, xlvl, &
     astr_len, bstr_len, dtrm_len, ierr)
     ! citrunc1
@@ -75,9 +78,11 @@ contains
     ! astring2    = alpha string
     ! bstring1    = beta  string
     ! bstring2    = beta  string
+    ! detstring   = determinant occupancy string
     ! dtlst_flnm  = determinant list file name
     integer, dimension(:), allocatable :: astring1, astring2
     integer, dimension(:), allocatable :: bstring1, bstring2, bstring_start
+    integer, dimension(:), allocatable :: detstring
     character*25 :: dtlst_flnm  = "det.list"
     character*25 :: strlst_flnm = "str.list"
     
@@ -107,6 +112,7 @@ contains
     allocate(bstring1(ci_belec))
     allocate(bstring2(ci_belec))
     allocate(bstring_start(ci_belec))
+    allocate(detstring(ci_orbs))
     ! initialize (a/b)string1
     do i = 1, ci_aelec
             astring1(i) = i
@@ -126,9 +132,10 @@ contains
     if (ierr .ne. 0) stop "*** Cannot open string list file for writing! ***"
     
     ! first strings are obviously included
-    write(dtlst_unit, 10) 1, 1, 1
+    call det_occ(astring1, bstring1, ci_aelec, ci_belec, ci_orbs, detstring)
+    write(dtlst_unit, 10) 1, 1, 1, detstring
     write(strlst_unit,11) "BETA"
-    write(strlst_unit,12) 1
+    write(strlst_unit,12) 1, bstring_start
     astr_len = 1
     bstr_len = 1
     dtrm_len = 1
@@ -140,7 +147,7 @@ contains
 
             ! test docc restrictions on string
             if (ndocc .ne. 0) then
-                    call enf_docc_str(bstring2, ci_belec, ndocc, bxdocc)
+                    call enf_docc_str(bstring2, ci_belec, ndocc, nactv, bxdocc)
                     if (bxdocc .gt. xlvl) then
                             bstring1 = bstring2
                             cycle
@@ -162,10 +169,13 @@ contains
             
             ! string is valid
             bstr_len = bstr_len + 1
-            write(strlst_unit, 12) i
+            write(strlst_unit, 12) i, bstring2
             ! compute determinant and write it to file
             deti = indexk(1, i, ci_orbs, ci_belec)
-            write(dtlst_unit, 10) 1, i, deti
+            call det_occ(astring1, bstring2, ci_aelec, ci_belec, &
+              ci_orbs, detstring)
+
+            write(dtlst_unit, 10) 1, i, deti, detstring
             dtrm_len = dtrm_len + 1
             bstring1 = bstring2
     end do
@@ -180,7 +190,7 @@ contains
 
             ! test docc restrictions on string
             if (ndocc .ne. 0) then
-                    call enf_docc_str(astring2, ci_aelec, ndocc, axdocc)
+                    call enf_docc_str(astring2, ci_aelec, ndocc, nactv, axdocc)
                     if (axdocc .gt. xlvl) then
                             astring1 = astring2
                             cycle
@@ -203,9 +213,13 @@ contains
             
             ! compute determanint
             astr_len = astr_len + 1
-            write(strlst_unit, 12) i
+            write(strlst_unit, 12) i, astring2
             deti = indexk(i, 1, ci_orbs, ci_belec)
-            write(dtlst_unit, 10) i, 1, deti
+
+            call det_occ(astring2, bstring_start, ci_aelec, ci_belec, &
+              ci_orbs, detstring)
+    
+            write(dtlst_unit, 10) i, 1, deti, detstring
             dtrm_len = dtrm_len + 1
 
             bstring1 = bstring_start
@@ -217,7 +231,7 @@ contains
                     
                     ! test docc restrictions on string
                     if (ndocc .ne. 0) then
-                            call enf_docc_str(bstring2, ci_belec, ndocc, bxdocc)
+                            call enf_docc_str(bstring2, ci_belec, ndocc, nactv,bxdocc)
                             if (bxdocc .gt. xlvl) then
                                     bstring1 = bstring2
                                     cycle
@@ -260,7 +274,9 @@ contains
 
                     ! if here, write determinant
                     deti = indexk(i, j, ci_orbs, ci_belec)
-                    write(dtlst_unit, 10), i, j, deti
+                    call det_occ(astring2, bstring2, ci_aelec, ci_belec, &
+                      ci_orbs, detstring)
+                    write(dtlst_unit, 10), i, j, deti, detstring
                     dtrm_len = dtrm_len + 1
                     bstring1 = bstring2
             end do
@@ -269,13 +285,67 @@ contains
     end do
 
     deallocate(astring1, astring2, bstring1, bstring2, bstring_start)
+    deallocate(detstring)
+    
     close(dtlst_unit)
     return
-10  format(i15,i15,i15)
-11  format(A5)
-12  format(i15)
-  end subroutine citrunc1
 
+10  format(i15,i15,i15, '  occupancy:',200i4)
+11  format(A5)
+12  format(i15,' string:',30i3)
+  end subroutine citrunc1
+  !*
+  !*
+  subroutine det_occ(astr, bstr, aelec, belec, orbitals, occ_str)
+    !===========================================================================
+    ! det_occ
+    ! -------
+    ! Purpose: generate occupancy string for determinant
+    !
+    ! Input:
+    !  astr = alpha string
+    !  bstr = beta string
+    !  aelec = number of alpha electrons
+    !  belec = number of beta  electrons
+    !  orbitals = number of orbitals
+    !
+    ! Output:
+    ! occ_str = occupancy string (0 = unoccupied,
+    !                             1 = beta
+    !                             2 = alpha
+    !                             3 = doubly occupied)
+    !---------------------------------------------------------------------------
+    implicit none
+
+    ! .. INPUT arguments ..
+    integer, intent(in) :: aelec, belec, orbitals
+    integer, dimension(aelec), intent(in) :: astr
+    integer, dimension(belec), intent(in) :: bstr
+
+    ! .. OUTPUT arguments ..
+    integer, dimension(orbitals), intent(out) :: occ_str
+
+    ! .. LOCAL scalars ..
+    integer :: i
+    integer :: alpha = 2, beta = 1
+
+    ! zero occupancy string
+    occ_str = 0
+
+    ! loop through alpha string
+    do i = 1, aelec
+            occ_str(astr(i)) = occ_str(astr(i)) + alpha
+    end do
+
+    ! loop through beta string
+    do i = 1, belec
+            occ_str(bstr(i)) = occ_str(bstr(i)) + beta
+    end do
+
+    return
+  end subroutine det_occ
+  !*
+  !*
   subroutine enf_actv_str(string, elec, ndocc, nactv, test)
     !===========================================================================
     ! enf_docc_str
@@ -315,8 +385,9 @@ contains
     
     return
   end subroutine enf_actv_str
-
-  subroutine enf_docc_str(string, elec, ndocc, test)
+  !*
+  !*
+  subroutine enf_docc_str(string, elec, ndocc, nactv, test)
     !===========================================================================
     ! enf_docc_str
     ! ------------
@@ -327,6 +398,7 @@ contains
     !  string = alpha/beta string to test
     !  elec   = number of electrons
     !  ndocc  = number of docc orbitals
+    !  nactv  = number of active orbitals
     !  xlvl   = excitation level of expansion
     !
     ! Output:
@@ -335,7 +407,7 @@ contains
     implicit none
 
     ! .. INPUT arguments ..
-    integer, intent(in) :: elec, ndocc
+    integer, intent(in) :: elec, ndocc, nactv
     integer, dimension(elec), intent(in) :: string
 
     ! .. OUTPUT arguments ..
@@ -347,14 +419,15 @@ contains
     ! loop over string
     test = 0
     do i = 1, ndocc
-            if (string(i) .gt. ndocc) then
+            if (string(i) .gt. (ndocc)) then
                     test = test + 1
             end if
     end do
     
     return
   end subroutine enf_docc_str
-
+  !*
+  !*
   subroutine find_maxstr(list, len, max)
     !===========================================================================
     ! find_maxstr
@@ -392,7 +465,8 @@ contains
     max = 0
     return
   end subroutine find_maxstr
-  
+  !*
+  !*
   subroutine write_list2file(list, len, flname, flunit, num_nz, ierr)
     !===========================================================================
     ! write_list2file

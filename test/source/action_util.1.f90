@@ -121,7 +121,7 @@ contains
        call possex1( aString, Orbitals, aElec, (Orbitals - aElec), &
             pExct1 )
        ! loop over single excitations
-       loop_elec: do j = nFrozen+1, aElec
+       loop_elec: do j = 1, aElec
           loop_Orbitals: do k = 1, Orbitals - aElec
              ! generate information for current single replacement
              call SRepInfo( aString, aElec, pExct1(k), j, Orbitals, &
@@ -176,12 +176,14 @@ contains
                      + int2e2)*InVector(oVIndx)
              end do loop_qstring1
              ! loop over additional replacments in alpha strings
-             loop_elec2: do m = 1, j-1
-                loop_Orbitals2: do n = k+1, Orbitals-aElec
+             loop_elec2: do m = 1, j - 1
+                loop_Orbitals2: do n = k + 1, Orbitals-aElec
                    ! Note: m must always be less than j
                    ! get double replacment information
                    call DRepInfo( aString, aElec, pExct1(n), m, pExct1(k), j, &
                         Orbitals, eps2, dxindx1 )
+                   !call DRepInfo( aString, aElec, pExct1(k), j, pExct1(n), m, &
+                   !     Orbitals, eps2, dxindx1 )
                    cLoc2 = 0
                    ! Test if dxindx1 is in expansion and greater than pDets(i)
                    if ( dxindx1 .lt. pDets(i) ) then
@@ -237,7 +239,7 @@ contains
              call possex1( bString, Orbitals, bElec, (Orbitals-bElec), &
                   qExct1 )
              ! loop over single excitations in q strings
-             loop_elec3: do l = nFrozen+1, bElec
+             loop_elec3: do l = 1, bElec
                 loop_Orbitals3: do m = 1, Orbitals - bElec
                    ! Generate single replacement information
                    call SRepInfo( bString, bElec, qExct1(m), l, Orbitals, &
@@ -355,7 +357,7 @@ contains
              bString(j) = j
           end do
        end if
-       ! generate possibl excitations
+       ! generate possible excitations
        call possex1( bString, Orbitals, bElec, (Orbitals - bElec), &
             qExct1 )
        ! loop over single excitations
@@ -387,7 +389,7 @@ contains
                   M1Len, M2Len, Orbitals, j, k, int1e1, int2e1 )
              ! loop over p strings
              loop_pstring1: do m = qLocate(cLoc) + 1, qLocate(cLoc) + qStep(cLoc)
-                ! find p' string index in p string list
+                     ! find p' string index in p string list
                 call int_search2( qString(m), qString(qLocate(i) + 1), qStep(i), &
                      oVIndx )
                 ! if string was not found
@@ -406,7 +408,7 @@ contains
                      + int2e2)*InVector(oVIndx)
              end do loop_pstring1
              ! loop over additional replacements in beta strings
-             loop_elec2: do m = 1 , j-1
+             loop_elec2: do m = 1 , j - 1
                 loop_Orbitals2: do n=k+1, Orbitals-bElec !
                    ! Note: m must always be less than j
                    ! get double replacement information

@@ -223,6 +223,7 @@ CONTAINS
     integer     ::i,j
     integer     ::peg_start       !peg to start at
     integer     ::a_str_size      !number of indices kept
+
     if(.NOT. ALLOCATED(alpha_strings))then    !Initialize
        print *, "    Initializing alpha strings array "
        if(pdets_MAX.LT.100)then
@@ -246,7 +247,10 @@ CONTAINS
        end do
        print *, "    Finished initializing alpha strings array."
     end if!if alpha_strings has not been allocated
-    peg_start=MAX(0,INT(str_index/str_peg_int_a)-1)
+    peg_start=MAX(0,INT(str_index/str_peg_int_a)-2)
+    ! this is a bounds check
+    peg_start=min(peg_start,99)
+    
     if(alpha_indices(peg_start).EQ.str_index)then
        str_string(1:str_elec)=alpha_strings(0:str_elec-1,peg_start)
     else
@@ -268,30 +272,41 @@ CONTAINS
     integer     ::i,j
     integer     ::peg_start       !peg to start at
     integer     ::b_str_size      !number of indices kept 
-    if(.NOT. ALLOCATED(beta_strings))then    !Initialize
-       print *, "    Initializing beta strings array "
-       if(qdets_MAX.LT.100)then
-          b_str_size=10
-       else
-          b_str_size=100
-       end if!pdets_MAX.LT.100
-       ALLOCATE(beta_strings(0:str_elec-1,0:b_str_size-1))
-       ALLOCATE(beta_indices(0:b_str_size-1))
-       str_peg_int_b=INT(qdets_MAX/b_str_size) !Always rounds down
-       do i=0,b_str_size-1
-          beta_indices(i)=(i)*str_peg_int_b+1      !Set up index array
-       end do
-       do i=0,str_elec-1
-          beta_strings(i,0)=i+1    !Initialize first string
-       end do
-       do i=1,b_str_size-1
-          CALL StrFind3(beta_strings(0,i-1),beta_indices(i-1),&
-               str_elec,Orbitals,str_Dets,beta_indices(i),    &
-               beta_strings(0,i))
-       end do
-       print *, "    Finished initializing beta strings array "
-    end if!if alpha_strings has not been allocated
-    peg_start=MAX(0,INT(str_index/str_peg_int_b)-1)
+
+    if(.not. allocated(beta_strings))then    !Initialize
+
+            print *, "    Initializing beta strings array "
+
+            if(qdets_MAX.LT.100)then
+                    b_str_size=10
+            else
+                    b_str_size=100
+            end if
+
+            ALLOCATE(beta_strings(0:str_elec-1,0:b_str_size-1))
+            ALLOCATE(beta_indices(0:b_str_size-1))
+
+            str_peg_int_b=INT(qdets_MAX/b_str_size) !Always rounds down
+            do i=0,b_str_size-1
+                    beta_indices(i)=(i)*str_peg_int_b+1      !Set up index array
+            end do
+            do i=0,str_elec-1
+                    beta_strings(i,0)=i+1    !Initialize first string
+            end do
+            do i=1,b_str_size-1
+                    CALL StrFind3(beta_strings(0,i-1),beta_indices(i-1),&
+                      str_elec,Orbitals,str_Dets,beta_indices(i),    &
+                      beta_strings(0,i))
+            end do
+            print *, "    Finished initializing beta strings array "
+
+    end if
+
+    peg_start=MAX(0,INT(str_index/str_peg_int_b) - 2)
+
+    ! this is a bounds check
+    peg_start=MIN(99,peg_start)
+
     if(beta_indices(peg_start).EQ.str_index)then
        str_string(1:str_elec)=beta_strings(0:str_elec-1,peg_start)
     else
@@ -318,7 +333,7 @@ CONTAINS
   !  read 1-e integrals
   !  read 2-e integrals
   ! Input:
-  !  type     = type of integrals to read
+  !  type1n   = type of integrals to read
   !  orbitals = number of orbitals in system
   !  mofile   = name of molecular orbital file
   !  m1len    = length of moints1
@@ -329,12 +344,12 @@ CONTAINS
   !  nuc_rep  = nuclear repulsion energy
   !  fcenergy = frozen core energy (array, size = 10)
   !--------------------------------------------------------------------
-  subroutine readmoints (moints1, moints2, type, orbitals, mofile, &
+  subroutine readmoints (moints1, moints2, type1n, orbitals, mofile, &
     m1len, m2len, nuc_rep, fcenergy)
     implicit none
 
     ! **input
-    integer,      intent(in) :: m1len, m2len, type, orbitals
+    integer,      intent(in) :: m1len, m2len, type1n, orbitals
     character*20, intent(in) :: mofile
 
     ! **output
@@ -379,6 +394,7 @@ CONTAINS
     character*8,  dimension(:),   allocatable :: bfnlab
     integer,      dimension(:),   allocatable :: nbpsy, info, ietype, imtype
     integer,      dimension(:,:), allocatable :: map
+    integer,      dimension(:),   allocatable :: mapin
     real*8,       dimension(:),   allocatable :: energy
 
     !**dword variables
@@ -448,25 +464,40 @@ CONTAINS
     if (ierr .ne. 0) stop "*** Error allocating vals()!***"
     allocate (ibitv(info(3) + 63), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating ibitv()!***"
-    allocate (s1h1(info(3), 2), stat = ierr)
+    allocate (s1h1(m1len, 2), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating s1h1()!***"
-    allocate (symb(nbft))
+    allocate (symb(nbft), stat = ierr)
+    if (ierr .ne. 0) stop "*** Error allocating symb()! ***"
+    allocate (mapin(m1len), stat = ierr)
+    if (ierr .ne. 0) stop "*** Error allocating mapin()!***"
+    do i = 1, m1len
+            mapin(i) = i
+    end do
     
     ! read 1 electron record
     moints1 = 0d0
     nipv = 2
     fcenergy = 0d0
 
-    do while (last .ne. nomore)
-            call sifrd1(aoints, info, nipv, iretbv, buf, num, last, itypea,&
-              itypeb, ibvtyp, vals, labels, fcore, ibitv, ierr)
-            if (ierr .ne. 0) stop "*** Error reading integral record! ***"
-            print *, "a, b, v = ", itypea, itypeb, ibvtyp
-            if (type .eq. 1) then ! we are after T1 + V1
-    
-                    if (ibvtyp .eq. 0 .and. itypea .eq. 0 .and. &
-                      itypeb .eq. 2 .and. last .eq. 1) then
-                            
+    if (type1n .eq. 1) then ! we are after H1(*)
+
+            call sifrsh(aoints, info, buf, vals, labels, nsym, &
+              nbpsy, mapin, m1len, s1h1, score, hcore, symb, ierr)
+            if (ierr .ne. 0) stop "*** Error reading 1-e integrals!***"
+            
+            moints1(1:m1len) = s1h1(1:m1len,2)
+            fcenergy = hcore
+
+    else if (type1n .eq. 3) then ! we are after the dipole moments
+
+            do while (last .ne. nomore)
+                    call sifrd1(aoints, info, nipv, iretbv, buf, num, last, &
+                      itypea, itypeb, ibvtyp, vals, labels, fcore, ibitv, ierr)
+                    if (ierr .ne. 0) stop "***Error reading integral record!***"
+
+                    if (itypea .eq. 1 .and. itypeb .eq. 0 &
+                      .and. last .eq. 1) then
+                            ! <x> dipole moment
                             ! collect values
                             do i = 1, num
                                     l1 = labels(1,i)
@@ -474,43 +505,42 @@ CONTAINS
                                     index = Ind2Val(l1,l2)
                                     moints1(index) = moints1(index) + vals(i)
                             end do
-                            ! add frozen core contributions
-                            fcenergy = fcenergy + fcore
-
-                    else if (ibvtyp .eq. 0 .and. itypea .eq. 0 .and. &
-                      itypeb .eq. 1 .and. last .eq. 1) then
-
+                    else if (itypea .eq. 1 .and. itypeb .eq. 1 &
+                      .and. last .eq. 1) then
+                            ! <y> dipole moment
                             ! collect values
                             do i = 1, num
                                     l1 = labels(1,i)
                                     l2 = labels(2,i)
                                     index = Ind2Val(l1,l2)
+                                    index = index + m1len
                                     moints1(index) = moints1(index) + vals(i)
                             end do
-                            ! add frozen core contributions
-                            fcenergy = fcenergy + fcore
-
-                    else if (ibvtyp .eq. 0 .and. itypea .eq. 0 .and. &
-                      itypeb .eq. 4 .and. last .eq. 2) then
-                            ! collect values
+                    else if (itypea .eq. 1 .and. itypeb .eq. 2 &
+                      .and. last .eq. 1) then
+                            ! <z> dipole moment
                             do i = 1, num
                                     l1 = labels(1,i)
                                     l2 = labels(2,i)
                                     index = Ind2Val(l1,l2)
+                                    index = index + m1len
+                                    index = index + m1len
                                     moints1(index) = moints1(index) + vals(i)
                             end do
-                            ! add frozen core contributions
-                            fcenergy = fcenergy + fcore
-
                     end if
-            end if
-    end do
 
-    
+            end do
+    end if
+
     ! deallocate arrays
-    deallocate (buf, labels, vals, ibitv)
+    deallocate (buf, s1h1, mapin, labels, vals, ibitv)
 
-        ! allocate arrays
+    if (type1n .eq. 3) then
+            close(aoints)
+            return
+    end if
+
+    ! allocate arrays
     allocate (buf(info(4)))
     allocate (labels(4,info(5)))
     allocate (vals(info(5)))
@@ -537,10 +567,13 @@ CONTAINS
                     moints2(index) = moints2(index) + vals(i)
             end do
     end do
+
     ! deallocate arrays
     deallocate(buf, ibitv, vals, labels)
     deallocate(title, nbpsy,slabel, info, bfnlab, ietype, energy, imtype, map)
 
+    close(aoints)
+    
     return
   end subroutine readmoints
   !====================================================================
@@ -898,11 +931,9 @@ CONTAINS
        string(indx2)=swp2
     end if
     ! Order second swap
-    call cannon3(string,length,indx2,tperm)
-    permind=permind*tperm
+    call cannon3(string,length,indx2,permind)
     ! Order first swap
-    call cannon3(string,length,indx1,tperm)
-    permind=permind*tperm
+    call cannon3(string,length,indx1,permind)
     
     RETURN!Return ordered string and parity of permutation
   end subroutine cannon2
@@ -913,11 +944,11 @@ CONTAINS
   subroutine cannon3(string,length,index_sub,permind)
     implicit none
     integer,intent(in)                        ::length,index_sub
-    integer,intent(out)                       ::permind
+    integer,intent(inout)                     ::permind
     integer,dimension(length),intent(in out)  ::string
     integer,dimension(:),allocatable          ::temp
     integer                                   ::i,j,test
-    permind=1
+
     !Check if index_sub is length or 1
     if(index_sub.EQ.length)then !Element to change is last
        if(string(index_sub).GT.string(index_sub-1))then !Do nothing

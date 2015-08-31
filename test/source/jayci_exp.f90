@@ -31,8 +31,10 @@ program jayci_exp
   ! ndocc     = number of doubly-occupied orbitals
   ! nactive   = number of active orbitals
   ! xlevel    = excitation level of expansion
-  integer :: electrons, orbitals, nfrozen, ndocc, nactive, xlevel
-  namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, xlevel
+  ! printlvl  = print level
+  integer :: electrons, orbitals, nfrozen, ndocc, nactive, xlevel, printlvl
+  namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, xlevel, &
+    printlvl
 
   ! .. LOCAL scalars ..
   ! aelec   = alpha electrons
@@ -52,7 +54,8 @@ program jayci_exp
   ndocc     = 0
   nactive   = 0
   xlevel    = 2 ! This won't return error. Default CI program is SDCI.
-
+  printlvl  = 0
+  
   ! open output file
   open(unit = outfl_unit, file = outfl_name, status = "unknown", &
     position = "rewind", action = "write", iostat = ierr)

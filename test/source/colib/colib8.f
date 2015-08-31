@@ -2800,8 +2800,6 @@ c     # nntot = the actual number of elements in the arrays.
          nntot = nntot + nndxf( nbpsy(isym) + 1 )
 20    continue
 c
-c      print *, "nnbft = ", nnbft
-c      print *, "nsym  = ", nsym
       
       if ( nntot .gt. nnbft ) then
 c        # inconsistent nnbft value.
