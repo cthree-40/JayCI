@@ -227,7 +227,7 @@ CONTAINS
     if(.NOT. ALLOCATED(alpha_strings))then    !Initialize
        print *, "    Initializing alpha strings array "
        if(pdets_MAX.LT.100)then
-          a_str_size=10
+          a_str_size=pdets_MAX
        else
           a_str_size=100
        end if!pdets_MAX.LT.100
@@ -278,7 +278,7 @@ CONTAINS
             print *, "    Initializing beta strings array "
 
             if(qdets_MAX.LT.100)then
-                    b_str_size=10
+                    b_str_size=qdets_MAX
             else
                     b_str_size=100
             end if
@@ -410,7 +410,7 @@ CONTAINS
 
     integer :: nipv ! nipv = 2: 1-e integrals, nipv = 4: 2-e integrals
     integer :: ios, ierr, i, index, j, l1, l2, l3, l4
-    integer :: aoints
+    integer :: aoints, n1int, n2int
     integer, parameter :: verin = 2
     
     aoints = 16
@@ -428,6 +428,9 @@ CONTAINS
     end if
     if (ierr .ne. 0) stop "*** Error reading header 1! ***"
 
+    n1int = Ind2Val(nbft, nbft)
+    n2int = Index2E(nbft, nbft, nbft, nbft)
+    
     ! allocate arrays
     allocate (title(ntitle), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating title()! ***"
@@ -464,13 +467,13 @@ CONTAINS
     if (ierr .ne. 0) stop "*** Error allocating vals()!***"
     allocate (ibitv(info(3) + 63), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating ibitv()!***"
-    allocate (s1h1(m1len, 2), stat = ierr)
+    allocate (s1h1(n1int, 2), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating s1h1()!***"
     allocate (symb(nbft), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating symb()! ***"
-    allocate (mapin(m1len), stat = ierr)
+    allocate (mapin(n1int), stat = ierr)
     if (ierr .ne. 0) stop "*** Error allocating mapin()!***"
-    do i = 1, m1len
+    do i = 1, n1int
             mapin(i) = i
     end do
     
@@ -478,14 +481,18 @@ CONTAINS
     moints1 = 0d0
     nipv = 2
     fcenergy = 0d0
-
+    
     if (type1n .eq. 1) then ! we are after H1(*)
 
             call sifrsh(aoints, info, buf, vals, labels, nsym, &
-              nbpsy, mapin, m1len, s1h1, score, hcore, symb, ierr)
+              nbpsy, mapin, n1int, s1h1, score, hcore, symb, ierr)
             if (ierr .ne. 0) stop "*** Error reading 1-e integrals!***"
             
-            moints1(1:m1len) = s1h1(1:m1len,2)
+            print *, "n1int = ", n1int
+            do i = 1, n1int
+                    print *, s1h1(i,2)
+            end do
+            moints1(1:n1int) = s1h1(1:n1int,2)
             fcenergy = hcore
 
     else if (type1n .eq. 3) then ! we are after the dipole moments
@@ -728,7 +735,7 @@ CONTAINS
     implicit none
     integer,intent(IN)      ::int_lookfor,list_length
     integer,dimension(list_length),intent(in) ::int_list
-    integer,intent(in out)     ::int_found_el
+    integer,intent(inout)     ::int_found_el
     integer     ::lwr_bnd,upp_bnd !upper and lower bounds (for sub call)
     integer     ::len_substr      !length of substrings
     integer     ::i
@@ -803,8 +810,8 @@ END MODULE search_fcns
 MODULE string_util
   IMPLICIT NONE      
 CONTAINS
-  !====================================================================
-  !>cannon1swp
+  !===================================================================
+  ! cannon1swp
   ! This subroutine orders a string and returns its permutation index 
   !  for a single index swap
   !--------------------------------------------------------------------
@@ -930,6 +937,8 @@ CONTAINS
        string(indx1)=swp1
        string(indx2)=swp2
     end if
+
+    
     ! Order second swap
     call cannon3(string,length,indx2,permind)
     ! Order first swap
@@ -945,7 +954,7 @@ CONTAINS
     implicit none
     integer,intent(in)                        ::length,index_sub
     integer,intent(inout)                     ::permind
-    integer,dimension(length),intent(in out)  ::string
+    integer,dimension(length),intent(inout)   ::string
     integer,dimension(:),allocatable          ::temp
     integer                                   ::i,j,test
 
@@ -1139,7 +1148,45 @@ CONTAINS
     if (allocated(temp)) deallocate(temp)
     RETURN
   end subroutine order
-  
+  !*
+  !*
+  subroutine strdiff(str1, str2, length, diffs)
+    !===========================================================================
+    ! strdiff
+    ! -------
+    ! Purpose: compute number of differences between two integer strings
+    !
+    ! Input:
+    !  str1 = string1
+    !  str2 = string2
+    !  length = dimension of strings 1 and 2
+    !
+    ! Output
+    !  diffs = number of differences
+    !---------------------------------------------------------------------------
+    use search_fcns,  only: int_search2
+    implicit none
+
+    ! .. INPUT arguments ..
+    integer, intent(in) :: length
+    integer, dimension(length), intent(in) :: str1, str2
+
+    ! .. INPUT/OUTPUT arguments ..
+    integer, intent(inout) :: diffs
+
+    ! .. LOCAL scalars ..
+    integer :: i, found
+
+    ! loop over elements of str1
+    diffs = 0
+    do i = 1, length
+            call int_search2(str1(i), str2, length, found)
+            if (found .eq. 0) then
+                    diffs = diffs + 1
+            end if
+    end do
+    return
+  end subroutine strdiff
 END MODULE string_util
 !********************************************************************
 MODULE input_proc

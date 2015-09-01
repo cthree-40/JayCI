@@ -78,12 +78,13 @@ contains
                        moints2( Index2E( pstring1(pdiffs(1,1)), pstring2(pdiffs(2,2)),&
                               pstring1(pdiffs(2,1)), pstring2(pdiffs(1,2)))))
     else if ( qd .eq. 2 ) then
-      dblexcitations =PermInd2*( moints2( Index2E( qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)),&
+            dblexcitations =PermInd2*( moints2( Index2E( qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)),&
                                 qstring1(qdiffs(2,1)), qstring2(qdiffs(2,2)))) - &
                        moints2( Index2E( qstring1(qdiffs(1,1)), qstring2(qdiffs(2,2)),&
                               qstring1(qdiffs(2,1)), qstring2(qdiffs(1,2)))))
     else
-      dblexcitations = PermInd1*PermInd2*( moints2( Index2E( pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)), &
+
+            dblexcitations = PermInd1*PermInd2*( moints2( Index2E( pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)), &
                                 qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)))))
     end if
     DEALLOCATE(pdiffs,qdiffs)
@@ -138,14 +139,14 @@ contains
     TempString = string1
     if ( diff_num .eq. 1 ) then
             CALL cannon1swp(TempString,length,diff_mat(1,1),PermInd)
-!            call singrepinfo( TempString, length, string2( diff_mat(1,2) ), &
-!                    diff_mat(1,1), 0, PermInd, DUMMY ) 
+            !call singrepinfo( TempString, length, string2( diff_mat(1,2) ), &
+            !        diff_mat(1,1), 0, PermInd, DUMMY ) 
     else if ( diff_num .eq. 2 ) then ! Should not be necessary to test again
             CALL cannon2(TempString,length,diff_mat(1,1),diff_mat(1,2),&
                   diff_mat(2,1),diff_mat(2,2),PermInd)
-!            call doublerepinfo( TempString, length, string2(diff_mat(1,2) ),&
-!                    diff_mat(1,1), string2(diff_mat(2,2)), diff_mat(2,1), &
-!                    0, PermInd, DUMMY )
+            !call doublerepinfo( TempString, length, string2(diff_mat(1,2) ),&
+            !        diff_mat(1,1), string2(diff_mat(2,2)), diff_mat(2,1), &
+            !        0, PermInd, DUMMY )
     end if
     
     return
@@ -325,6 +326,8 @@ contains
 ! Find determinant string indices for ind1 and ind2
     call K2Indc( ind1, belec, orbitals, p1, q1 )
     call K2Indc( ind2, belec, orbitals, p2, q2 )
+    print *, "orbitals = ", orbitals
+    print *, "ind1, ind2", ind1, ind2
 ! Find respective strings for p1, q1, p2, q2
     call GenOrbString( p1, aelec, orbitals, adets, pstring1 )
     call GenOrbString( p2, aelec, orbitals, adets, pstring2 )

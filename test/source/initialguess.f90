@@ -74,13 +74,19 @@ contains
             ! diagonal elements
             hblock(i,i) = ham_element(detlist(i), detlist(i), moints1, &
               m1len, moints2, m2len, aelec, belec, orbs)
-            do j = (i + 1), refdim
+            do j = 1, refdim
                     ! off-diagonal elements
                     hblock(j,i) = ham_element(detlist(j), detlist(i), moints1, &
                       m1len, moints2, m2len, aelec, belec, orbs)
                     hblock(i,j) = hblock(j,i)
             end do
     end do
+
+#ifdef DEBUGGING
+    do i = 1, refdim
+            write(*,"(25(f8.4))") hblock(1:25,i)
+    end do
+#endif
     
     ! diagonalize hblock using dsyevr
     call diag_dsyevr(hblock, refdim, evecs, evals)

@@ -32,9 +32,11 @@ program jayci_exp
   ! nactive   = number of active orbitals
   ! xlevel    = excitation level of expansion
   ! printlvl  = print level
-  integer :: electrons, orbitals, nfrozen, ndocc, nactive, xlevel, printlvl
+  ! nrzvirt   = number of frozen virtuals
+  integer :: electrons, orbitals, nfrozen, ndocc, nactive, xlevel, nfrzvirt
+  integer :: printlvl
   namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, xlevel, &
-    printlvl
+    printlvl, nfrzvirt
 
   ! .. LOCAL scalars ..
   ! aelec   = alpha electrons
@@ -53,6 +55,7 @@ program jayci_exp
   nfrozen   = 0
   ndocc     = 0
   nactive   = 0
+  nfrzvirt  = 0
   xlevel    = 2 ! This won't return error. Default CI program is SDCI.
   printlvl  = 0
   
@@ -79,14 +82,14 @@ program jayci_exp
 
   ! write input values
   call write_gennml(electrons, orbitals, nfrozen, ndocc, nactive, xlevel, &
-    outfl_unit)
+    nfrzvirt, outfl_unit)
   ! set alpha/beta electron numbers
   call alpha_beta(electrons, aelec, belec)
 
   ! truncate ci space
   write(*, "(1x, A)") "Truncating CI space..."
-  call citrunc1(aelec, belec, orbitals, nfrozen, ndocc, nactive, xlevel, &
-    astrlen, bstrlen, dtrmlen, ierr)
+  call citrunc1(aelec, belec, orbitals, nfrozen, ndocc, nactive, nfrzvirt, &
+    xlevel, astrlen, bstrlen, dtrmlen, ierr)
   if (ierr .ne. 0) stop "*** Error during truncation! ***"
 
   write(*, "(1x, A, i15)") "Determinants =", dtrmlen
@@ -96,12 +99,12 @@ program jayci_exp
   ! generate input for jayci.x
   write (*, "(1x, A)") "Generating input for jayci.x..."
   call gen_input(dtrmlen, astrlen, bstrlen, aelec, belec, orbitals, nfrozen, &
-    ierr)
+    nfrzvirt, ierr)
   
 contains
 
   subroutine gen_input(num_det, num_astr, num_bstr, aelec, belec, orbs, &
-    nfrzn, ierr)
+    nfrzn, nfvrt, ierr)
     !===========================================================================
     ! gen_input
     ! ---------
@@ -115,7 +118,7 @@ contains
     !  belec    = number of beta  electrons
     !  orbs     = number of orbitals
     !  nfrzn    = number of frozen orbitals
-    !
+    !  nfvrt    = number of frozen virtual orbitals
     ! Output:
     !  ierr     = error handling
     !---------------------------------------------------------------------------
@@ -124,7 +127,7 @@ contains
     ! .. INPUT arguments ..
     integer, intent(in) :: num_det, num_astr, num_bstr
     integer, intent(in) :: aelec, belec, orbs
-    integer, intent(in) :: nfrzn
+    integer, intent(in) :: nfrzn, nfvrt
 
     ! .. OUTPUT arguments ..
     integer, intent(out) :: ierr
@@ -141,7 +144,7 @@ contains
     integer :: flunit = 14
     integer :: ci_orbs, ci_aelec, ci_belec
 
-    ci_orbs  = orbitals - nfrozen
+    ci_orbs  = orbitals - nfrozen - nfvrt
     ci_aelec = aelec - nfrozen
     ci_belec = belec - nfrozen
     
@@ -163,7 +166,7 @@ contains
 11  format(1x,A,i15)
   end subroutine gen_input
 
-  subroutine write_gennml(elec, orb, nfrzn, ndocc, nactv, xlvl, outfl_unit)
+  subroutine write_gennml(elec, orb, nfrzn, ndocc, nactv, xlvl, nfvrt, outfl_unit)
     !===========================================================================
     ! write_gennml
     ! ------------
@@ -179,7 +182,8 @@ contains
     implicit none
 
     ! .. INPUT arguments ..
-    integer, intent(in) :: outfl_unit, elec, orb, nfrzn, ndocc, nactv, xlvl
+    integer, intent(in) :: outfl_unit, elec, orb, nfrzn, ndocc, nactv, nfvrt
+    integer, intent(in) :: xlvl
 
     ! write input values
     write(outfl_unit, 10) ""
@@ -189,6 +193,7 @@ contains
     write(outfl_unit, 11) "nfrozen   =", nfrzn
     write(outfl_unit, 11) "ndocc     =", ndocc
     write(outfl_unit, 11) "nactive   =", nactv
+    write(outfl_unit, 11) "nfrzvirt  =", nfvrt
     write(outfl_unit, 11) "xlevel    =", xlvl
     write(outfl_unit, 10) ""
 

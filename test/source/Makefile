@@ -104,8 +104,6 @@ driver1:	$(DRIV1) | $(BIN)
 	@echo " --- "
 	$(PREFIX) "$(COMPLR) -o $(EXEC1) $(DRIV1) $(LIBS1) $(LIBS2)"
 	@echo " ------------------------------------------------------------------------"
-	@echo " Cleaning... "
-	$(RM) $(DRIV1) ./*genmod.f90 ./*.o ./*.mod
 
 
 driver2:$(DRIV2) | $(BIN)

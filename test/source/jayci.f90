@@ -41,12 +41,14 @@ program jayci
   ! ndocc     = number of doubly-occupied orbitals
   ! nactive   = number of active orbitals
   ! xlevel    = excitation level
+  ! nfrzvirt  = number of frozen virtual orbitals
   ! printlvl  = level of output printing:    0 = minimal
   !                                       1..5 = reserved
   !                                         >5 = debugging
-  integer :: electrons, orbitals, nfrozen, ndocc, nactive, xlevel, printlvl
+  integer :: electrons, orbitals, nfrozen, ndocc, nactive, xlevel, nfrzvirt
+  integer :: printlvl
   namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, xlevel, &
-    printlvl
+    printlvl, nfrzvirt
 
   ! -- expansion NAMELIST ------------------------------------------------------
   ! ci_electrons = electrons subject to excitations in CI expansion
@@ -126,6 +128,7 @@ program jayci
   nfrozen   = 0
   ndocc     = 0
   nactive   = 0
+  nfrzvirt  = 0
   xlevel    = 2 ! This won't return error. Default CI program is SDCI.
   printlvl  = 0 ! Minimal printing by default.
 
@@ -182,8 +185,8 @@ program jayci
   bstrings = binom(ci_orbitals, ci_belec)
   
   ! read in molecular orbitals
-  m1len = ind2val(ci_orbitals, ci_orbitals)
-  m2len = index2e(ci_orbitals, ci_orbitals, ci_orbitals, ci_orbitals)
+  m1len = ind2val(orbitals, orbitals)
+  m2len = index2e(orbitals, orbitals, orbitals, orbitals)
   allocate(moints1(m1len))
   allocate(moints2(m2len))
   inquire(file = mofile, exist = file_exists)

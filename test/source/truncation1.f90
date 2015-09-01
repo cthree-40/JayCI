@@ -22,7 +22,7 @@ module truncation
 contains
   !*
   !*
-  subroutine citrunc1 (aelec, belec, orb, nfrzn, ndocc, nactv, xlvl, &
+  subroutine citrunc1 (aelec, belec, orb, nfrzn, ndocc, nactv, nfvrt, xlvl, &
     astr_len, bstr_len, dtrm_len, ierr)
     ! citrunc1
     ! --------
@@ -35,6 +35,7 @@ contains
     !  nfrzn = number of frozen core orbitals
     !  ndocc = number of docc orbitals
     !  nactv = number of active orbitals
+    !  nfvrt = number of frozen virtual orbitals
     !  xlvl  = excitaiton level
     !
     ! Output:
@@ -47,14 +48,14 @@ contains
     implicit none
 
     ! .. INPUT arguments ..
-    integer, intent(in) :: aelec, belec, orb, nfrzn, ndocc, nactv, xlvl
+    integer, intent(in) :: aelec, belec, orb, nfrzn, ndocc, nactv, nfvrt, xlvl
 
     ! .. OUTPUT arguments ..
     integer, intent(out) :: ierr
     integer, intent(out) :: astr_len, bstr_len, dtrm_len
 
     ! .. LOCAL scalars ..
-    ! ci_orbs    = (orbitals) - (frozen core)
+    ! ci_orbs    = (orbitals) - (frozen core) - (frozen virtuals)
     ! ci_aelec   = (alpha electrons) - (frozen core)
     ! ci_belec   = (beta  electrons) - (frozen core)
     ! axdocc     = alpha string docc excitations
@@ -87,7 +88,7 @@ contains
     character*25 :: strlst_flnm = "str.list"
     
     ! if frozen-core calculation, remove non-interacting electrons
-    ci_orbs  = orb - nfrzn
+    ci_orbs  = orb - nfrzn - nfvrt
     ci_aelec = aelec - nfrzn
     ci_belec = belec - nfrzn
 
@@ -146,16 +147,12 @@ contains
             call strfind2(bstring1, ci_belec, ci_orbs, bstrings, bstring2)
 
             ! test docc restrictions on string
-            if (ndocc .ne. 0) then
-                    call enf_docc_str(bstring2, ci_belec, ndocc, nactv, bxdocc)
-                    if (bxdocc .gt. xlvl) then
-                            bstring1 = bstring2
-                            cycle
-                    end if
-            else
-                    bxdocc = 0
+            call enf_docc_str(bstring2, ci_belec, ndocc, nactv, bxdocc)
+            if (bxdocc .gt. xlvl) then
+                    bstring1 = bstring2
+                    cycle
             end if
-
+            
             ! test active orbital restrictions on string
             if (nactv .ne. 0) then
                     call enf_actv_str(bstring2, ci_belec, ndocc, nactv, bxactv)
@@ -189,16 +186,12 @@ contains
             call strfind2(astring1, ci_aelec, ci_orbs, astrings, astring2)
 
             ! test docc restrictions on string
-            if (ndocc .ne. 0) then
-                    call enf_docc_str(astring2, ci_aelec, ndocc, nactv, axdocc)
-                    if (axdocc .gt. xlvl) then
-                            astring1 = astring2
-                            cycle
-                    end if
-            else
-                    axdocc = 0
+            call enf_docc_str(astring2, ci_aelec, ndocc, nactv, axdocc)
+            if (axdocc .gt. xlvl) then
+                    astring1 = astring2
+                    cycle
             end if
-
+            
             ! test active orbital restrictions on string
             if (nactv .ne. 0) then
                     call enf_actv_str(astring2, ci_aelec, ndocc, nactv, axactv)
@@ -230,16 +223,12 @@ contains
                       bstring2)
                     
                     ! test docc restrictions on string
-                    if (ndocc .ne. 0) then
-                            call enf_docc_str(bstring2, ci_belec, ndocc, nactv,bxdocc)
-                            if (bxdocc .gt. xlvl) then
-                                    bstring1 = bstring2
-                                    cycle
-                            end if
-                    else
-                            bxdocc = 0
+                    call enf_docc_str(bstring2, ci_belec, ndocc, nactv,bxdocc)
+                    if (bxdocc .gt. xlvl) then
+                            bstring1 = bstring2
+                            cycle
                     end if
-
+                    
                     ! test active orbital restrictions on string
                     if (nactv .ne. 0) then
                             call enf_actv_str(bstring2, ci_belec, ndocc, nactv, bxactv)
