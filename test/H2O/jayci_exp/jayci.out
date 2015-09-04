@@ -1,1 +1,38 @@
  ------------------------------------
+ jayci.x 
+ ------------------------------------
+ 
+ &general input values:
+  electrons =   10
+  orbitals  =   24
+  nfrozen   =    1
+  ndocc     =    4
+  nactive   =    0
+  xlevel    =    2
+ 
+ 
+ &expansion input values:
+  ci_electrons =               8
+  ci_orbitals  =              23
+  alpha strings=            1103
+  beta  strings=            1103
+  determinants =            7981
+ 
+ 
+ &dalginfo input values:
+  maxiter      =              20
+  krymin       =               3
+  krymax       =               8
+  nroots       =               1
+  prediagr     =               1
+  iguessdim    =               4
+  restol       =      0.00001000
+  refdim       =              50
+ 
+
+ Nuclear repulsion energy:     9.16048714
+ Frozen-core contribution:   -61.30695281
+ Total contribution:         -52.14646567
+
+ Hartree Fock Energy:    -76.02650823
+ Final CI energy =    -76.23008839

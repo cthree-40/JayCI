@@ -11,7 +11,7 @@ contains
     moints2, moints2len, pstring, pstep, plocate, qstring, qstep, qlocate,   &
     xreflist, pdets, qdets, pdetslen, qdetslen, adets, bdets, aelec, belec,  &
     orbitals, diagonals, nfrozen, ndocc, nactive, vectors2 )
-    use construct, only: exp_construct
+    use construct, only: exp_construct, ham_element
     implicit none
     integer, intent(in) :: num_vecs, dim_vecs, moints1len, moints2len, pdetslen, &
                            qdetslen, adets, bdets, aelec, belec, orbitals, &
@@ -26,6 +26,7 @@ contains
     real*8,  dimension(dim_vecs, num_vecs), intent(inout) :: vectors2
     real*8,  dimension(dim_vecs, num_vecs), intent(in)    :: vectors1
     integer :: i
+
   ! Loop over initial vectors
     do i=1, num_vecs
             print *, "    Vector ", i
@@ -34,9 +35,9 @@ contains
                   pdets,pdetslen,qdets,qdetslen,adets,bdets,aelec,belec,&
                   orbitals,diagonals,nfrozen,ndocc,nactive,vectors2(1,i))
     end do
-    print *, "Finished initialization."
+
     RETURN
-  end subroutine
+  end subroutine David_Initial
   !====================================================================
   !====================================================================
   !>build_subham

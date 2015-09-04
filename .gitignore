@@ -1,2 +1,5 @@
-test/
+test/bin
+test/H2O/archive
+test/build.sh
+test/edison
 Profile_Info/

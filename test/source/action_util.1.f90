@@ -77,7 +77,7 @@ contains
     type sRep ! Single replacement information linked list
        type(sRep), pointer :: next, prev
        integer             :: exIndex       ! index of |p*,q>
-       integer             :: parity        ! parity returning p* to cannonical order
+       integer             :: prty          ! parity returning p* to cannonical order
        integer             :: orbital1      ! excitation FROM this orbital
        integer             :: orbital2      ! excitation TO this orbital
        integer             :: detLoc        ! Location of determinant |p*,q>
@@ -128,9 +128,9 @@ contains
                   eps1, sxindx1, new_astring )
              cLoc = 0
              ! Test if sxindx1 is in expansion and is greater than pDets(i)
-             if ( sxindx1 .lt. pDets(i) ) then
-                cycle loop_Orbitals
-             end if
+             !if ( sxindx1 .lt. pDets(i) ) then
+             !   cycle loop_Orbitals
+             !end if
              ! Test if sxindx1 is greater than the largest element of pDets
              if ( sxindx1 .gt. pDets(pDetsTrunc) ) then
                 cycle loop_Orbitals
@@ -145,7 +145,7 @@ contains
              !cLoc = i
              ! store single replacment information
              currsRep%exIndex  = sxindx1
-             currsRep%parity   = eps1
+             currsRep%prty   = eps1
              currsRep%orbital1 = aString(j)
              currsRep%orbital2 = pExct1(k)
              currsRep%detLoc   = cLoc
@@ -172,8 +172,8 @@ contains
                      qDets(qDetsTrunc), int2e2 )
                 OutVector(oVIndx) = OutVector(oVIndx) + eps1*(int1e1 + int2e1 &
                      + int2e2)*InVector(m)
-                OutVector(m)      = OutVector(m)      + eps1*(int1e1 + int2e1 &
-                     + int2e2)*InVector(oVIndx)
+              !  OutVector(m)      = OutVector(m)      + eps1*(int1e1 + int2e1 &
+              !       + int2e2)*InVector(oVIndx)
              end do loop_qstring1
              ! loop over additional replacments in alpha strings
              loop_elec2: do m = 1, j - 1
@@ -186,9 +186,9 @@ contains
                    !     Orbitals, eps2, dxindx1 )
                    cLoc2 = 0
                    ! Test if dxindx1 is in expansion and greater than pDets(i)
-                   if ( dxindx1 .lt. pDets(i) ) then
-                      cycle loop_Orbitals2
-                   end if
+                   !if ( dxindx1 .lt. pDets(i) ) then
+                   !   cycle loop_Orbitals2
+                   !end if
                    ! Test if dxindx1 is greater than largest element of pDets
                    if ( dxindx1 .gt. pDets(pDetsTrunc) ) then
                       cycle loop_Orbitals2
@@ -200,9 +200,9 @@ contains
                    end if
                    !cLoc2 =
                    ! Compute integral
-                   int1e3 = eps2*( Moints2( Index2E(aString(m),pExct1(k),aString(j), &
-                        pExct1(n)) ) - Moints2( Index2E(aString(m), pExct1(n),       &
-                        aString(j), pExct1(k) ) ) )
+                   int1e3 = eps2*( Moints2( Index2E(aString(m),pExct1(n),aString(j), &
+                        pExct1(k)) ) - Moints2( Index2E(aString(m), pExct1(k),       &
+                        aString(j), pExct1(n) ) ) )
                    ! Loop over q's
                    loop_qstring2: do o = pLocate(cLoc2) + 1, pLocate(cLoc2) + pStep(cLoc2)
                       ! find index in stinrg: pLocate(i)...pLocate(i+pStep(i))
@@ -214,7 +214,7 @@ contains
                       iVIndx = o
                       oVIndx = p+pLocate(i)
                       OutVector(oVIndx) = OutVector(oVIndx) + int1e3*InVector(iVIndx)
-                      OutVector(iVIndx) = OutVector(iVIndx) + int1e3*InVector(oVIndx)
+                 !     OutVector(iVIndx) = OutVector(iVIndx) + int1e3*InVector(oVIndx)
                    end do loop_qstring2
                 end do loop_Orbitals2
              end do loop_elec2
@@ -227,6 +227,7 @@ contains
        if ( associated(currsRep%next) ) then ! We are at end of list
           nullify(currsRep%next)
        end if
+
        ! loop over single replacments stored from previous loop
        currsRep => sRepll
        singEx: do while ( associated ( currsRep ) )
@@ -246,9 +247,9 @@ contains
                         eps2, sxindx2, new_bstring )
                    ! loop over q indices that correspond to the single excitation
                    !  r(pjv*) in q*>q
-                   if ( sxindx2 .lt. pString(k) ) then
-                      cycle loop_Orbitals3
-                   end if
+                   !if ( sxindx2 .lt. pString(k) ) then
+                   !   cycle loop_Orbitals3
+                   !end if
                    ! Check if sxindx2 is in expansion
                    !if ( sxindx2 .gt. pString(pLocate(i)+pStep(i)) ) then
                    !   cycle loop_Orbitals3
@@ -263,13 +264,13 @@ contains
                    end if
                    ! Compute contribution
                    int3e2 = Moints2( Index2E( currsRep%orbital1, currsRep%orbital2, &
-                        bString(l), qExct1(m) ) )
+                     bString(l), qExct1(m) ) )
                    iVIndx = pLocate( currsRep%detLoc ) + cLoc2
                    oVIndx = k
-                   OutVector(oVIndx) = OutVector(oVIndx) + int3e2 * currsRep%parity * eps2 * &
+                   OutVector(oVIndx) = OutVector(oVIndx) + int3e2 * currsRep%prty * eps2 * &
                         InVector(iVIndx)
-                   OutVector(iVIndx) = OutVector(iVIndx) + int3e2 * currsRep%parity * eps2 * &
-                        InVector(oVIndx)
+                   !OutVector(iVIndx) = OutVector(iVIndx) + int3e2 * currsRep%prty * eps2 * &
+                   !     InVector(oVIndx)
                 end do loop_Orbitals3
              end do loop_elec3
           end do loop_qstring3
@@ -292,9 +293,6 @@ contains
        deallocate(sRepll)
     end do astrings
 
-#ifdef DEBUGGING
-    write(*,"(A)") "Finished alpha contribution computation. Deallocating arrays"
-#endif
     ! deallocate arrays
     deallocate( aString, bString, pExct1, qExct1, tmpString, new_astring )
     return
@@ -343,9 +341,7 @@ contains
     ! allocate array of possible excitations
     allocate(pExct1(Orbitals - aElec))
     allocate(qExct1(Orbitals - bElec))
-#ifdef DEBUGGING
-    write(*,"(A)") "Computing beta strings contribution"
-#endif
+
     ! loop over beta strings
     bstrings: do i=1, qDetsTrunc
        ! generate string qDets(i)
@@ -368,9 +364,9 @@ contains
              call SRepInfo( bString, bElec, qExct1(k), j, Orbitals, eps1, &
                   sxindx1, new_bstring )
              ! Test if sxindx1 is in expansion and is greater than qDets(i)
-             if ( sxindx1 .lt. qDets(i) ) then
-                cycle loop_Orbitals
-             end if
+             !if ( sxindx1 .lt. qDets(i) ) then
+             !   cycle loop_Orbitals
+             !end if
              ! Test if sxindx1 is within expansion
              if ( sxindx1 .gt. qDets(qDetsTrunc) ) then
                 cycle loop_Orbitals
@@ -404,24 +400,24 @@ contains
                      pDets(pDetsTrunc), int2e2 )
                 OutVector(oVIndx) = OutVector(oVIndx) + eps1*(int1e1 + int2e1 &
                      + int2e2)*InVector(iVIndx)                                     
-                OutVector(iVIndx)      = OutVector(iVIndx) + eps1*(int1e1 + int2e1 &
-                     + int2e2)*InVector(oVIndx)
+                !OutVector(iVIndx)      = OutVector(iVIndx) + eps1*(int1e1 + int2e1 &
+                !     + int2e2)*InVector(oVIndx)
              end do loop_pstring1
              ! loop over additional replacements in beta strings
              loop_elec2: do m = 1 , j - 1
                 loop_Orbitals2: do n=k+1, Orbitals-bElec !
                    ! Note: m must always be less than j
                    ! get double replacement information
-
                    call DRepInfo( bString, bElec, qExct1(n), m, qExct1(k), j, &
-                        Orbitals, eps2, dxindx1 )
-                   !call DRepInfo( bString, bElec, qExct1(k), j, qExct1(n), m, &
-                   !     Orbitals, eps2, dxindx1 )
+                     Orbitals, eps2, dxindx1 )
+!                   call DRepInfo( bString, bElec, qExct1(k), j, qExct1(n), m, &
+!                        Orbitals, eps2, dxindx1 )
+
                    cLoc2 = 0
                    ! test if dxindx1 is in expansion and greater than qDets(i)
-                   if ( dxindx1 .lt. qDets(i) ) then
-                      cycle loop_Orbitals2
-                   end if
+                   !if ( dxindx1 .lt. qDets(i) ) then
+                   !   cycle loop_Orbitals2
+                   !end if
                    ! test if dxindx1 is within expansion
                    if ( dxindx1 .gt. qDets(qDetsTrunc) ) then
                       cycle loop_Orbitals2
@@ -433,9 +429,9 @@ contains
                    end if
                    cLoc2 = cLoc2
                    ! Compute integral : ( m, k, j, n ) - ( m, n, j, k )
-                   int1e3 = eps2 * ( Moints2( Index2E(bString(m),qExct1(k),bString(j), &
-                        qExct1(n)) ) - Moints2( Index2E(bString(m), qExct1(n),         &
-                        bString(j), qExct1(k) ) ) )
+                   int1e3 = eps2 * ( Moints2( Index2E(bString(m),qExct1(n),bString(j), &
+                        qExct1(k)) ) - Moints2( Index2E(bString(m), qExct1(k),         &
+                        bString(j), qExct1(n) ) ) )
                    ! loop over p's
                    loop_pstring2: do o = qLocate(cLoc2) + 1, qLocate(cLoc2) + qStep(cLoc2)
                       ! find index in string: qLocate(i) .... qLocate (i + qStep(i) )
@@ -447,8 +443,8 @@ contains
                       iVIndx = XRefList(o)
                       oVIndx = XRefList(p + qLocate(i))
                       OutVector(oVIndx) = OutVector(oVIndx) + int1e3*InVector(iVIndx)
-                      OutVector(iVIndx) = OutVector(iVIndx) + int1e3*InVector(oVIndx)
-
+                !      OutVector(iVIndx) = OutVector(iVIndx) + int1e3*InVector(oVIndx)
+                      
                    end do loop_pstring2
                 end do loop_Orbitals2
              end do loop_elec2
@@ -489,7 +485,7 @@ contains
     !Return to cannonical ordering                                 
     CALL cannon1swp(newString,SLen,IndxSwp,Eps1)                   
     !Locate address                                                
-    CALL AdrFind(newString,SLen,Orbitals,Indx)                      
+    CALL AdrFind(newString,SLen,Orbitals,Indx)
     RETURN                                                         
   end subroutine SRepInfo
 !======================================================================
@@ -510,11 +506,11 @@ contains
     integer,dimension(:),ALLOCATABLE    ::newString                     
     !Allocate newString                                                 
     ALLOCATE(newString(SLen))                                           
-    newString=String                                                    
+    newString=String
     !Orbitals are swapped in subroutine cannon2                         
     CALL cannon2(newString,SLen,IndxSwp1,NewOrb1,IndxSwp2,NewOrb2,&     
          Eps1)                                                         
-    !Find address                                                       
+    !Find address
     CALL AdrFind(newString,SLen,Orbitals,Indx)                          
     DEALLOCATE(newString)                                               
     RETURN                                                              

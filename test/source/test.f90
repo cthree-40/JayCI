@@ -6,6 +6,7 @@ program test
 
   call test_citrunc()
 
-  call test_expdiag()
+  call test_cannon4()
   
+
 end program test

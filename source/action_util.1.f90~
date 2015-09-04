@@ -110,10 +110,6 @@ contains
              aString(j) = j
           end do
        end if
-
-#ifdef DEBUGGING
-       write(*,"(A,i8,A,5i3)") "String ",i, ":", astring
-#endif
        ! allocate array of single replacements in alpha strings (linked list)   
        allocate(sRepll)                                                         
        nullify(sRepll%prev)                                                    
@@ -178,9 +174,9 @@ contains
                      + int2e2)*InVector(oVIndx)
              end do loop_qstring1
              ! loop over additional replacments in alpha strings
-             loop_elec2: do m = j+1, aElec
-                loop_Orbitals2: do n = 1, k - 1
-                   ! Note: M MUST ALWAYS BE GREATER THAN J
+             loop_elec2: do m = 1, j-1
+                loop_Orbitals2: do n = k+1, Orbitals-aElec
+                   ! Note: m must always be less than j
                    ! get double replacment information
                    call DRepInfo( aString, aElec, pExct1(k), j, pExct1(n), m, &
                         Orbitals, eps2, dxindx1 )
@@ -200,9 +196,9 @@ contains
                    end if
                    cLoc2 = i + cLoc2
                    ! Compute integral
-                   int1e3 = eps2*( Moints2( Index2E(aString(j),pExct1(k),aString(m), &
-                        pExct1(n)) ) - Moints2( Index2E(aString(j), pExct1(n),       &
-                        aString(m), pExct1(k) ) ) )
+                   int1e3 = eps2*( Moints2( Index2E(aString(m),pExct1(k),aString(j), &
+                        pExct1(n)) ) - Moints2( Index2E(aString(m), pExct1(n),       &
+                        aString(j), pExct1(k) ) ) )
                    ! Loop over q's
                    loop_qstring2: do o = pLocate(cLoc2) + 1, pLocate(cLoc2) + pStep(cLoc2)
                       ! find index in stinrg: pLocate(i)...pLocate(i+pStep(i))
@@ -360,12 +356,11 @@ contains
        call possex1( bString, Orbitals, bElec, (Orbitals - bElec), &
             qExct1 )
        ! loop over single excitations
-       loop_elec: do j = nFrozen+1, bElec
+       loop_elec: do j = 1, bElec
           loop_Orbitals: do k = 1, Orbitals - bElec
              ! generate information for curren replacement
              call SRepInfo( bString, bElec, qExct1(k), j, Orbitals, eps1, &
                   sxindx1 )
-             cLoc = 0
              ! Test if sxindx1 is in expansion and is greater than qDets(i)
              if ( sxindx1 .lt. qDets(i) ) then
                 cycle loop_Orbitals
@@ -375,13 +370,14 @@ contains
                 cycle loop_Orbitals
              end if
              ! search for determinant in string
-             call int_search2( sxindx1, qDets(i+1), (qDetsTrunc-i), cLoc )
+             cLoc = 0
+             call int_search2( sxindx1, qDets(1), (qDetsTrunc), cLoc )
              ! if determinant is not found, cycle
              if ( cLoc .eq. 0 ) then
                 cycle loop_Orbitals
              end if
              ! cLoc gives location of matching index above qDets(i) in qDets
-             cLoc = cLoc + i
+             cLoc = cLoc + 0
              ! compute first single excitation term
              call eval_singlex1( bString, qExct1, bElec, Moints1, Moints2, &
                   M1Len, M2Len, Orbitals, j, k, int1e1, int2e1 )
@@ -406,13 +402,22 @@ contains
                      + int2e2)*InVector(oVIndx)
              end do loop_pstring1
              ! loop over additional replacements in beta strings
-             loop_elec2: do m = j+1, bElec
-                loop_Orbitals2: do n=1, k-1
-                   ! Note: M MUST ALWAYS BE GREATER THAN J
+             loop_elec2: do m = 1 , j-1
+                loop_Orbitals2: do n=k+1, Orbitals-bElec !
+                   ! Note: m must always be less than j
                    ! get double replacement information
-                   call DRepInfo( bString, bElec, qExct1(k), j, qExct1(n), m, &
+                   call DRepInfo( bString, bElec, qExct1(n), m, qExct1(k), j, &
                         Orbitals, eps2, dxindx1 )
+                   !call DRepInfo( bString, bElec, qExct1(k), j, qExct1(n), m, &
+                   !     Orbitals, eps2, dxindx1 )
                    cLoc2 = 0
+                   
+#ifdef DEBUGGING
+                   write( *, "(1x,A,i8,A,i8)") "String ", qDets(i), "  exciting into ", dxindx1
+                   if ( dxindx1 .eq. 10263 ) then
+                      write(*,"(1x,A,i10)") "qDets(i) = ", qDets(i)
+                   end if
+#endif
                    ! test if dxindx1 is in expansion and greater than qDets(i)
                    if ( dxindx1 .lt. qDets(i) ) then
                       cycle loop_Orbitals2
@@ -422,27 +427,39 @@ contains
                       cycle loop_Orbitals2
                    end if
                    ! search for determinant in string qDets
-                   call int_search2( dxindx1, qDets(i+1), (qDetsTrunc - i), cLoc2 )
+                   call int_search2( dxindx1, qDets(1), qDetsTrunc, cLoc2 )
                    if ( cLoc2 .eq. 0 ) then
                       cycle loop_Orbitals2
                    end if
-                   cLoc2 = i + cLoc2
-                   ! Compute integral
-                   int1e3 = eps2 * ( Moints2( Index2E(bString(j),qExct1(k),bString(m), &
-                        qExct1(n)) ) - Moints2( Index2E(bString(j), qExct1(n),         &
-                        bString(m), qExct1(k) ) ) )
+                   cLoc2 = cLoc2
+                   ! Compute integral : ( m, k, j, n ) - ( m, n, j, k )
+                   int1e3 = eps2 * ( Moints2( Index2E(bString(m),qExct1(k),bString(j), &
+                        qExct1(n)) ) - Moints2( Index2E(bString(m), qExct1(n),         &
+                        bString(j), qExct1(k) ) ) )
                    ! loop over p's
                    loop_pstring2: do o = qLocate(cLoc2) + 1, qLocate(cLoc2) + qStep(cLoc2)
                       ! find index in string: qLocate(i) .... qLocate (i + qStep(i) )
+#ifdef DEBUGGING
+                      if ( dxindx1 .eq. 10263 .or. qDets(i) .eq. 10263 ) then
+                         write(*,"(1x,A,i8,A,i8)") "dxindx1 = ", dxindx1, " qDets(i) = ", qDets(i) 
+                         write(*,"(1x,A,i8,A,i8)") "Looking for ", qString(o), " in list beginning with ", qString(qLocate(i)+1)
+                      end if
+#endif
                       p = 0
-                      call int_search2( qString(o), qString(qLocate(i)), qStep(i), p )
+                      call int_search2( qString(o), qString(qLocate(i)+1), qStep(i), p )
                       if ( p .eq. 0 ) then
                          cycle loop_pstring2
                       end if
                       iVIndx = XRefList(o)
                       oVIndx = XRefList(p + qLocate(i))
+#ifdef DEBUGGING
+                      if ( oVIndx .eq. 573 .or. iVIndx .eq. 573 ) then
+                         print *, "Integral = ", int1e3," Element 573 = ", OutVector(573), " oVIndx = ", oVIndx, " iVIndx = ", iVIndx
+                      end if
+#endif
                       OutVector(oVIndx) = OutVector(oVIndx) + int1e3*InVector(iVIndx)
                       OutVector(iVIndx) = OutVector(iVIndx) + int1e3*InVector(oVIndx)
+
                    end do loop_pstring2
                 end do loop_Orbitals2
              end do loop_elec2
@@ -553,7 +570,7 @@ contains
   subroutine eval_singlex1(sp_string,sp_excites,sp_elecs,MOints1, &                           
        MOints2,M1Len,M2Len,Orbitals,bound_elec,excited_elec,contr_1elec, &                   
        contr_2elec)                                                                          
-    use integral,         only: Ind2Val, Index2E                                          
+    use integral,         only: Ind2Val, Index2E
     IMPLICIT NONE                                                                         
     integer,intent(IN)      ::sp_elecs,M1Len,M2Len,Orbitals,bound_elec,&                  
          excited_elec                                                                    
@@ -573,16 +590,16 @@ contains
     !Compute contribution                                                                 
     contr_2elec=0d0                                                                       
     do i=1, bound_elec-1                                                                  
-       contr_2elec=contr_2elec+MOints2(Index2E(sp_string(i),sp_string(i), &            
-            sp_string(bound_elec),sp_excites(excited_elec))) -             &          
-            MOints2(Index2E(sp_string(i),sp_string(bound_elec),sp_string(i), &        
+       contr_2elec=contr_2elec+MOints2(Index2E(sp_string(bound_elec),                   &
+            sp_excites(excited_elec),sp_string(i),sp_string(i))) - &          
+            MOints2(Index2E(sp_string(bound_elec),sp_string(i),sp_string(i),            &        
             sp_excites(excited_elec)))                                                
     end do
     do i=bound_elec+1,sp_elecs                                                            
-       contr_2elec=contr_2elec+Moints2(Index2E(sp_string(i),sp_string(i),     &        
-            sp_string(bound_elec),sp_excites(excited_elec))) -                &       
-            MOints2(Index2E(sp_string(i),sp_string(bound_elec),sp_string(i), &        
-                        sp_excites(excited_elec)))                                                
+       contr_2elec=contr_2elec+MOints2(Index2E(sp_string(bound_elec),                   &                                                                                                                                                                                 
+            sp_excites(excited_elec),sp_string(i),sp_string(i))) - &                                                                                                                                                                                                      
+            MOints2(Index2E(sp_string(bound_elec),sp_string(i),sp_string(i),            &                                                                                                                                                                                 
+            sp_excites(excited_elec))) 
     end do
     DEALLOCATE(tmp_string)                                                                
     RETURN !Return values                                                                 

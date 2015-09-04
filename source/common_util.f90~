@@ -601,7 +601,6 @@ CONTAINS
        totorbs(i)=i
     end do
     ! Loop through occstr making totorbs(i)=0
-    print *, "elecs = ", elecs
     do i=1,elecs
        totorbs(occstr(i))=0
     end do!i

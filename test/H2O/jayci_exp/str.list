@@ -1,4 +1,4 @@
- BETA
+  BETA
               1 string:  1  2  3  4
               2 string:  1  2  3  5
               3 string:  1  2  3  6
@@ -1102,8 +1102,8 @@
            3039 string:  3  4 21 22
            3040 string:  3  4 21 23
            3041 string:  3  4 22 23
-ALPHA
-              1 string:
+ ALPHA
+              1 string:  1  2  3  4
               2 string:  1  2  3  5
               3 string:  1  2  3  6
               4 string:  1  2  3  7

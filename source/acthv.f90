@@ -1,43 +1,83 @@
-!=====================================================================
-!>acthv
-! Subroutine to peform Hv=c
-!---------------------------------------------------------------------
-subroutine acthv(In_Vector,MOints1,MOints2,M1Len,M2Len,pString,    &
-     pStep,pLocate,qString,qStep,qLocate,xRefList,ciDim,pDets,    &
-     pDLen,qDets,qDLen,aDets,bDets,aElec,bElec,Orbitals,Diagonals,&
-     nFrozen,nDocc,nActive,Out_Vector)
+subroutine acthv (in_vec, moints1, moints2, m1len, m2len, pString,   &
+     pStep, pLocate, qString, qStep, qLocate, xRefList, ciDim, pDets,&
+     pDLen, qDets, qDLen, aDets, bDets, aElec, bElec, orbitals,      &
+     diagonals, nFrozen, nDocc, nActive, out_Vec)
+  !=====================================================================
+  ! acthv
+  ! -----
+  ! Subroutine to peform Hv=c
+  !
+  ! Input:
+  !  in_vec  = v
+  !  moints1 = 1-e integrals
+  !  moints2 = 2-e integrals
+  !  m1len   = len(moints1)
+  !  m2len   = len(moints2)
+  !  pString = q strings of determinenats ordered by p string index
+  !  pStep   = number of q strings for p string
+  !  pLocate = location of ith p string
+  !  qString =
+  !  qStep   =
+  !  qLocate =
+  !  xRefList= pString(i) |-> qString(j)
+  !  ciDim   = expansion size
+  !  pDets   = p strings
+  !  pDLen   = length of pDets
+  !  qDets   = q strings
+  !  qDLen   = length of qDets
+  !  aDets   = num of alpha strings without expansion restrictions
+  !  bDets   = num of beta  strings without expansion restrictions
+  !  aElec   = alpha electrons
+  !  bElec   = beta  electrons
+  !  orbitals= number of orbitals
+  !  diagonals = diagonal elements of H
+  !  nfrozen = number of frozen core orbitals
+  !  ndocc   = number of docc orbitals
+  !  nactive = number of active space orbitals
+  !
+  ! Output:
+  !  out_vec
+  !---------------------------------------------------------------------
   use action_util,  only: hv_alpha,hv_beta
-  IMPLICIT NONE
-  integer,intent(IN)      ::M1Len,M2Len,ciDim,pDLen,qDLen,aDets,&
-       bDets,aElec,bElec,Orbitals,nFrozen,nDocc,nActive
-  integer,dimension(pDLen),intent(IN) ::pStep,pLocate,pDets
-  integer,dimension(qDLen),intent(IN) ::qStep,qLocate,qDets
-  integer,dimension(ciDim),intent(IN)     :: pString,qString
-  integer,dimension(ciDim),intent(IN) ::xRefList
-  real*8,dimension(M1Len),intent(IN)  ::MOints1
-  real*8,dimension(M2Len),intent(IN)  ::MOints2
-  real*8,dimension(ciDim),intent(IN)  ::In_Vector,Diagonals
-  real*8,dimension(ciDim),intent(OUT)    ::Out_Vector
+  implicit none
+
+  ! .. INPUT arguments ..
+  integer, intent(in) :: m1len, m2len, ciDim, pDLen, qDLen, aDets
+  integer, intent(in) :: bDets, aElec, bElec, orbitals
+  integer, intent(in) :: nfrozen, ndocc, nactive
+  integer, dimension(pDLen), intent(in) :: pStep,pLocate,pDets
+  integer, dimension(qDLen), intent(in) :: qStep,qLocate,qDets
+  integer, dimension(ciDim), intent(in) :: pString,qString
+  integer, dimension(ciDim), intent(in) :: xRefList
+  real*8,  dimension(m1len), intent(in) :: moints1
+  real*8,  dimension(m2len), intent(in) :: moints2
+  real*8,  dimension(ciDim), intent(in) :: in_vec, diagonals
+
+  ! .. OUTPUT arguments ..
+  real*8,  dimension(ciDim), intent(out) :: out_vec
+
+  ! .. LOCAL arguments ..
   integer     :: i
+  
   ! Zero out Out_vector
-  Out_Vector=0d0
+  out_vec = 0d0
+  
   ! Diagonal contribution
   do i=1,ciDim
-     Out_Vector(i)=Out_Vector(i)+Diagonals(i)*In_Vector(i)
+     out_vec(i) = out_vec(i) + diagonals(i)*in_vec(i)
   end do !i
+
   ! Alpha string contribution
-  print *, "     Computing alpha contribution "
-  CALL hv_alpha(In_Vector,MOints1,M1Len,MOints2,M2Len,pString,      &
-       pStep,pLocate,pDets,qString,qStep,qLocate,qDets,ciDim,      &
-       pDLen,qDLen,aDets,bDets,aElec,bElec,Orbitals,     &
-       nFrozen,nDocc,nActive,Out_Vector)
+  CALL hv_alpha(in_vec,moints1,m1len,moints2,m2Len,pString,  &
+       pStep,pLocate,pDets,qString,qStep,qLocate,qDets,ciDim,&
+       pDLen,qDLen,aDets,bDets,aElec,bElec,orbitals,         &
+       nfrozen,ndocc,nactive,out_vec)
+  
   ! Beta string contribution
-  print *, "     Computing beta contribution "
-  CALL hv_beta(In_Vector,MOints1,M1Len,MOints2,M2Len,pString,      &
-       pStep,pLocate,pDets,qString,qStep,qLocate,qDets,ciDim,      &
-       pDLen,qDLen,aDets,bDets,aElec,bElec,Orbitals,     &
-       nFrozen,nDocc,nActive,xRefList,Out_Vector)
-      
+  CALL hv_beta(in_vec,moints1,m1len,moints2,m2len,pString,   &
+       pStep,pLocate,pDets,qString,qStep,qLocate,qDets,ciDim,&
+       pDLen,qDLen,aDets,bDets,aElec,bElec,orbitals,         &
+       nfrozen,ndocc,nactive,xRefList,out_vec)
+
   RETURN
 end subroutine acthv
-!=====================================================================

@@ -68,18 +68,16 @@ subroutine acthv (in_vec, moints1, moints2, m1len, m2len, pString,   &
   end do !i
 
   ! Alpha string contribution
-  print *, "     Computing alpha contribution "
   CALL hv_alpha(in_vec,moints1,m1len,moints2,m2Len,pString,  &
        pStep,pLocate,pDets,qString,qStep,qLocate,qDets,ciDim,&
        pDLen,qDLen,aDets,bDets,aElec,bElec,orbitals,         &
        nfrozen,ndocc,nactive,out_vec)
-
+  
   ! Beta string contribution
-  print *, "     Computing beta contribution "
   CALL hv_beta(in_vec,moints1,m1len,moints2,m2len,pString,   &
        pStep,pLocate,pDets,qString,qStep,qLocate,qDets,ciDim,&
        pDLen,qDLen,aDets,bDets,aElec,bElec,orbitals,         &
        nfrozen,ndocc,nactive,xRefList,out_vec)
-      
+
   RETURN
 end subroutine acthv

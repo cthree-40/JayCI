@@ -73,17 +73,17 @@ contains
 ! Find orbitals differing in beta strings
     call stringdiffs( qstring1, qstring2, belec, qdiffs, qd, PermInd2 )
     if ( pd .eq. 2 ) then
-      dblexcitations = PermInd1*(moints2( Index2E( pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)),&
+            dblexcitations = PermInd1*(moints2( Index2E( pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)),&
                               pstring1(pdiffs(2,1)), pstring2(pdiffs(2,2)))) - &
                        moints2( Index2E( pstring1(pdiffs(1,1)), pstring2(pdiffs(2,2)),&
                               pstring1(pdiffs(2,1)), pstring2(pdiffs(1,2)))))
     else if ( qd .eq. 2 ) then
-      dblexcitations =PermInd2*( moints2( Index2E( qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)),&
+            dblexcitations =PermInd2*( moints2( Index2E( qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)),&
                                 qstring1(qdiffs(2,1)), qstring2(qdiffs(2,2)))) - &
                        moints2( Index2E( qstring1(qdiffs(1,1)), qstring2(qdiffs(2,2)),&
                               qstring1(qdiffs(2,1)), qstring2(qdiffs(1,2)))))
     else
-      dblexcitations = PermInd1*PermInd2*( moints2( Index2E( pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)), &
+            dblexcitations = PermInd1*PermInd2*( moints2( Index2E( pstring1(pdiffs(1,1)),pstring2(pdiffs(1,2)), &
                                 qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2)))))
     end if
     DEALLOCATE(pdiffs,qdiffs)
@@ -107,6 +107,7 @@ contains
     integer                                   :: test, eps1, esp2, DUMMY
 !--------------------------------------------------------------------
     diff_num = 0
+    diff_mat = 0
     l = 1
     loopa: do i=1, length
       test = 0
@@ -136,16 +137,19 @@ contains
     end do
     ! Replace orbital with excitation to get permutation index
     TempString = string1
+
     if ( diff_num .eq. 1 ) then
+            TempString(diff_mat(1,1)) = string2(diff_mat(1,2))
             CALL cannon1swp(TempString,length,diff_mat(1,1),PermInd)
-!            call singrepinfo( TempString, length, string2( diff_mat(1,2) ), &
-!                    diff_mat(1,1), 0, PermInd, DUMMY ) 
+            !call singrepinfo( TempString, length, string2( diff_mat(1,2) ), &
+            !        diff_mat(1,1), 0, PermInd, DUMMY ) 
     else if ( diff_num .eq. 2 ) then ! Should not be necessary to test again
-            CALL cannon2(TempString,length,diff_mat(1,1),diff_mat(1,2),&
-                  diff_mat(2,1),diff_mat(2,2),PermInd)
-!            call doublerepinfo( TempString, length, string2(diff_mat(1,2) ),&
-!                    diff_mat(1,1), string2(diff_mat(2,2)), diff_mat(2,1), &
-!                    0, PermInd, DUMMY )
+
+            CALL cannon2(TempString,length,diff_mat(1,1),string2(diff_mat(1,2)),&
+                  diff_mat(2,1),string2(diff_mat(2,2)),PermInd)
+            !call doublerepinfo( TempString, length, string2(diff_mat(1,2) ),&
+            !        diff_mat(1,1), string2(diff_mat(2,2)), diff_mat(2,1), &
+            !        0, PermInd, DUMMY )
     end if
     
     return
@@ -157,10 +161,10 @@ contains
 ! real*8 function to compute single excitations
 !--------------------------------------------------------------------
   real*8 function singlexcitations( pstring1, pstring2, qstring1, qstring2, &
-    aelec, belec, moints1, moints1len, moints2, moints2len )
+    aelec, belec, moints1, moints1len, moints2, moints2len, ind1, ind2 )
     use integral
     implicit none
-    integer, intent(in)   :: aelec, belec, moints1len, moints2len
+    integer, intent(in)   :: aelec, belec, moints1len, moints2len, ind1, ind2
     integer, dimension( aelec ),    intent(in) :: pstring1, pstring2     
     integer, dimension( belec ),    intent(in) :: qstring1, qstring2
     real*8,  dimension(moints1len), intent(in) :: moints1
@@ -173,6 +177,8 @@ contains
 !--------------------------------------------------------------------
     ALLOCATE(qdiffs(2,2))
     ALLOCATE(pdiffs(2,2))
+    qdiffs = 0
+    pdiffs = 0
 ! Find orbitals differing in alpha strings
     call stringdiffs( pstring1, pstring2, aelec, pdiffs, pd , PermInd1)
 ! Find orbitals differing in beta strings
@@ -193,6 +199,12 @@ contains
         val = val + moints2( Index2E( qstring1(i), qstring1(i), &
                     pstring1(pdiffs(1,1)), pstring2(pdiffs(1,2)) ) ) !-       &
       end do
+
+#ifdef DEBUGGING
+!      write(*, 11) qstring1, qstring2, pstring1, pstring2, PermInd1, pdiffs(1,1:2)
+!11    format(1x,/,20('-'),/,'b1: ',4i3,/,'b2: ',4i3,/,'a1: ',4i3,/,'a2: ',4i3,/,'p: ',i3,/, &
+!        'pdiffs:',2(2i2,/))
+#endif
       val = PermInd1*val
     else if ( qd .eq. 1 ) then
       val = moints1( ind2val(qstring1(qdiffs(1,1)), qstring2(qdiffs(1,2))))
@@ -340,7 +352,7 @@ contains
                            belec, moints1, moints1len, moints2, moints2len )
     else if ( diffs .eq. 1 ) then
       ham_element =  singlexcitations( pstring1, pstring2, qstring1, qstring2, aelec, &
-                           belec, moints1, moints1len, moints2, moints2len )
+                           belec, moints1, moints1len, moints2, moints2len, ind1, ind2 )
     else 
       ham_element =  diagonal_mat( pstring1, qstring1, aelec, &
                            belec, moints1, moints1len, moints2, moints2len )

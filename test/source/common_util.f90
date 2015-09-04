@@ -225,7 +225,7 @@ CONTAINS
     integer     ::a_str_size      !number of indices kept
 
     if(.NOT. ALLOCATED(alpha_strings))then    !Initialize
-       print *, "    Initializing alpha strings array "
+
        if(pdets_MAX.LT.100)then
           a_str_size=pdets_MAX
        else
@@ -245,7 +245,7 @@ CONTAINS
                str_elec,Orbitals,str_Dets,alpha_indices(i),    &
                alpha_strings(0,i))
        end do
-       print *, "    Finished initializing alpha strings array."
+
     end if!if alpha_strings has not been allocated
     peg_start=MAX(0,INT(str_index/str_peg_int_a)-2)
     ! this is a bounds check
@@ -275,8 +275,6 @@ CONTAINS
 
     if(.not. allocated(beta_strings))then    !Initialize
 
-            print *, "    Initializing beta strings array "
-
             if(qdets_MAX.LT.100)then
                     b_str_size=qdets_MAX
             else
@@ -298,7 +296,6 @@ CONTAINS
                       str_elec,Orbitals,str_Dets,beta_indices(i),    &
                       beta_strings(0,i))
             end do
-            print *, "    Finished initializing beta strings array "
 
     end if
 
@@ -488,10 +485,6 @@ CONTAINS
               nbpsy, mapin, n1int, s1h1, score, hcore, symb, ierr)
             if (ierr .ne. 0) stop "*** Error reading 1-e integrals!***"
             
-            print *, "n1int = ", n1int
-            do i = 1, n1int
-                    print *, s1h1(i,2)
-            end do
             moints1(1:n1int) = s1h1(1:n1int,2)
             fcenergy = hcore
 
@@ -924,26 +917,25 @@ CONTAINS
     integer, intent(IN) ::length,indx1,indx2,swp1,swp2
     integer, dimension(length), intent(INOUT) ::string
     integer, intent(OUT)                      ::permind
-    integer,dimension(:),allocatable          ::temp_list
+    integer,dimension(length)   :: order
+    integer,dimension(2*length) :: scratch
     integer ::i,j,k,tperm
     !Initialize
     permind=1
-    ! Make subsitutions
-    if(swp1.gt.swp2)then    !Swap subsituting orbitals
-       permind=permind*(-1)
-       string(indx1)=swp2
-       string(indx2)=swp1
-    else
-       string(indx1)=swp1
-       string(indx2)=swp2
-    end if
+    do i = 1, length
+            order(i) = i
+    end do
+    ! make first substitution
+    string(indx1) = swp1
 
-    
-    ! Order second swap
-    call cannon3(string,length,indx2,permind)
-    ! Order first swap
-    call cannon3(string,length,indx1,permind)
-    
+    call cannon4(string, length, indx1, scratch, order, permind)
+    if (permind .eq. 0) stop "ERROR!!! permind = 0"
+
+    ! make second substitution
+    string(order(indx2)) = swp2
+    call cannon4(string, length, order(indx2), scratch, order, permind)
+    if (permind .eq. 0) stop "ERROR!!! permind = 0"
+
     RETURN!Return ordered string and parity of permutation
   end subroutine cannon2
   !====================================================================
@@ -1150,6 +1142,158 @@ CONTAINS
   end subroutine order
   !*
   !*
+  subroutine cannon4(string, strlen, indx1, scratch, order, perm)
+    !===========================================================================
+    ! cannon4
+    ! -------
+    ! Purpose: order a integer string with 1 substitution
+    !
+    ! Input:
+    !  string  = unordered string
+    !  indx1   = index of 1 substitutions
+    !  scratch = scratch array
+    
+    ! Order:
+    !  order = new ordering
+    !  perm  = parity of permutations
+    !---------------------------------------------------------------------------
+    implicit none
+
+    ! .. input arguments ..
+    integer, intent(in) :: strlen, indx1
+
+    ! .. input/output arguments ..
+    integer, dimension(strlen),   intent(inout) :: string, order
+    integer, dimension(2*strlen), intent(inout) :: scratch
+    ! .. output arguments ..
+    integer, intent(inout) :: perm
+
+    ! .. local scalars ..
+    integer :: i, optr, htest, ltest
+    
+    ! set order ptr
+    optr = strlen + 1
+    ! zero out scratch
+    scratch = 0
+    
+    ! bounds checks
+    htest = min(strlen, (indx1 + 1))
+    ltest = max(1, indx1 - 1)
+    
+    ! check direction to travel
+    if (string(indx1) .gt. string(htest)) then
+            ! string(indx1) is in wrong position, must move up
+            call orderstr(1, string(indx1), order(indx1), &
+              (strlen - indx1 + 1), scratch(1), scratch(optr), perm)
+    else if (string(indx1) .lt. string(ltest)) then
+            ! string(indx1) is in wrong position, must move down
+            call orderstr(-1, string(1), order(1), indx1, &
+              scratch(1), scratch(optr), perm)
+    end if
+    
+    return
+    
+  contains
+
+    subroutine orderstr(dir, str, ord, l, scr, oscr, p1)
+      implicit none
+
+      integer, intent(in) :: dir ! direction
+      integer, intent(in) :: l       ! length of str and ord
+      integer, dimension(l), intent(inout) :: str, ord, scr, oscr
+      integer, intent(inout) :: p1   ! permutational parity
+
+      integer :: i, htest
+
+      oscr = ord
+      scr  = str
+      ! if we are moving first element up string
+      if (dir .gt. 0) then
+              ! test if we need only one switch
+              htest = min(l, 3)
+              if (l .eq. 2 .or. str(1) .lt. str(htest)) then
+                      str(2) = str(1)
+                      str(1) = scr(2)
+                      ord(2) = oscr(1)
+                      ord(1) = oscr(2)
+                      p1 = p1 * (-1)
+                      return
+              end if
+              ! find position
+              do i = 3, l
+
+                      if (str(1) .lt. str(i)) then
+
+                              p1 = p1 * ((-1) ** (i-2))
+                              str(i-1) = scr(1)
+                              ord(1)   = oscr(i-1)
+
+                              str(1:i-2) = scr(2:i-1)
+                              ord(2:i-1) = oscr(1:i-2)
+                              
+                              return
+
+                      else if (str(1) .eq. str(i)) then
+
+                              p1 = 0
+
+                              return
+
+                      end if
+              end do
+
+              ! if here we must place first point last
+
+              p1 = p1 * ((-1) ** (l-1))
+
+              str(l) = str(1)
+              ord(1) = ord(l)
+
+              str(1:l-1) = scr(2:l)
+              ord(2:l)   = oscr(1:l-1)
+              return
+      else ! we are moving down list
+              ! test if we need only one switch
+              htest = max(1, l-2)
+              if (l .eq. 2 .or. str(l) .gt. str(htest)) then
+                      str(l-1)= str(l)
+                      str(l)  = scr(l-1)
+                      ord(l-1) = ord(l)
+                      ord(l)   = oscr(l-1)
+                      p1 = p1 * (-1)
+                      return
+              end if
+              do i = l-2, 1, -1
+                      if (str(l) .gt. str(i)) then
+                              p1 = p1 * ((-1) ** (l - i + 1))
+
+                              str(i+1)  = str(l)
+                              str(i+2:l)= scr(i+1:l-1)
+
+                              ord(l)  = ord(i+1)
+                              ord(i+1:l-1)= oscr(i+2: l)
+              
+                              return
+                      else if (str(l) .eq. str(i)) then
+                              p1 = 0
+                              return
+                      end if
+              end do
+              ! if here we must place last point first
+              p1 = p1 * ((-1) ** (l - 1))
+
+              str(1)   = str(l)
+              str(2:l) = scr(1:l-1)
+
+              ord(l)    = ord(1)
+              ord(1:l-1)= oscr(2:l)
+              return
+      end if
+      ! if here return error
+      p1 = 0
+      return
+    end subroutine orderstr
+  end subroutine cannon4
   subroutine strdiff(str1, str2, length, diffs)
     !===========================================================================
     ! strdiff

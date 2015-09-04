@@ -125,8 +125,6 @@ test:	$(OBJSTEST) | $(BIN)
 	@echo " --- "
 	$(PREFIX) "$(COMPLR) -o $(TESTEX) $(OBJSTEST) $(LIBS1) $(LIBS2) $(DEBUG) $(PREPROC)"
 	@echo " ------------------------------------------------------------------------"
-	@echo " Cleaning... "
-	$(RM) $(OBJSTEST) ./*__genmod.f90 ./*.o ./*.mod
 
 colib:	$(COLIBO) $(UNIXO)
 	$(AR) colib.a $(COLIBO) $(UNIXO)
