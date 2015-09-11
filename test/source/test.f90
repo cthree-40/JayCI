@@ -8,5 +8,6 @@ program test
 
   call test_cannon4()
   
-
+  call test_strfind3()
+  
 end program test

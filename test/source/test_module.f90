@@ -122,5 +122,36 @@ contains
   end subroutine test_citrunc
   !*
   !*
+  subroutine test_strfind3()
+    !===========================================================================
+    ! test_strfind3()
+    ! --------------
+    ! Test strfind3 subroutine
+    use addressing,    only: StrFind3
+    use combinatorial, only: binom
+    implicit none
+
+    ! .. strfind3 input variables ..
+    integer, dimension(5) :: str1, str2
+    integer               :: indx1, indx2
+    integer               :: orbs, dets, elecs
+
+    str1 = (/1, 2, 3, 4, 5/)
+    str2 = 0
+
+    indx1 = 1
+    indx2 = 1
+    orbs  = 24
+    dets  = binom(24,5)
+    elecs = 5
+
+    call strfind3(str1, indx1, elecs, orbs, dets, indx2, str2)
+
+    write(*,"(2(1x,5i3,/))") str1, str2
+
+    return
+  end subroutine test_strfind3
+  !*
+  !*
 end module test_module
     

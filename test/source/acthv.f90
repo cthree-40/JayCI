@@ -57,10 +57,14 @@ subroutine acthv (in_vec, moints1, moints2, m1len, m2len, pString,   &
   real*8,  dimension(ciDim), intent(out) :: out_vec
 
   ! .. LOCAL arguments ..
-  integer     :: i
+  integer          :: i
+  double precision :: tstart, tfinal
   
   ! Zero out Out_vector
   out_vec = 0d0
+  
+  ! get time
+  call cpu_time(tstart)
   
   ! Diagonal contribution
   do i=1,ciDim
@@ -72,12 +76,18 @@ subroutine acthv (in_vec, moints1, moints2, m1len, m2len, pString,   &
        pStep,pLocate,pDets,qString,qStep,qLocate,qDets,ciDim,&
        pDLen,qDLen,aDets,bDets,aElec,bElec,orbitals,         &
        nfrozen,ndocc,nactive,out_vec)
+  ! get time
+  call cpu_time(tfinal)
+  write (*, "(f6.3,' sec to compute alpha contribution.')") &
+    (tfinal - tstart)
   
   ! Beta string contribution
   CALL hv_beta(in_vec,moints1,m1len,moints2,m2len,pString,   &
        pStep,pLocate,pDets,qString,qStep,qLocate,qDets,ciDim,&
        pDLen,qDLen,aDets,bDets,aElec,bElec,orbitals,         &
        nfrozen,ndocc,nactive,xRefList,out_vec)
-
+  call cpu_time(tstart)
+  write(*, "(f6.3,' sec to compute beta  contribution.')") &
+    (tstart - tfinal)
   RETURN
 end subroutine acthv

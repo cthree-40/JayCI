@@ -861,42 +861,52 @@ CONTAINS
     DEALLOCATE(tmp1) !Deallocate arrays
     RETURN
   end subroutine cannon1swp
-  !====================================================================
-  !>possex1
-  ! This subroutine returns possible excitations for a string
-  ! INPUT:
-  !  occstring = string of occupied orbitals for alpha/beta electrons
-  !  orbs = number of MO's
-  !  elecs = number of alpha/beta electrons
-  !  pexitslen = orbs-elecs
-  !  pexits = list of possible excitations
-  !--------------------------------------------------------------------
-  subroutine possex1(occstr,orbs,elecs,pexitslen,pexits)
-    IMPLICIT NONE
-    integer,intent(IN)      ::orbs,elecs,pexitslen
-    integer,dimension(elecs),intent(IN)       ::occstr
-    integer,dimension(pexitslen),intent(OUT)  ::pexits
-    integer,dimension(:),ALLOCATABLE          ::totorbs
-    integer :: i,j,e1,e2
-    ! Construct totorbs
-    ALLOCATE(totorbs(orbs))
-    do i=1,orbs
-       totorbs(i)=i
+  !*
+  !*
+  subroutine possex1(occstr, orbs, elecs, pexits)
+    !===========================================================================
+    ! possex1
+    ! -------
+    ! Purpose: return unoccupied orbital list
+    !
+    ! Input:
+    !  occstr = occupied orbital string
+    !  orbs   = number of MO's
+    !  elecs  = number of electrons
+    !
+    ! Output:
+    !  pexits = list of possible excitations
+    !---------------------------------------------------------------------------
+    use search_fcns, only: int_search2
+    ! .. INPUT arguments ..
+    integer, intent(in) :: orbs, elecs
+    integer, dimension(elecs), intent(in) :: occstr
+
+    ! .. OUTPUT arguments ..
+    integer, dimension(orbs-elecs), intent(out) :: pexits
+
+    ! .. LOCAL scalars ..
+    integer :: i, pxptr
+    integer :: found
+
+    pxptr = 1 ! pexits 'pointer'
+    
+    do i = 1, orbs
+
+            ! test if orbital is in occupation string
+            call int_search2(i, occstr, elecs, found)
+
+            if (found .eq. 0) then
+                    pexits(pxptr) = i
+                    pxptr = pxptr + 1
+            end if
+            
     end do
-    ! Loop through occstr making totorbs(i)=0
-    do i=1,elecs
-       totorbs(occstr(i))=0
-    end do!i
-    ! Construct pexits
-    j=1
-    do i=1,orbs
-       if(totorbs(i).NE.0)then
-          pexits(j)=totorbs(i)
-          j=j+1!j->j+1
-       end if
-    end do!i
-    RETURN!Return pexits
+                    
+    return
   end subroutine possex1
+  !*
+  !*
   !====================================================================
   !>cannon2
   ! This suborutine returns a string to cannonical ordering and gives
@@ -912,7 +922,6 @@ CONTAINS
   !
   !--------------------------------------------------------------------
   subroutine cannon2(string,length,indx1,swp1,indx2,swp2,permind)
-    use search_fcns,  only:int_search2
     IMPLICIT NONE
     integer, intent(IN) ::length,indx1,indx2,swp1,swp2
     integer, dimension(length), intent(INOUT) ::string
