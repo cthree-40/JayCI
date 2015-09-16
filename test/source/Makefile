@@ -53,7 +53,7 @@ ifneq ($(findstring gfortran,$(COMPLR)),)
 #GNU compilers
 	CPOPS	:= -c -frecord-marker=4 -O3
 	CLIBOPS	:= -c -frecord-marker=4 -O3
-	DEBUG	:= -g -fcheck=all -g -fbacktrace 
+	#DEBUG	:= -g -fcheck=all -g -fbacktrace 
 	CDEF	:= -c -DFLUSH -DINT64 -DEXTNAME
 else
 #Intel compilers
