@@ -24,7 +24,8 @@ COLIBLIB := ./colib.a
 TESTX := test.x
 
 # Objects ------------------------------------------------------------
-OBJS  := binary.o combinatorial.o straddress.o moindex.o readmoints.o ioutil.o
+OBJS  := binary.o combinatorial.o straddress.o moindex.o readmoints.o \
+         readnamelist.o ioutil.o
 TESTO := $(OBJS) test.o
 
 # Build --------------------------------------------------------------
@@ -41,3 +42,6 @@ clean:
 
 readmoints.o:readmoints.f90
 	$(FC) -c readmoints.f90 $(DEBUG) $(FDEBUG)
+
+readnamelist.o:readnamelist.f90
+	$(FC) -c readnamelist.f90 $(DEBUG) $(FDEBUG)

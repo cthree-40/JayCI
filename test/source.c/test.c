@@ -7,7 +7,6 @@
 #include "moindex.h"
 #include "ioutil.h"
 
-#define FLNMSIZE 20
 
 void main()
 {
@@ -19,6 +18,11 @@ void main()
      unsigned char moflname[FLNMSIZE];
      int type;
 
+     int elec, orbs;
+     int nfrzc, nfrzv, ndocc, nactv;
+     int xlvl, prtlvl;
+
+     int err;
      int i;
      
      m1len = index1e(orb, orb);
@@ -41,6 +45,17 @@ void main()
      }
      printf("Nuc Rep   = %15.8lf\n", nrep);
      printf("FC Energy = %15.8lf\n", fce);
+     
+     printf(" Reading namelist.\n");
+
+     readgeninput(&elec, &orbs, &nfrzc, &ndocc, &nactv,
+		  &xlvl, &nfrzv, &prtlvl, &err);
+     printf("  electrons = %5d\n", elec);
+     printf("  orbitals  = %5d\n", orbs);
+     printf("  nfrzc     = %5d\n", nfrzc);
+     printf("  ndocc     = %5d\n", ndocc);
+     printf("  nactv     = %5d\n", nactv);
+     printf("  nfrzv     = %5d\n", nfrzv);
      
      free(moints1);
      free(moints2);
