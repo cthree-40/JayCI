@@ -22,6 +22,11 @@ void main()
      int nfrzc, nfrzv, ndocc, nactv;
      int xlvl, prtlvl;
 
+     int *astring, *bstring;
+     int *astring2, *bstring2;
+     int aelec, belec;
+     int aindx, bindx;
+     
      int err;
      int i;
      
@@ -56,7 +61,22 @@ void main()
      printf("  ndocc     = %5d\n", ndocc);
      printf("  nactv     = %5d\n", nactv);
      printf("  nfrzv     = %5d\n", nfrzv);
+
+     /* test addressing */
+     aelec = 3;
+     astring = malloc(aelec * sizeof(int));
+     astring2= malloc(aelec * sizeof(int));
+     astring[0] = 1;
+     astring[1] = 3;
+     astring[2] = 4;
+     aindx = str_adrfind(astring, aelec, 6);
+     printf("Address = %d\n", aindx);
      
+     str_strfind1(astring, aelec, 6, 20, astring2);
+     printf("String1 = %d %d %d\n", astring[0], astring[1],
+	    astring[2]);
+     printf("String2 = %d %d %d\n", astring2[0], astring2[1],
+	    astring2[2]);
      free(moints1);
      free(moints2);
 }

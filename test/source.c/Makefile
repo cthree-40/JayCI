@@ -13,24 +13,30 @@ FCOPS  := -c -frecord-marker=4 -O3
 CCDEF  := -c -DFLUSH -DINT64 -DEXTNAME
 
 # Debugging ----------------------------------------------------------
-DEBUG  := -g
+DEBUG  := -g -DDEBUGGING
 FDEBUG := -fbacktrace
 CDEBUG :=
+
 # Libraries ----------------------------------------------------------
 MATHLIBS := -L/usr/lib64 -llapack64 -lblas -lm
 COLIBLIB := ./colib.a
 
 # Executables --------------------------------------------------------
 TESTX := test.x
+JEXPX := jayci_exp.x
 
 # Objects ------------------------------------------------------------
 OBJS  := binary.o combinatorial.o straddress.o moindex.o readmoints.o \
-         readnamelist.o ioutil.o
+         readnamelist.o ioutil.o abecalc.o citruncate.o
 TESTO := $(OBJS) test.o
+JEXPO := $(OBJS) jayci_exp.o
 
 # Build --------------------------------------------------------------
 test: $(TESTO)
 	$(CC) -o $(TESTX) $(TESTO) $(MATHLIBS) $(COLIBLIB) -lgfortran
+
+jayci_exp: $(JEXPO)
+	$(CC) -o $(JEXPX) $(JEXPO) $(MATHLIBS) $(COLIBLIB) -lgfortran
 
 # Clean --------------------------------------------------------------
 clean:

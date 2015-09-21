@@ -2,7 +2,7 @@
 #ifndef ioutil_h_
 #define ioutil_h_
 
-
+int checkinputfiles();
 void readgeninput(int *elec,
                   int *orbs,
 		  int *nfrozen,
@@ -11,8 +11,7 @@ void readgeninput(int *elec,
 		  int *xlevel,
 		  int *nfrzvirt,
 		  int *printlvl,
-		  int *err
- );
+		  int *err);
 void readmointegrals(double *moints1,
 		     double *moints2,
 		     int type,
