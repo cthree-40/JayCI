@@ -88,7 +88,7 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
       * detfileptr = determinant list file pointer
       * strfileptr = string list file pointer */
      FILE *detfileptr, *strfileptr;
-    
+
      int i, j;
      
      /* initialize error flag */
@@ -354,6 +354,9 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
 
 	  free(tmp);
      }
+
+     fclose(detfileptr);
+     fclose(strfileptr);
 }
 /* str_enfactv: enforce ACTIVE orbital restrictions
  * -------------------------------------------------------------------

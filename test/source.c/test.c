@@ -3,10 +3,10 @@
 #include <string.h>
 #include "combinatorial.h"
 #include "straddress.h"
+#include "binarystr.h"
 #include "binary.h"
 #include "moindex.h"
 #include "ioutil.h"
-
 
 void main()
 {
@@ -26,6 +26,9 @@ void main()
      int *astring2, *bstring2;
      int aelec, belec;
      int aindx, bindx;
+
+     struct occstr string1;
+     char binstr1[65];
      
      int err;
      int i;
@@ -72,13 +75,23 @@ void main()
      aindx = str_adrfind(astring, aelec, 6);
      printf("Address = %d\n", aindx);
      
-     str_strfind1(astring, aelec, 6, 20, astring2);
+     str_strfind1(astring, aelec, 6, astring2);
      printf("String1 = %d %d %d\n", astring[0], astring[1],
 	    astring[2]);
      printf("String2 = %d %d %d\n", astring2[0], astring2[1],
 	    astring2[2]);
+
+     string1 = str2occstr(astring2, aelec, 1, 3);
+     printf("%d %d %d %d\n", string1.byte1, string1.byte2,
+	    string1.virtx[0], string1.virtx[1]);
+
+     llint2bin(string1.byte1, binstr1);
+     binstr1[64] = '\0';
+     printf(" %.*s\n", 3, binstr1);
+     printf(" ---\n");
      free(moints1);
      free(moints2);
+
 }
 
 	

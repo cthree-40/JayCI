@@ -91,7 +91,7 @@ void main()
 		   &astr_len, &bstr_len, &dtrm_len);
      if (err != 0) {
 	  // ERROR HANDLING //
-	  exit(1)
+	  exit(1);
      }
      
      fprintf(stdout, "Alpha strings = %d\n", astr_len); 
@@ -99,6 +99,8 @@ void main()
      fprintf(stdout, "Determinants  = %d\n", dtrm_len);
 
      /* generate input for jayci.x */
-     
+     fprintf(stdout, "Generating input for jayci.x\n");
+     err = geninput(dtrm_len, astr_len, bstr_len, aelec, belec, orbs, nfrzc,
+		    nfrzv);
      
 }
