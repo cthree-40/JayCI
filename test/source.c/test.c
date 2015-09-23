@@ -27,7 +27,7 @@ void main()
      int aelec, belec;
      int aindx, bindx;
 
-     struct occstr string1;
+     struct occstr string1[2];
      char binstr1[65];
      
      int err;
@@ -81,11 +81,15 @@ void main()
      printf("String2 = %d %d %d\n", astring2[0], astring2[1],
 	    astring2[2]);
 
-     string1 = str2occstr(astring2, aelec, 1, 3);
-     printf("%d %d %d %d\n", string1.byte1, string1.byte2,
-	    string1.virtx[0], string1.virtx[1]);
+     
+     string1[0] = str2occstr(astring2, aelec, 1, 3);
+     string1[1] = str2occstr(astring,  aelec, 1, 3);
+     printf("%d %d %d %d\n", string1[0].byte1, string1[0].byte2,
+	    string1[0].virtx[0], string1[0].virtx[1]);
+     printf("%d %d %d %d\n", string1[1].byte1, string1[1].byte2,
+	    string1[1].virtx[0], string1[1].virtx[1]);
 
-     llint2bin(string1.byte1, binstr1);
+     llint2bin(string1[0].byte1, binstr1);
      binstr1[64] = '\0';
      printf(" %.*s\n", 3, binstr1);
      printf(" ---\n");

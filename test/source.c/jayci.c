@@ -17,15 +17,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ioutil.h"
 #include "abecalc.h"
 #include "binarystr.h"
-
-/* det: determinant composed of alpha and beta occupation strings */
-struct det {
-    struct occstr astr; /* alpha string */
-    struct occstr bstr; /* beta  string */
-};
+#include "straddress.h"
+#include "moindex.h"
+#include "prediagfcns.h"
 
 /* jayci: determinant ci algorithm
  * -------------------------------------------------------------------
@@ -35,6 +33,7 @@ struct det {
  *  checks for all necessary files
  *  reads input: jayci.in, input.jayci, det.list
  *  generate binary determinant list
+ *  read in molecular orbitals
  *  generate initial guess
  *  perform davidson algorithm
  *  write vectors to disk: civfl */
@@ -45,10 +44,19 @@ void main(int argc, char *argv[])
      * mem    = memory to be allocated
      * err    = error handling 
      * m1len  = number of 1-e integrals
-     * m2len  = number of 2-e integrals */
+     * m2len  = number of 2-e integrals 
+     * ai     = alpha string index
+     * bi     = beta  string index
+     * itype  = integral type, always 1 
+     * nucrep = nuclear repulsion energy
+     * frzce  = frozen core energy */
     int c;
     int mem = 5000;
     int err = 0;
+    int m1len, m2len;
+    int ai, bi;
+    int itype;
+    double nucrep, frzce;
 
     /* .. &general scalars ..
      * elec  = total electrons in system
@@ -88,12 +96,22 @@ void main(int argc, char *argv[])
      * moints1 = 1-e integrals
      * moints2 = 2-e integrals
      * civec   = ci-vectors
-     * cienergy= ci-energies */
+     * cienergy= ci-energies 
+     * aistr   = alpha electron orbital index string
+     * bistr   = beta  electron orbital index string 
+     * strscr  = string scratch array 
+     * initv   = initial guess vectors
+     * initscr = (double) scratch space for initial guess generation */
     struct det *detlist;
     double *moints1, *moints2;
     double *civec, *cienergy;
+    int *aistr, *bistr, *strscr;
+    unsigned char moflname[FLNMSIZE];
+    double *initscr, *initv;
+    double *ptr1, *ptr2;
     
-    int i;
+    FILE *dlistfl;
+    int i, j, k;
     
     /* process command line options */
     for (i = 1; i < argc; i++) {
@@ -137,10 +155,12 @@ void main(int argc, char *argv[])
 	    fprintf(stderr,
 		    "*** ERROR: Unknown input file error! ***\n");
 	}
-	exit(0);
+	exit(1);
     } else {
 	fprintf(stdout, "All necessary input files present.\n");
     }
+
+    fprintf(stdout, "Reading namelist inputs.\n");
     
     /* read &general namelist */
     readgeninput(&elec, &orbs, &nfrzc, &ndocc, &nactv, &xlvl,
@@ -148,10 +168,132 @@ void main(int argc, char *argv[])
     if (err != 0) {
 	fprintf(stderr,
 		"*** ERROR: Error reading &general namelist. ***\n");
-	exit(0);
+	exit(1);
+    } else {
+	fprintf(stdout, "&general\n");
+	fprintf(stdout, " %10s = %10d\n", "elec", elec);
+	fprintf(stdout, " %10s = %10d\n", "orbs", orbs);
+	fprintf(stdout, " %10s = %10d\n", "nfrzc", nfrzc);
+	fprintf(stdout, " %10s = %10d\n", "ndocc", ndocc);
+	fprintf(stdout, " %10s = %10d\n", "nactv", nactv);
+	fprintf(stdout, " %10s = %10d\n", "nfrzv", nfrzv);
+	fprintf(stdout, " %10s = %10d\n", "xlvl", xlvl);
+	fprintf(stdout, " %10s = %10d\n", "plvl", plvl);
     }
     
     /* read &dalginfo namelist */
-    ///////////////////////////////////////
+    readdaiinput(&maxiter, &krymin, &krymax, &nroots, &prediagr, &refdim,
+		 &restol, &err);
+    if (err != 0) {
+	fprintf(stderr,
+		"*** ERROR: Error reading &dalginfo namelist. ***\n");
+	exit(1);
+    } else {
+	fprintf(stdout, "&dalginfo\n");
+	fprintf(stdout, " %10s = %10d\n", "maxiter", maxiter);
+	fprintf(stdout, " %10s = %10d\n", "krymin", krymin);
+	fprintf(stdout, " %10s = %10d\n", "krymax", krymax);
+	fprintf(stdout, " %10s = %10d\n", "nroots", nroots);
+	fprintf(stdout, " %10s = %10d\n", "prediagr", prediagr);
+	fprintf(stdout, " %10s = %10d\n", "refdim", refdim);
+	fprintf(stdout, " %10s = %10.5lf\n", "restol", restol);
+    }
+
+    fprintf(stdout, "\nReading input.jayci.\n");
+	    
+    /* read input.jayci input file */
+    err = readinputjayci(&ci_aelec, &ci_belec, &ci_orbs, &nastr, &nbstr, &ndets);
+    if (err != 0) {
+	fprintf(stderr,
+		"*** ERROR: Error reading &dalginfo namelist. ***\n");
+	exit(1);
+    } else {
+	fprintf(stdout, "input.jayci:\n");
+	fprintf(stdout, " %10s = %10d\n", "ci_aelec", ci_aelec);
+	fprintf(stdout, " %10s = %10d\n", "ci_belec", ci_belec);
+	fprintf(stdout, " %10s = %10d\n", "ci_orbs", ci_orbs);
+	fprintf(stdout, " %10s = %10d\n", "nastr", nastr);
+	fprintf(stdout, " %10s = %10d\n", "nbstr", nbstr);
+	fprintf(stdout, " %10s = %10d\n", "ndets", ndets);
+    }
+
+    fprintf(stdout, "\nGenerating binary determinant list.\n");
+    aistr = (int *) malloc(ci_aelec * sizeof(int));
+    bistr = (int *) malloc(ci_belec * sizeof(int));
+    strscr= (int *) malloc(ci_aelec * sizeof(int));
+    detlist = (struct det *) malloc(ndets * sizeof(struct det));
+    dlistfl = fopen("det.list", "r");
+    if (dlistfl == NULL) {
+	fprintf(stderr, "*** ERROR: Cannot open det.list! ***\n");
+	exit(1);
+    }
+    i = 0;
+    printf("Reading file.\n");
+    while (fscanf(dlistfl, " %d %d\n", &ai, &bi) != EOF) {
+	str_adr2str(ai, strscr, ci_aelec, ci_orbs, aistr);
+	str_adr2str(bi, strscr, ci_belec, ci_orbs, bistr);
+	detlist[i].astr = str2occstr(aistr, ci_aelec, ndocc, nactv);
+	detlist[i].bstr = str2occstr(bistr, ci_belec, ndocc, nactv);
+	i++;
+    }
+
+    fclose(dlistfl);
+    free(aistr);
+    free(bistr);
+    free(strscr);
+
+    fprintf(stdout, "Read in %d determinants.\n", i);
+    if (i != ndets) {
+	fprintf(stderr, "*** ERROR: Incorrect number of determinants! ***\n");
+	exit(1);
+    }
+
+    /* if parallel, we compute integrals on the fly
+     * 09-23-2015: this has not been implemented yet - CLM */
+#ifndef PARALLEL
+    fprintf(stdout, "Reading in molecular integrals.\n");
+    m1len = index1e(ci_orbs, ci_orbs);
+    m2len = index2e(ci_orbs, ci_orbs, ci_orbs, ci_orbs);
+    itype = 1;
+    strncpy(moflname, "moints", FLNMSIZE);
+    moints1 = (double *) malloc(m1len * sizeof(double));
+    moints2 = (double *) malloc(m2len * sizeof(double));
+    readmointegrals(moints1, moints2, itype, ci_orbs, moflname, m1len, m2len,
+		    &nucrep, &frzce);
+    fprintf(stdout," Nuclear repulsion energy: %15.8lf\n", nucrep);
+    if (nfrzc > 0) 
+	fprintf(stdout," Frozen core energy:       %15.8lf\n", frzce);
+    
+#endif
+
+    if (prediagr == 1) {
+	fprintf(stdout, "\nPerforming reference block diagonalization.\n");
+	initscr = (double *) malloc(refdim * refdim * sizeof(double));
+	err = drefblock(detlist, moints1, moints2, m1len, m2len, refdim,
+			initscr);
+	if (err != 0) {
+	    fprintf(stderr,"*** ERROR in drefblock! ***\n");
+	    exit(1);
+	}
+
+	/* place eigenvectors in initial guess vector array.
+	 * we make the remaining (ndets - refdim) * krymin
+	 * elements 0. */
+	*ptr1 = initv[0];
+	*ptr2 = initscr[0];
+	for (i = 0; i < krymin; i++) {
+	    for (j = 0; j < refdim; j++) {
+		*ptr1++ = *ptr2++;
+	    }
+	    for (j = refdim; j < ndets; j++) {
+		*ptr1++ = 0.0;
+	    }
+	}
+	    
+    }
+	
+	
+			
+    
 }
      

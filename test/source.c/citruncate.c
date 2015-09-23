@@ -147,33 +147,15 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
      /* open determinant list file */
      detfileptr = fopen("det.list", "w");
      if (detfileptr == NULL) {
-	  /* file could not be opened */
 	  fprintf(stderr,
 		  "*** ERROR: det.list could not be opened! ***\n");
-	  /* deallocate arrays */
-	  free(astr1);
-	  free(astr2);
-	  free(bstr1);
-	  free(bstr2);
-	  free(astr_hf);
-	  free(bstr_hf);
-	  /* exit */
 	  exit(1);
      }
      /* open string list file */
      strfileptr = fopen("str.list", "w");
      if (strfileptr == NULL) {
-	  /* file could not be opened */
 	  fprintf(stderr,
 		  "*** ERROR: str.list could not be opened! ***\n");
-	  /* deallocate arrays */
-	  free(astr1);
-	  free(astr2);
-	  free(bstr1);
-	  free(bstr2);
-	  free(astr_hf);
-	  free(bstr_hf);
-	  /* exit */
 	  exit(1);
      }
 

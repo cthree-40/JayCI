@@ -12,32 +12,44 @@
 #include <stdlib.h>
 #include <math.h>
 #include "combinatorial.h"
+#include "straddress.h"
 
-/* subfunctions
- * ------------
- * int str_adrfind(int *str, int elec, int orbs)
- * void str_strfind1(int *str1, int elec, int orbs, 
- *                   int *str2)
- * void str_strfind2(int *str1, int indx1, int elec,
- *                   int orbs, int indx2, int *str2)
-*/
+/* str_adr2str: Computes orbital index string from address
+ * -------------------------------------------------------------------
+ * [citation]
+ * 
+ * Input:
+ *  index = index of string
+ *  elec  = number of electrons
+ *  orbs  = number of orbitals 
+ *  scr   = scratch array
+ * Output:
+ *  str = orbital index string */
+void str_adr2str(int index, int *scr, int elec, int orbs, int *str)
+{
+    int i;
 
-int str_adrfind(int *str, int elec, int orbs)
-/* str_adrfind
- * -----------
- * Computes address of orbital index string as proposed by
+    for (i = 0; i < elec; i++) {
+	scr[i] = i + 1;
+    }
+    str_strfind2(scr, 1, elec, orbs, index, str);
+
+    return;
+
+}    
+/* str_adrfind: Computes address of orbital index string
+ * -------------------------------------------------------------------
  * [citation]
  *
  * Input:
  *  str  = orbital index string
  *  elec = electron number
- *  orbs = MO's in system
- */
+ *  orbs = MO's in system */
+int str_adrfind(int *str, int elec, int orbs)
 {
      int address;
      int i, j;
 
-     /* start at 1 */
      address = 1;
      for (i = 2; i <= elec; i++) {
 	  for (j = (str[i - 2] + 1); j <= (str[i - 1] - 1); j++ ) {
@@ -102,13 +114,18 @@ void str_strfind1(int *str1, int elec, int orbs, int *str2)
 void str_strfind2(int *str1, int indx1, int elec, int orbs, int indx2,
 		  int *str2)
 {
-     int i;
+    int i, j;
 
-     for (i = 0; i < indx2 - indx1; i++) {
-	  str_strfind1(str1, elec, orbs, str2);
-	  str1 = str2;
-     }
-
-     return;
+    for (i = 0; i < elec; i++) {
+	str2[i] = str1[i];
+    }
+    for (i = 0; i < indx2 - indx1; i++) {
+	str_strfind1(str1, elec, orbs, str2);
+	for (j = 0; j < elec; j++) {
+	    str1[j] = str2[j];
+	}
+    }
+    
+    return;
 }
 	  

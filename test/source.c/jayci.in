@@ -15,6 +15,5 @@ krymin = 3
 restol = 1d-5
 nroots = 1
 prediagr = 1
-iguessdim = 4
 refdim = 50
 /

@@ -9,6 +9,12 @@ struct occstr {
      int virtx[2]; /* virtual orbital excitations */
 };
 
+/* det: determinant composed of alpha and beta occupation strings */
+struct det {
+    struct occstr astr; /* alpha string */
+    struct occstr bstr; /* beta  string */
+};
+
 /* str2occstr: convert orbital index string -> occstr type */
 struct occstr str2occstr(int *istr, /* orbital index string */
 			 int  elec, /* number of electrons  */

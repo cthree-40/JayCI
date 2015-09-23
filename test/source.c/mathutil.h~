@@ -1,0 +1,10 @@
+// File: mathutil.h
+#ifndef mathutil_h
+#define mathutil_h
+
+void diagmat_dsyevr(double *mat,
+		    int dim,
+		    double *evecs,
+		    double *evals);
+
+#endif

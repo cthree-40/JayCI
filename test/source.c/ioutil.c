@@ -119,6 +119,53 @@ int geninput(int dlen, int alen, int blen, int aelec, int belec, int orbs,
 
      return err;
 }
+/* readdaiinput: read diagonalization algorithm input.
+ * -------------------------------------------------------------------
+ * Calls readnamelist which returns a chracter array
+ *  nmlstr[0] = maxiter
+ *  nmlstr[1] = krymin
+ *  nmlstr[2] = krymax
+ *  nmlstr[3] = nroots
+ *  nmlstr[4] = prediagr
+ *  nmlstr[5] = refdim
+ *  nmlstr[6] = restol
+ *
+ * Output:
+ *  maxiter = maximum iterations of davidson algorithm
+ *  krymin  = minimum dimension of krylov space
+ *  krymax  = maximum dimension of krylov space
+ *  nroots  = number of roots to find
+ *  prediagr= prediagonalization subroutine choice
+ *  refdim  = intitial reference-space dimension (prediagonalization)
+ *  restol  = convergence tolerance of residual
+ *  err     = error handling: n = missing variable n */
+void readdaiinput(int *maxiter,  int *krymin, int *krymax, int *nroots,
+		  int *prediagr, int *refdim, double *restol, int *err)
+{
+    /* .. local scalars ..
+     * gnml = namelist to read in */
+    long long int gnml = 2;
+
+    /* .. local arrays ..
+     * nmlstr = namelist character arrays */
+    char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE];
+
+    *err = 0;
+
+    readnamelist_(&gnml, nmlstr, &err);
+    if (err != 0) return;
+
+    /* stream input into proper values */
+    sscanf(nmlstr[0], "%d",  maxiter);
+    sscanf(nmlstr[1], "%d",   krymin);
+    sscanf(nmlstr[2], "%d",   krymax);
+    sscanf(nmlstr[3], "%d",   nroots);
+    sscanf(nmlstr[4], "%d", prediagr);
+    sscanf(nmlstr[6], "%d",   refdim);
+    sscanf(nmlstr[5], "%lf",  restol);
+    
+    return;
+}
 /* readgeninput: read general wavefunction input.
  * -------------------------------------------------------------------
  * Calls readnamelist which returns a character array
@@ -153,16 +200,6 @@ void readgeninput(int *elec,    int *orbs,   int *nfrozen,  int *ndocc,
 
      *err = 0;
 
-     /* initialize variables */
-     *elec     = 0;
-     *orbs     = 0;
-     *nfrozen  = 0;
-     *ndocc    = 0;
-     *nactive  = 0;
-     *xlevel   = 2; 
-     *nfrzvirt = 0;
-     *printlvl = 0;
-
      /* read namelist 1 */
      readnamelist_(&gnml, nmlstr, &err);
      if (err != 0) return;
@@ -180,13 +217,37 @@ void readgeninput(int *elec,    int *orbs,   int *nfrozen,  int *ndocc,
      return;
      
 }
-void readmointegrals(double *moints1, double *moints2,         int itype,
-		     int orbitals,    unsigned char *moflname, int m1len,
-		     int m2len,       double *nuc_rep,
-		     double *fcenergy)
-/* readmointegrals
- * ---------------
- * Subroutine to read 1 and 2 electron integrals.
+/* readinputjayci: read the input file input.jayci
+ * -------------------------------------------------------------------
+ * Output:
+ *  ci_aelec = ci alpha electrons
+ *  ci_belec = ci beta  electrons
+ *  ci_orbs  = ci orbitals
+ *  nastr    = number of alpha strings
+ *  nbstr    = number of beta  strings
+ *  ndets    = number of ci determinants 
+ * Returns:
+ *  err = error handling */
+int readinputjayci(int *ci_aelec, int *ci_belec, int *ci_orbs, int *nastr,
+		   int *nbstr, int *ndets)
+{
+    FILE *inputfile;
+    int err = 0;
+
+    inputfile = fopen("input.jayci", "r");
+    if (inputfile == NULL) {
+	err = -1;
+	return err;
+    }
+
+    fscanf(inputfile, " %d\n %d\n %d\n %d\n %d\n %d\n",
+	   ndets, nastr, nbstr, ci_aelec, ci_belec, ci_orbs);
+
+    return err;
+    
+}    
+/* readmointegrals: Subroutine to read 1 and 2 electron integrals.
+ * -------------------------------------------------------------------
  * Calls fortran subroutine readmoints()
  *
  * Input:
@@ -199,8 +260,10 @@ void readmointegrals(double *moints1, double *moints2,         int itype,
  *  moints1  = 1-e integrals
  *  moints2  = 2-e integrals
  *  nuc_rep  = nuclear repulsion energy
- *  fcenergy = frozen-core energy
- */
+ *  fcenergy = frozen-core energy */
+void readmointegrals(double *moints1, double *moints2, int itype,
+		     int orbitals, unsigned char *moflname, int m1len,
+		     int m2len, double *nuc_rep, double *fcenergy)
 {
      long long int itype8, orbitals8, m1len8, m2len8;
      double energy[2];
@@ -210,20 +273,17 @@ void readmointegrals(double *moints1, double *moints2,         int itype,
      m1len8 = (long long int) m1len;
      m2len8 = (long long int) m2len;
      
-     printf("Calling readmoints_\n");
-     printf(" Molecular integral file: %s\n", moflname);
-     printf(" Type of integrals: %d\n", itype8);
-     printf(" 1-e integrals: %d\n", m1len8);
-     printf(" 2-e integrals: %d\n", m2len8);
+     fprintf(stdout, "Calling readmoints_\n");
+     fprintf(stdout, " Molecular integral file: %s\n", moflname);
+     fprintf(stdout, " Type of integrals: %d\n", itype8);
+     fprintf(stdout, " 1-e integrals: %d\n", m1len8);
+     fprintf(stdout, " 2-e integrals: %d\n", m2len8);
      
      /* call fortran subroutine */
      readmoints_(moints1, moints2, &itype8, &orbitals8, &m1len8,
 		&m2len8, energy);
 
-     printf("%lf", energy[0]);
-     printf("%lf", energy[1]);
-
-     *nuc_rep = energy[0];
+     *nuc_rep =  energy[0];
      *fcenergy = energy[1];
      return;
 }

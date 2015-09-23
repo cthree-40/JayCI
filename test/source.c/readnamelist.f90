@@ -58,8 +58,8 @@ subroutine readnamelist(nmlist, nmlstr, err)
     write(nmlstr(5),9) nactive
     write(nmlstr(6),9) xlevel
     write(nmlstr(7),9) nfrzvirt
-    write(nmlstr(7),9) printlvl
-    
+    write(nmlstr(8),9) printlvl
+
     close(10)
     return
   else if (nmlist .eq. dai_nml) then
