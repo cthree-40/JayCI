@@ -28,7 +28,7 @@ JEXPX := jayci_exp.x
 JYCIX := jayci.x
 
 # Objects ------------------------------------------------------------
-OBJS  := binary.o initarray.o combinatorial.o straddress.o moindex.o \
+OBJS  := bitutil.o binary.o initarray.o combinatorial.o straddress.o moindex.o \
 	 readmoints.o readnamelist.o ioutil.o abecalc.o citruncate.o \
 	 binarystr.o dlamch_fcn.o mathutil.o action_util.o prediagfcns.o
 TESTO := $(OBJS) test.o

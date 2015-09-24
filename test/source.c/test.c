@@ -7,6 +7,7 @@
 #include "binary.h"
 #include "moindex.h"
 #include "ioutil.h"
+#include "bitutil.h"
 
 void main()
 {
@@ -27,6 +28,10 @@ void main()
      int aelec, belec;
      int aindx, bindx;
 
+     long long int byte1;
+     long long int byte2;
+     int diff;
+     
      struct occstr string1[2];
      char binstr1[65];
      
@@ -96,6 +101,10 @@ void main()
      free(moints1);
      free(moints2);
 
+     byte1 = 3;
+     byte2 = 2;
+     diff = ndiffbytes(byte1, byte2);
+     printf(" Differences = %d\n", diff);
 }
 
 	
