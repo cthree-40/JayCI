@@ -10,8 +10,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include"binarystr.h"
+#include "binarystr.h"
 #include "mathutil.h"
+#include "action_util.h"
 
 /* drefblock: diagonalizes an explicitly constructed reference space 
  *            of the hamiltonian.
@@ -52,7 +53,7 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 
     /* diagonalize reference block */
     err = diagmat_dsyevr(hmat, refdim, evecs, evals);
-
+        
     fprintf(stdout,
 	    "Lowest eigenvalue in reference space: %15.8lf\n", evals[0]);
 

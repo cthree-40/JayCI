@@ -24,6 +24,7 @@
 #include "straddress.h"
 #include "moindex.h"
 #include "prediagfcns.h"
+#include "initarray.h"
 
 /* jayci: determinant ci algorithm
  * -------------------------------------------------------------------
@@ -265,7 +266,10 @@ void main(int argc, char *argv[])
 	fprintf(stdout," Frozen core energy:       %15.8lf\n", frzce);
     
 #endif
-
+    /* initializing initial vector array */
+    initv = (double *) malloc(ndets * krymin * sizeof(double));
+    initarray(initv, (ndets * krymin));
+    
     if (prediagr == 1) {
 	fprintf(stdout, "\nPerforming reference block diagonalization.\n");
 	initscr = (double *) malloc(refdim * refdim * sizeof(double));
@@ -279,19 +283,20 @@ void main(int argc, char *argv[])
 	/* place eigenvectors in initial guess vector array.
 	 * we make the remaining (ndets - refdim) * krymin
 	 * elements 0. */
-	*ptr1 = initv[0];
-	*ptr2 = initscr[0];
 	for (i = 0; i < krymin; i++) {
 	    for (j = 0; j < refdim; j++) {
-		*ptr1++ = *ptr2++;
-	    }
-	    for (j = refdim; j < ndets; j++) {
-		*ptr1++ = 0.0;
+		initv[(i * ndets) + j] = initscr[(i * refdim) + j];
 	    }
 	}
-	    
-    }
 	
+    } else {
+	fprintf(stderr,
+		"\n*** ERROR: Unknown prediagonalization subroutine! ***\n");
+	fprintf(stderr, " prediagr = %d\n", prediagr);
+	exit(1);
+    }
+
+    
 	
 			
     

@@ -4,8 +4,8 @@
  * -----------
  * Subfunctions for binary digit implementation of orbital strings
  *
- * str2occstr
- *
+ * str2occstr: convert orbital index string to occstr type
+ * 
  * By Christopher L Malbon
  * Dept. of Chemistry, The Johns Hopkins University
  ********************************************************************/
