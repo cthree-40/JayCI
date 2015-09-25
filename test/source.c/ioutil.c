@@ -51,6 +51,8 @@ int checkinputfiles()
      fptr = fopen("jayci.in","r");
      if (fptr == NULL) {
 	  err = 1;
+	  fprintf(stderr,
+		  "*** ERROR: Missing input file: jayci.in! ***\n");
 	  return err;
      } else {
 	  fclose(fptr);
@@ -59,6 +61,8 @@ int checkinputfiles()
      fptr = fopen("input.jayci","r");
      if (fptr == NULL) {
 	  err = 2;
+	  fprintf(stderr,
+		  "*** ERROR: Missing input file: input.jayci! ***\n");
 	  return err;
      } else {
 	  fclose(fptr);
@@ -67,6 +71,8 @@ int checkinputfiles()
      fptr = fopen("moints", "r");
      if (fptr == NULL) {
 	  err = 3;
+	  fprintf(stderr,
+		  "*** ERROR: Missing molecular integral file: moints! ***\n");
 	  return err;
      } else {
 	  fclose(fptr);
@@ -75,6 +81,8 @@ int checkinputfiles()
      fptr = fopen("det.list", "r");
      if (fptr == NULL) {
 	  err = 4;
+	  fprintf(stderr,
+		  "*** ERROR: Missing determinant list file! ***\n");
 	  return err;
      } else {
 	  fclose(fptr);

@@ -26,6 +26,11 @@
 #include "prediagfcns.h"
 #include "initarray.h"
 
+
+int genbinarydetlist(struct det *dlist, int aelec, int belec, int orbs,
+		     int ndocc, int nactv, int ndets);
+int processcmdlineargs(int argc, char *argv[], long long int *mem);
+
 /* jayci: determinant ci algorithm
  * -------------------------------------------------------------------
  * Usage: ./jayci.c -m memory
@@ -41,21 +46,16 @@
 void main(int argc, char *argv[])
 {
     /* .. local scalars ..
-     * c      = command line argument value
      * mem    = memory to be allocated
      * err    = error handling 
      * m1len  = number of 1-e integrals
      * m2len  = number of 2-e integrals 
-     * ai     = alpha string index
-     * bi     = beta  string index
      * itype  = integral type, always 1 
      * nucrep = nuclear repulsion energy
      * frzce  = frozen core energy */
-    int c;
-    int mem = 5000;
+    long long int mem = 5000;
     int err = 0;
     int m1len, m2len;
-    int ai, bi;
     int itype;
     double nucrep, frzce;
 
@@ -106,56 +106,30 @@ void main(int argc, char *argv[])
     struct det *detlist;
     double *moints1, *moints2;
     double *civec, *cienergy;
-    int *aistr, *bistr, *strscr;
     unsigned char moflname[FLNMSIZE];
     double *initscr, *initv;
     double *ptr1, *ptr2;
     
-    FILE *dlistfl;
     int i, j, k;
-    
-    /* process command line options */
-    for (i = 1; i < argc; i++) {
-	if (*argv[i] == '-') {
-	    while (c = *++argv[i]) {
-		switch (c) {
-		case 'm':
-		    mem = atoi(argv[i+1]);
-		    break;
-		default:
-		    fprintf(stderr,"Illegal option: %c\n", c);
-		    i = argc;
-		    break;
-		}
-	    }
-	}
-    }
-    if (argc != 3) {
-	//fprintf(stderr,"Usage: jayci.x -m [memory]\n");
-	//exit(1);
-    } else {
-	//fprintf(stdout,"Allocated %d bytes\n", mem);
-    }
-    
+
+    /*************************************************************/
+    /*** BIGCAS has not been implemented yet. CLM - 09-25-2015 ***/
+#ifdef BIGCAS
+    fprintf(stderr,
+	    " The -DBIGCAS option has not be implemented yet.\n");
+    fprintf(stderr, " Please recompile.\n");
+    exit(0);
+#endif
+    /*************************************************************/
+    /*************************************************************/
+
+    err = processcmdlineargs(argc, argv, &mem);
+    if (err != 0)
+	exit(1);
+        
     /* check for input files */
     err = checkinputfiles();
     if (err != 0) {
-	if (err == 1) {
-	    fprintf(stderr,
-		    "*** ERROR: Cannot open input file: jayci.in! ***\n");
-	} else if (err == 2) {
-	    fprintf(stderr,
-		    "*** ERROR: Cannot open input file: input.jayci! ***\n");
-	} else if (err == 3) {
-	    fprintf(stderr,
-		    "*** ERROR: Cannot open molecular integral file! ***\n");
-	} else if (err == 4) {
-	    fprintf(stderr,
-		    "*** ERROR: Cannot open determinant list file! ***\n");
-	} else {
-	    fprintf(stderr,
-		    "*** ERROR: Unknown input file error! ***\n");
-	}
 	exit(1);
     } else {
 	fprintf(stdout, "All necessary input files present.\n");
@@ -181,6 +155,15 @@ void main(int argc, char *argv[])
 	fprintf(stdout, " %10s = %10d\n", "xlvl", xlvl);
 	fprintf(stdout, " %10s = %10d\n", "plvl", plvl);
     }
+#ifndef BIGCAS
+    if ((ndocc + nactv) > 64) {
+	fprintf(stderr, "*** ERROR: Chosen active space is greater ");
+	fprintf(stderr, " than 64 orbitals! ***\n");
+	fprintf(stderr,
+		"*** Please compile jayci.x with the BIGCAS option set. ***\n");
+	exit(1);
+    }
+#endif
     
     /* read &dalginfo namelist */
     readdaiinput(&maxiter, &krymin, &krymax, &nroots, &prediagr, &refdim,
@@ -218,36 +201,16 @@ void main(int argc, char *argv[])
 	fprintf(stdout, " %10s = %10d\n", "ndets", ndets);
     }
 
+    /* generate binary determinant list */
     fprintf(stdout, "\nGenerating binary determinant list.\n");
-    aistr = (int *) malloc(ci_aelec * sizeof(int));
-    bistr = (int *) malloc(ci_belec * sizeof(int));
-    strscr= (int *) malloc(ci_aelec * sizeof(int));
     detlist = (struct det *) malloc(ndets * sizeof(struct det));
-    dlistfl = fopen("det.list", "r");
-    if (dlistfl == NULL) {
-	fprintf(stderr, "*** ERROR: Cannot open det.list! ***\n");
+    err = genbinarydetlist(detlist, ci_aelec, ci_belec, ci_orbs,
+			   ndocc, nactv, ndets);
+    if (err != 0) {
+	fprintf(stderr, "*** ERROR generating binary determinant list! ***\n");
 	exit(1);
     }
-    i = 0;
-    printf("Reading file.\n");
-    while (fscanf(dlistfl, " %d %d\n", &ai, &bi) != EOF) {
-	str_adr2str(ai, strscr, ci_aelec, ci_orbs, aistr);
-	str_adr2str(bi, strscr, ci_belec, ci_orbs, bistr);
-	detlist[i].astr = str2occstr(aistr, ci_aelec, ndocc, nactv);
-	detlist[i].bstr = str2occstr(bistr, ci_belec, ndocc, nactv);
-	i++;
-    }
 
-    fclose(dlistfl);
-    free(aistr);
-    free(bistr);
-    free(strscr);
-
-    fprintf(stdout, "Read in %d determinants.\n", i);
-    if (i != ndets) {
-	fprintf(stderr, "*** ERROR: Incorrect number of determinants! ***\n");
-	exit(1);
-    }
 
     /* if parallel, we compute integrals on the fly
      * 09-23-2015: this has not been implemented yet - CLM */
@@ -266,6 +229,8 @@ void main(int argc, char *argv[])
 	fprintf(stdout," Frozen core energy:       %15.8lf\n", frzce);
     
 #endif
+
+
     /* initializing initial vector array */
     initv = (double *) malloc(ndets * krymin * sizeof(double));
     initarray(initv, (ndets * krymin));
@@ -301,4 +266,109 @@ void main(int argc, char *argv[])
 			
     
 }
-     
+/* genbinarydetlist: generate list of determinants in binary format
+ * -------------------------------------------------------------------
+ * Input:
+ *  aelec = alpha electrons
+ *  belec = beta  electrons
+ *  orbs  = orbitals
+ *  ndocc = docc orbitals
+ *  nactv = active orbitals
+ * Output:
+ *  dlist = determinant list
+ * Returns:
+ *  error = 0: no error, 1: error */
+int genbinarydetlist(struct det *dlist, int aelec, int belec, int orbs,
+		     int ndocc, int nactv, int ndets)
+{
+    int i;
+    int ai, bi;
+    int *aistr, *bistr, *strscr;
+    int error;
+    FILE *dlistfl;
+
+    error = 0;
+    
+    aistr = (int *) malloc(aelec * sizeof(int));
+    bistr = (int *) malloc(belec * sizeof(int));
+    strscr= (int *) malloc(aelec * sizeof(int));
+
+    dlistfl = fopen("det.list", "r");
+    if (dlistfl == NULL) {
+	fprintf(stderr, "*** ERROR: Cannot open det.list! ***\n");
+	error = 1;
+	return error;
+    }
+    i = 0;
+    printf("Reading file.\n");
+    while (fscanf(dlistfl, " %d %d\n", &ai, &bi) != EOF) {
+	str_adr2str(ai, strscr, aelec, orbs, aistr);
+	str_adr2str(bi, strscr, belec, orbs, bistr);
+	dlist[i].astr = str2occstr(aistr, aelec, ndocc, nactv);
+	dlist[i].bstr = str2occstr(bistr, belec, ndocc, nactv);
+	/* is this determinant a CAS determinant? */
+	if (dlist[i].astr.virtx[0] == 0 && dlist[i].bstr.virtx[0] == 0) {
+	    dlist[i].cas = 1;
+	} else {
+	    dlist[i].cas = 0;
+	}
+	i++;
+    }
+
+    fclose(dlistfl);
+    free(aistr);
+    free(bistr);
+    free(strscr);
+
+    fprintf(stdout, "Read in %d determinants.\n", i);
+    if (i != ndets) {
+	fprintf(stderr, "*** ERROR: Incorrect number of determinants! ***\n");
+	error = 1;
+	return error;
+    }
+    return error;
+}
+/* processcmdlineargs: process command line arguments
+ * -------------------------------------------------------------------
+ * Input: 
+ *  argc = number of arguments
+ *  argv = arguments
+ * Output:
+ *  memory = memory to allocate
+ * Returns:
+ *  error = 0: no error; 1: error */
+int processcmdlineargs(int argc, char *argv[], long long int *memory)
+{
+    int i, c, error;
+
+    if (argc == 1) {
+	error = 0;
+	return error;
+    }
+    
+    for (i = 1; i < argc; i++) {
+	if (*argv[i] == '-') {
+	    while (c = *++argv[i]) {
+		switch (c) {
+		case 'm':
+		    *memory = atoi(argv[i+1]);
+		    break;
+		default:
+		    fprintf(stderr,"Illegal option: %c\n", c);
+		    i = argc;
+		    break;
+		}
+	    }
+	}
+    }
+
+    if (argc != 3) {
+	fprintf(stderr,"Usage: jayci.x -m [memory]\n");
+	error = -1;
+	return error;
+    } else {
+	fprintf(stdout,"Allocated %d bytes\n", *memory);
+	error = 0;
+	return error;
+    }
+}

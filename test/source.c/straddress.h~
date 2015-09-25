@@ -1,7 +1,0 @@
-#ifndef straddress_h_
-#define straddress_h_
-
-void det2pq(int det_index, int orbitals, int *bitscr, int *p, int *q);
-void str2det(int *astr, int *bstr, int *dstr, int orb);
-
-#endif

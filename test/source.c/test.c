@@ -30,7 +30,9 @@ void main()
 
      long long int byte1;
      long long int byte2;
-     int diff;
+     int diff, same;
+     long long int diffs;
+     long long int sames;
      
      struct occstr string1[2];
      char binstr1[65];
@@ -101,10 +103,25 @@ void main()
      free(moints1);
      free(moints2);
 
-     byte1 = 3;
-     byte2 = 2;
-     diff = ndiffbytes(byte1, byte2);
+     byte1 = 15;
+     byte2 = 51;
+     llint2bin(byte1,binstr1);
+     printf(" %d:", byte1);
+     printf(" %.*s\n", 64, binstr1);
+     llint2bin(byte2,binstr1);
+     printf(" %d:", byte2);
+     printf(" %.*s\n", 64, binstr1);
+     diff = ndiffbytes(byte1, byte2, &diffs);
      printf(" Differences = %d\n", diff);
+     printf(" Located at bits: ");
+     llint2bin(diffs, binstr1);
+     printf(" %.*s\n", 64, binstr1);
+     printf("\n");
+     same = nsamebytes(byte1, diffs, &sames);
+     printf(" Replacements in byte 1: ");
+     llint2bin(sames, binstr1);
+     printf(" %.*s\n", 64, binstr1);
+     printf("\n");
 }
 
 	

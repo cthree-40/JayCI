@@ -13,6 +13,7 @@
  ********************************************************************/
 
 #include <stdio.h>
+#include "bitutil.h"
 #include "binarystr.h"
 #include "action_util.h"
 

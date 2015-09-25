@@ -1,8 +1,0 @@
-// FILE: moindex.h
-#ifndef moindex_h_
-#define moindex_h_
-
-int index1e(int i, int j);
-int index2e(int i, int j, int k, int l);
-
-#endif
