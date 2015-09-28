@@ -41,10 +41,15 @@ PREFIX		:= sh -c
 # Set Libraries
 # We build on edison
 ifeq ($(NERSC_HOST),edison)
-	LIBS1	:= 
-# Or we are on Hyperion
+	LIBS1	:=
 else
-	LIBS1	:= -L/usr/lib64 -llapack64 -lblas
+	# we are on helios
+	ifeq ($(shell uname -n),helios)
+		LIBS1	:= -L/usr/lib64 -llapack -lblas
+	# we are on hyperion
+	else
+		LIBS1	:= -L/usr/lib64 -llapack64 -lblas
+	endif
 endif
 
 LIBS2		:= $(SOURCE)/colib.a
