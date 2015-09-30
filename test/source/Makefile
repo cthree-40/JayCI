@@ -43,13 +43,8 @@ PREFIX		:= sh -c
 ifeq ($(NERSC_HOST),edison)
 	LIBS1	:=
 else
-	# we are on helios
-	ifeq ($(shell uname -n),helios)
-		LIBS1	:= -L/usr/lib64 -llapack -lblas
-	# we are on hyperion
-	else
-		LIBS1	:= -L/usr/lib64 -llapack64 -lblas
-	endif
+	# we are on hyperion or helios
+	LIBS1	:= -L/usr/lib64 -llapack -lblas
 endif
 
 LIBS2		:= $(SOURCE)/colib.a

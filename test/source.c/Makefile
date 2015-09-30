@@ -19,7 +19,7 @@ FDEBUG := -fbacktrace
 CDEBUG :=
 
 # Libraries ----------------------------------------------------------
-MATHLIBS := -L/usr/lib64 -llapack64 -lblas -lm
+MATHLIBS := -L/usr/lib64 -llapack -lblas -lm
 COLIBLIB := ./colib.a
 
 # Executables --------------------------------------------------------
