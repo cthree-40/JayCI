@@ -17,19 +17,23 @@
 #include "bitutil.h"
 #include "binarystr.h"
 
-/* comparedets: compare two determinants, returning differences
+/* comparedets_cas: compare CAS bytes of two determinants, 
+ *                  returning differences
  * -------------------------------------------------------------------
  * Input:
- *  deti = determinant 1
- *  detj = determinant j
+ *  deti  = determinant 1
+ *  detj  = determinant j
  * Output:
- *  axi = alpha excitations initial orbitals
- *  axf = alpha excitations final orbitals
- *  bxi = beta  excitations initial orbitals
- *  bxf = beta  excitations final orbitals
+ *  numax = number of alpha excitations
+ *  numbx = number of beta  excitations
+ *  axi   = alpha excitations initial orbitals
+ *  axf   = alpha excitations final orbitals
+ *  bxi   = beta  excitations initial orbitals
+ *  bxf   = beta  excitations final orbitals
  * Returns:
- *  numx = number of excitations */
-int comparedets(struct det deti, struct det detj,
+ *  numx  = number of excitations */
+int comparedets_cas(struct det deti, struct det detj,
+		int *numax, int *numbx,
 		long long int *axi, long long int *axf,
 		long long int *bxi, long long int *bxf)
 {
@@ -44,27 +48,69 @@ int comparedets(struct det deti, struct det detj,
 
     numx = 0;
     /* compare alpha strings */
-    numx = ndiffbytes(deti.astr.byte1, detj.astr.byte1, &diffs);
+    *numax = ndiffbytes(deti.astr.byte1, detj.astr.byte1, &diffs);
     same = nsamebytes(deti.astr.byte1, diffs, axi);
     same = nsamebytes(detj.astr.byte1, diffs, axf);
-    
+    numx = numx + *numax;
+
     /* compare beta strings */
-    numx = numx + ndiffbytes(deti.bstr.byte1, detj.bstr.byte1, &diffs);
+    *numbx = ndiffbytes(deti.bstr.byte1, detj.bstr.byte1, &diffs);
     same = nsamebytes(deti.bstr.byte1, diffs, bxi);
     same = nsamebytes(detj.bstr.byte1, diffs, bxf);
-    
+    numx = numx + *numbx;
+
 #ifdef BIGCAS
     if ((ndocc + nactv) > 64) {
-	numx = numx + ndiffbytes(deti.astr.byte2, detj.astr.byte2, &diffs);
-
-	numx = numx + ndiffbytes(deti.bstr.byte2, detj.bstr.byte2, &diffs);
+        *numax = *numax + ndiffbytes(deti.astr.byte2, detj.astr.byte2, &diffs);
+	*numbx = *numbx + ndiffbytes(deti.bstr.byte2, detj.bstr.byte2, &diffs);
+	numx = numx + *numax;
+	numx = numx + *numbx;
     }
 #endif
-
-    numx = numx / 2;
-
+    /* Note: numx is NOT excitation number. It is the differences in 
+     * binary representations of the two bytes. You must divide the
+     * final numx, including virtual excitations , to get excitation 
+     * number. */
     return numx;
 }
+/* comparedets_virt: compare determinants with virtual orbitals
+ * -------------------------------------------------------------------
+ * Input:
+ *  deti  = determinant 1
+ *  detj  = determinant j
+ * Output:
+ *  numax = number of alpha excitations
+ *  numbx = number of beta  excitations
+ *  axi   = alpha excitations initial orbitals
+ *  axf   = alpha excitations final orbitals
+ *  bxi   = beta  excitations initial orbitals
+ *  bxf   = beta  excitations final orbitals
+ * Returns:
+ *  numx  = number of excitations */
+int comparedets_virt(struct det deti, struct det detj, 
+		     int *numax, int *numbx,
+		     long long int *axi, long long int *axf, 
+		     long long int *bxi, long long int *bxf)
+{
+    int numx;
+    
+    numx = 0;
+    /* compare virtual orbitals 
+     * if numx > 2, we can exit. <i|H|j> = 0.0 */
+    *numax = ndiffs_array(deti.astr.virtx, detj.astr.virtx, 2);
+    *numbx = ndiffs_array(deti.bstr.virtx, detj.bstr.virtx, 2);
+    numx = *numax + *numbx;
+    if (numx > 2) return numx;
+
+    /* compare CAS bytes */
+    numx = numx + comparedets_cas(deti, detj, &(*numax), &(*numbx),
+				  &(*axi), &(*axf), &(*bxi), &(*bxf));
+    
+    /* get excitation number from number of differences */
+    numx = numx / 2;
+    return numx;
+}
+
 /* str2occstr: convert orbital index string -> occstr type
  * -------------------------------------------------------------------
  * Input:

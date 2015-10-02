@@ -9,4 +9,13 @@ double hmatels(struct det deti,
 	       int m1len,
 	       int m2len);
 
+double evaluate_dets(int ndiff,
+		     struct det deti,
+		     struct det detj,
+		     int numax,
+		     int numbx,
+		     long long int axi,
+		     long long int axf,
+		     long long int bxi,
+		     long long int bxf);
 #endif
