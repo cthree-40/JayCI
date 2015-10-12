@@ -1,4 +1,4 @@
-// FILE: abecalc.c
+// File: abecalc.c
 /*********************************************************************
  * abecalc
  * -------
@@ -19,16 +19,16 @@ void abecalc(int tot_elec, int *aelec, int *belec)
  *  belec = beta  electrons
  */
 {
-     /* test if even number of electrons */
-     if (tot_elec % 2 == 0) {
-	  /* even */
-	  *aelec = tot_elec / 2;
-	  *belec = *aelec;
-     } else {
-	  /* odd */
-	  *aelec = (tot_elec + 1) / 2;
-	  *belec = (tot_elec - 1) / 2;
-     }
+    /* test if even number of electrons */
+    if (tot_elec % 2 == 0) {
+        /* even */
+        *aelec = tot_elec / 2;
+        *belec = *aelec;
+    } else {
+        /* odd */
+        *aelec = (tot_elec + 1) / 2;
+        *belec = (tot_elec - 1) / 2;
+    }
 
-     return;
+    return;
 }

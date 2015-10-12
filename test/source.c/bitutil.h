@@ -10,4 +10,6 @@ int nsamebytes(long long int byte1,
 	       long long int byte2,
 	       long long int *sames);
 
+void nonzerobits(long long int byt,
+		 int *nzb);
 #endif

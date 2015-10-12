@@ -7,6 +7,8 @@ int drefblock(struct det *detlist,
 	      double *moints2,
 	      int m1len,
 	      int m2len,
+	      int aelec,
+	      int belec,
 	      int refdim,
 	      double *evecs);
 

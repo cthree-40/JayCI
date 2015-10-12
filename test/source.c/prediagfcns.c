@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "binary.h"
 #include "binarystr.h"
 #include "mathutil.h"
 #include "action_util.h"
@@ -25,11 +26,14 @@
  *  moints2 = 2-e integrals
  *  m1len   = number of 1-e integrals
  *  m2len   = number of 2-e integrals
+ *  aelec   = alpha electrons
+ *  belec   = beta  electrons
  *  refdim = size of reference block
  * Output:
  *  evecs = eigenvectors of diagonalized block */
 int drefblock(struct det *detlist,  double *moints1, double *moints2,
-	      int m1len, int m2len, int refdim, double *evecs)
+	      int m1len, int m2len, int aelec, int belec, int refdim, 
+	      double *evecs)
 {
     int i, j, k;
     double *hmat;
@@ -45,9 +49,10 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	for (j = 0; j < refdim; j++) {
 
 	    k = (i * refdim) + j;
+	    printf(" Computing < %d | H | %d >...  ", i, j);
 	    hmat[k] = hmatels(detlist[i], detlist[j], moints1, moints2,
-			      m1len, m2len);
-	    
+			      m1len, m2len, aelec, belec);
+	    printf("%15.8lf\n", hmat[k]);
 	}
     }
 

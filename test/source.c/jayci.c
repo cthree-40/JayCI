@@ -18,6 +18,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+#include "binary.h"
 #include "ioutil.h"
 #include "abecalc.h"
 #include "binarystr.h"
@@ -88,9 +90,14 @@ void main(int argc, char *argv[])
      * ci_orbs  = orbs - nfrzc - nfrzv
      * nastr    = number of alpha strings
      * nbstr    = number of beta  strings
-     * ndets    = number of determinants */
+     * ndets    = number of determinants 
+     * curr_time   = current time
+     * prev_time   = previous time
+     * start_time  = start time
+     * finish_time = finish time */
     int ci_aelec, ci_belec, ci_orbs;
     int nastr, nbstr, ndets;
+    clock_t curr_time, prev_time, start_time, finish_time;
 
     /* .. local arrays .. 
      * detlist = determinant list 
@@ -111,6 +118,8 @@ void main(int argc, char *argv[])
     double *ptr1, *ptr2;
     
     int i, j, k;
+
+    start_time = clock();
 
     /*************************************************************/
     /*** BIGCAS has not been implemented yet. CLM - 09-25-2015 ***/
@@ -203,6 +212,7 @@ void main(int argc, char *argv[])
 
     /* generate binary determinant list */
     fprintf(stdout, "\nGenerating binary determinant list.\n");
+    prev_time = clock();
     detlist = (struct det *) malloc(ndets * sizeof(struct det));
     err = genbinarydetlist(detlist, ci_aelec, ci_belec, ci_orbs,
 			   ndocc, nactv, ndets);
@@ -210,7 +220,9 @@ void main(int argc, char *argv[])
 	fprintf(stderr, "*** ERROR generating binary determinant list! ***\n");
 	exit(1);
     }
-
+    curr_time = clock();
+    fprintf(stdout, "Total time reading list: %10.5f sec\n",
+	    (double)((curr_time - prev_time)/CLOCKS_PER_SEC));
 
     /* if parallel, we compute integrals on the fly
      * 09-23-2015: this has not been implemented yet - CLM */
@@ -238,8 +250,8 @@ void main(int argc, char *argv[])
     if (prediagr == 1) {
 	fprintf(stdout, "\nPerforming reference block diagonalization.\n");
 	initscr = (double *) malloc(refdim * refdim * sizeof(double));
-	err = drefblock(detlist, moints1, moints2, m1len, m2len, refdim,
-			initscr);
+	err = drefblock(detlist, moints1, moints2, m1len, m2len, ci_aelec,
+			ci_belec, refdim, initscr);
 	if (err != 0) {
 	    fprintf(stderr,"*** ERROR in drefblock! ***\n");
 	    exit(1);

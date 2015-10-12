@@ -4,6 +4,7 @@
 
 int ndiffs_array(int *ar1,
 		 int *ar2,
-		 int ard);
+		 int ard1,
+		 int ard2);
 
 #endif
