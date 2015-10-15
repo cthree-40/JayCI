@@ -4,6 +4,7 @@
  * -----------
  * Subfunctions for performing operations on arrays.
  *
+ * init_int_array_0: initialize integer array to zero
  * ndiffs_array: find number of differences between two arrays
  *
  * By Christopher L Malbon
@@ -13,15 +14,29 @@
 #include <stdio.h>
 #include "arrayutil.h"
 
-/* ndiffs_array: find number of similarities between two arrays
- * -------------------------------------------------------------------
+/* 
+ * init_int_array_0: initialize integer array to 0
+ */
+void init_int_array_0(int *array, int len)
+{
+	int i;
+	for (i = 0; i < len; i++) {
+		array[i] = 0;
+	}
+	return;
+}
+
+/* 
+ * ndiffs_array: find number of similarities between two arrays
+ * 
  * Input:
  *  ar1 = array 1
  *  ar2 = array 2
  *  ard1 = array 1 dimension
  *  ard2 = array 2 dimension
  * Returns:
- *  ndiffs = number of differences */
+ *  ndiffs = number of differences 
+ */
 int ndiffs_array(int *ar1, int *ar2, int ard1, int ard2)
 {
 	int ndiffs = 0;

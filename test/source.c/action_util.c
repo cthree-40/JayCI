@@ -17,6 +17,7 @@
 
 #include <stdio.h>
 #include <math.h>
+#include "arrayutil.h"
 #include "bitutil.h"
 #include "binarystr.h"
 #include "action_util.h"
@@ -63,20 +64,15 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 		detdiff = comparedets_ncas(
 			deti, detj, &numaxc, &numbxc, &numaxv, &numbxv,
 			&numaxcv, &numbxcv, &axi, &axf, &bxi, &bxf);
-		printf(" detdiff = %d, numaxc = %d, numbxc = %d ", 
-		       detdiff, numaxc, numbxc);
-		printf(" numaxv = %d, numbxv = %d ", 
-		       numaxv, numbxv);
-		printf(" numaxcv = %d, numbxcv = %d ",
-		       numaxcv, numbxcv);
 		if (detdiff > 2) return val;
-		val = 2.0;
+		val = evaluate_dets_ncas(
+			detdiff, deti, detj, numaxc, numbxc, numaxcv,
+			numbxcv, numaxv, numbxv, axi, axf, bxi, bxf,
+			aelec, belec, moints1, moints2);
 	} else {
 		detdiff = comparedets_cas(
 			deti, detj, &numaxc, &numbxc, &axi, &axf, &bxi, &bxf);
 		detdiff = detdiff / 2;
-		printf(" detdiff = %d, numaxc = %d, numbxc = %d ", 
-		       detdiff, numaxc, numbxc);
 		if (detdiff > 2) return val;
 		val = evaluate_dets_cas(
 			detdiff, deti, detj, numaxc, numbxc, axi, axf,
@@ -89,7 +85,7 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 
 /* 
  * evaluate_dets_cas: evaluate matrix element <i|H|j>.
- * ---------------------------------------------------
+ *
  * Input:
  *  ndiff = number of differences (excitation level)
  *  deti  = determinant i
@@ -366,8 +362,216 @@ double eval2_20_cas(long long int xi, long long int xf, double *moints2)
 }
 
 /* 
+ * evaluate_dets_ncas: evaluate <i|H|j> for non-cas flagged determinants
+ *
+ * Input:
+ *  ndiff   = number of differences (excitation level)
+ *  deti    = determinant i
+ *  detj    = determinant j
+ *  numaxc  = number of alpha cas excitations
+ *  numbxc  = number of beta  cas excitations
+ *  numaxcv = number of alpha cas->virtual excitations
+ *  numbxcv = number of beta  cas->virtual excitations
+ *  numaxv  = number of alpha virtual excitaitons
+ *  numbxv  = number of beta  virtual excitations
+ *  axi     = alpha excitation initial orbitals
+ *  axf     = alpha excitation final orbitals
+ *  bxi     = beta  excitation initial orbitals
+ *  bxf     = beta  excitation final orbitals
+ *  moints1 = 1-e integrals
+ *  moints2 = 2-e integrals
+ * Returns:
+ *  value   = value of matrix element 
+ */
+double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
+			  int numaxc, int numbxc, int numaxcv, int numbxcv,
+			  int numaxv, int numbxv, long long int axi,
+			  long long int axf, long long int bxi, 
+			  long long int bxf, int aelec, int belec, 
+			  double *moints1, double *moints2)
+{
+     double value = 0.0;
+	
+	/* check for inter-space interactions then number of differences */
+	if (numaxcv + numbxcv == 0) {
+		if (ndiff == 2) {
+		} else if (ndiff == 1) {
+			if (numaxv == 1) {
+				printf("NUMAXV == 1\n");
+				value = eval1_ncas_c0cv0v1(
+					deti.astr, detj.astr, aelec, deti.bstr,
+					belec, moints1, moints2);
+			} else if (numbxv == 1) {
+				printf("NUMBXV == 1\n");
+				value = eval1_ncas_c0cv0v1(
+					deti.bstr, detj.bstr, belec, deti.astr, 
+					aelec, moints1, moints2);
+			} else if (numaxc == 1) {
+				value = eval1_ncas_c1cv0v0(
+					deti.astr, axi, axf, deti.bstr, aelec,
+					belec, moints1, moints2);
+			} else {
+				value = eval1_ncas_c1cv0v0(
+					deti.bstr, bxi, bxf, deti.astr, belec,
+					aelec, moints1, moints2);
+			}
+		} else {
+			value = eval0_ncas(deti, aelec, belec, moints1, moints2);
+		}
+	} else {
+		if (ndiff == 2) {
+		} else if (ndiff == 1) {
+		} else {
+		}
+	}
+	
+	return value;
+}
+
+/* 
+ *eval0_ncas: evaluate matrix elements <i|H|i> with virtual occupations
+ *
+ * Input:
+ *  deti    = determinant
+ *  aelec   = alpha electrons
+ *  belec   = beta  electrons
+ *  moints1 = 1-e integrals
+ *  moints2 = 2-e integrals
+ * Returns:
+ *  value = <i|H|i>
+ */
+double eval0_ncas(struct det deti, int aelec, int belec, double *moints1,
+		  double *moints2)
+{
+	double val = 0.0;
+	
+	/* .. local scalars ..
+	 * i1, i2 = integral indexes */
+	int i1, i2;
+	int i, j;
+
+	/* .. local arrays ..
+	 * eostr1 = electron orbital occupation string 1
+	 * eostr2 = electron orbital occupation string 2 */
+	int eostr1[aelec], eostr2[belec];
+	
+	/* form eostr1 and eostr2 */
+	make_orbital_strings_virt(deti.astr, eostr1, aelec);
+	make_orbital_strings_virt(deti.bstr, eostr2, belec);
+	
+	/* compute alpha contribution */
+	for (i = 0; i < aelec; i++) {
+		/* one electron integral contribution */
+		i1 = index1e(eostr1[i], eostr1[i]);
+		val = val + moints1[i1 - 1];
+		for (j = 0; j < i; j++) {
+			/* two electron integral contribution */
+			i1 = index2e(eostr1[i], eostr1[i], eostr1[j], eostr1[j]);
+			i2 = index2e(eostr1[i], eostr1[j], eostr1[i], eostr1[j]);
+			val = val + (moints2[i1 - 1] - moints2[i2 - 1]);
+
+		}
+	}
+	/* compute beta contribution */
+	for (i = 0; i < belec; i++) {
+		/* one electron integral contribution */
+		i1 = index1e(eostr2[i], eostr2[i]);
+		val = val + moints1[i1 - 1];
+		for (j = 0; j < i; j++) {
+			/* two electron integral contribution */
+			i1 = index2e(eostr2[i], eostr2[i], eostr2[j], eostr2[j]);
+			i2 = index2e(eostr2[i], eostr2[j], eostr2[i], eostr2[j]);
+			val = val + (moints2[i1 - 1] - moints2[i2 - 1]);
+		}
+	}
+	/* compute alpha and beta contribution */
+	for (i = 0; i < aelec; i++) {
+		for (j = 0; j < belec; j++) {
+			i1 = index2e(eostr1[i], eostr1[i], eostr2[j], eostr2[j]);
+			val = val + moints2[i1 - 1];
+		}
+	}
+	return val;
+}
+
+/*
+ * eval1_ncas_c0cv0v1: evaluate single virtual replacement matrix elements
+ *                     between non-cas-flagged determinants.
+ */
+double eval1_ncas_c0cv0v1(struct occstr ostr1i, struct occstr ostr1j,
+			  int ne1, struct occstr ostr2i, int ne2,
+			  double *moints1, double *moints2)
+{
+	double val;
+	int  pindx; /* permuational index */
+	int ifo[2]; /* initial, final orbital */
+	int i1, i2; /* integral indexes */
+	int eostr1[ne1]; /* electron occupation string */
+	int eostr2[ne2]; 
+	int i;
+	
+	/* locate initial and final orbitals and construct 
+	 * eostr1 and eostr2 */
+	virtdiffs_single_rep(ostr1i.virtx, ostr1j.virtx, ifo);
+	make_orbital_strings_virt(ostr1i, eostr1, ne1);
+	make_orbital_strings_virt(ostr2i, eostr2, ne2);
+
+	printf("eostr1 = %d %d %d %d\n", eostr1[0], eostr1[1], eostr1[2], eostr1[3]);
+	printf("eostr2 = %d %d %d %d\n", eostr2[0], eostr2[1], eostr2[2], eostr2[3]);
+	
+	/* compute permuational index and 1-e contriubtion */
+	pindx = pow(-1, abs(ifo[1] - ifo[0]));
+	i1 = index1e(ifo[0], ifo[1]);
+	val = pindx * moints1[i1 - 1];
+	
+	val = val + single_rep_2e_contribution(
+		eostr1, ifo[0], ifo[1], pindx, eostr2, ne1, ne2, moints2);
+
+	return val;
+}
+
+/* 
+ * eval1_ncas_c1cv0v0: evaluate single cas replacement matrix elements 
+ *                     between non-cas-flagged determinants
+ */
+double eval1_ncas_c1cv0v0(struct occstr ostr1, long long int xi, 
+			  long long int xf, struct occstr ostr2, int ne1, 
+			  int ne2, double *moints1, double *moints2)
+{
+	double val; /* <i|H|j> */
+	
+	int pindx; /* permuational index */
+	int io, fo; /* initial, final orbital */
+	int i1, i2; /* integral indexes */
+	
+	int eostr1[ne1]; /* electron occupation string */
+	int eostr2[ne2]; 
+	
+	int i;
+	
+	/* locate the nonzero bits in xi and xf and form occ_str1, occ_str2 */
+	nonzerobits(xi, &io);
+	nonzerobits(xf, &fo);
+	make_orbital_strings_virt(ostr1, eostr1, ne1);
+	make_orbital_strings_virt(ostr2, eostr2, ne2);
+	
+	/* compute permuational index and 1-e contribution */
+	pindx = pow(-1, abs(fo - io));
+	i1 = index1e(io, fo);
+	val = pindx * moints1[i1 - 1];
+	
+	val = val + single_rep_2e_contribution(
+		eostr1, io, fo, pindx, eostr2, ne1, ne2, moints2);
+	
+	return val;
+}
+	
+	
+					
+	
+/* 
  * make_orbital_strings_virt: make orbital strings with virtual occupations
- * -----------------------------------------------------------------------------
+ * 
  * Input:
  *  ostr1i = orbital occupation string
  * Output:
@@ -375,26 +579,59 @@ double eval2_20_cas(long long int xi, long long int xf, double *moints2)
  */
 void make_orbital_strings_virt(struct occstr ostr1i, int *eostr1, int nelec1)
 {
+	int i;
+
+	init_int_array_0(eostr1, nelec1);
+
 #ifndef BIGCAS
 	nonzerobits(ostr1i.byte1, eostr1);
 #endif
 	if (eostr1[nelec1 - 2] == 0) {
 		eostr1[nelec1 - 2] = ostr1i.virtx[0];
 		eostr1[nelec1 - 1] = ostr1i.virtx[1];
-	} else {
+	} else if (eostr1[nelec1 - 1] == 0) {
 		eostr1[nelec1 - 1] = ostr1i.virtx[0];
 	}
 	return;
 }
+/*
+ * single_rep_2e_contribution: compute contribution of 2e integrals to
+ *                             single replacements
+ */
+double single_rep_2e_contribution(int *eostr1, int io, int fo,
+				  int pindx, int *eostr2, int ne1,
+				  int ne2, double *moints2)
+{
+	double value = 0.0;
+	int          i1,i2; /* integral indexes */
+	int              i;
 
-/* virtdiffs_1: find location of virtual orbital replacements
- * -------------------------------------------------------------------
+	for (i = 0; i < ne1; i++) {
+		if (eostr1[i] != io || eostr1[i] != fo) {
+			i1 = index2e(eostr1[i], eostr1[i], 
+				     io, fo);
+			i2 = index2e(eostr1[i], io, eostr1[i],
+				     fo);
+			value = value + pindx * (moints2[i1 - 1] -
+						      moints2[i2 - 1]);
+		}
+	}
+	for (i = 0; i < ne2; i++) {
+		i1 = index2e(eostr2[i], eostr2[i], io, fo);
+		value = value + pindx * moints2[i1 - 1];
+	}
+	return value;
+}
+
+/* 
+ * virtdiffs_single_rep: find location of virtual orbital replacement
+ *
  * Input:
  *  vxi = deti virtual orbitals
  *  vxj = detj virtual orbitals
  * Output:
  *  ifo = differences */
-void virtdiffs_1(int *vxi, int *vxj, int *ifo)
+void virtdiffs_single_rep(int *vxi, int *vxj, int *ifo)
 {
 	/* locate where differences are 
 	 * possible differences:
