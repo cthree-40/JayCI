@@ -3,6 +3,14 @@
 #define arrayutil_h
 
 /* 
+ * find_pos_in_array_lnsrch: find position of integer in array. linear search.
+ */
+int find_pos_in_array_lnsrch(
+	int look,   /* integer to look for */ 
+	int *array, /* array to look in */
+	int len);   /* length of array */
+
+/* 
  * init_dbl_array_0: initialize a double array to 0.0
  */
 void init_dbl_array_0(

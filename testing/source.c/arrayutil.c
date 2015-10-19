@@ -1,20 +1,37 @@
 // File: arrayutil.c
-/*********************************************************************
+/*
  * arrayutil.c
  * -----------
  * Subfunctions for performing operations on arrays.
  *
+ * find_pos_in_array_lnsrch: find position of integer in array. linear search.
  * init_dbl_array_0: initialize double  array to zero
  * init_int_array_0: initialize integer array to zero
  * ndiffs_array: find number of differences between two arrays
  *
  * By Christopher L Malbon
  * Dept. of Chemistry, The Johns Hopkins University
- ********************************************************************/
+ */
 
 #include <stdio.h>
 #include "arrayutil.h"
 
+/* 
+ * find_pos_in_array_lnsrch: find position of integer in array. linear search.
+ */
+int find_pos_in_array_lnsrch(int look, int *array, int len)
+{
+	int loc = 0; /* location */
+	int i;
+	for (i = 0; i < len; i++) {
+		if (look == array[i]) {
+			loc = i;
+			return loc;
+		}
+	}
+	return loc;
+}
+	
 /* 
  * init_dbl_array_0: initialize double  array to 0
  */

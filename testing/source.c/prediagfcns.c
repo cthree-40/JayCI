@@ -47,18 +47,17 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	evals = (double *) malloc(refdim * sizeof(double));
 	init_dbl_array_0(hmat, (refdim * refdim));
 	init_dbl_array_0(evals,(refdim));
-	for (i = 0; i < 1; i++) {
+	for (i = 0; i < refdim; i++) {
+		printf("Computing %d\n", i);
 		for (j = i; j < refdim; j++) {
 			
 			k = (i * refdim) + j;
 			l = (j * refdim) + i;
 			hmat[k] = hmatels(detlist[i], detlist[j], moints1, moints2,
 					  aelec, belec);
-			printf("%15.8f\n", hmat[k]);
 			hmat[l] = hmat[k];
 		}
 	}
-	exit(1);
 	/* diagonalize reference block */
 	err = diagmat_dsyevr(hmat, refdim, evecs, evals);
         

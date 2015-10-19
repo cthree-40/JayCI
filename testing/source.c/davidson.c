@@ -38,36 +38,73 @@ void davidson_diagonalization_routine(struct det *dlist, int ndets,
 				      double *cienergy)
 {
 	double *hscr;  /* vhv scratch array */
-	double *hvscr; /* hv scratch array */
-	int niter = 1;
+	double *hvscr; /* hv vectors scratch array */
+	double *bscr;  /* v  vectors scratch array */
+	double *hevec, *heval; /* vhv eigenvetors and eigenvalues */
+	double *rvec, *nvec;  /* residual vector, new vector */
+	double rnorm;  /* norm of residual */
+	int niter = 1, cdim, croot; /* iteration count, current dimension, 
+				     * current root*/
+	int i;
+	
+	/* allocate arrays. Then initialize them to 0d0. We then
+	 * place the initial vectors in the basis vector scratch
+	 * array and begin our loop */
 	
 	hscr = (double *) malloc(krymax * krymax * sizeof(double));
+	hevec= (double *) malloc(krymax * krymax * sizeof(double));
+	heval= (double *) malloc(krymax * sizeof(double));
 	hvscr= (double *) malloc(krymax * ndets * sizeof(double));
+	bscr = (double *) malloc(krymax * ndets * sizeof(double));
+	rvec = (double *) malloc(ndets * sizeof(double));
+	nvec = (double *) malloc(ndets * sizeof(double));
+	init_dbl_array_0(hscr, (krymax * krymax));
+	init_dbl_array_0(hvscr,(krymax * ndets));
+	init_dbl_array_0(bscr, (krymax * ndets));
+	init_dbl_array_0(hevec,(krymax * krymax));
+	init_dbl_array_0(heval, krymax);
+	init_dbl_array_0(rvec, ndets);
+	init_dbl_array_0(nvec, ndets);
+	for (i = 0; i < krymin * ndets; i++) {
+		bscr[i] = initv[i];
+	}
 	
-	perform_hv_inititalspace(dlist, ndets, moints1, moints2,
-				 aelec, belec, krymin, initv, hvscr);
-	
+	cdim = krymin;
+	croot = 1;
+
+	while (niter <= maxiter) {
 		
-	return;
-}
-
-/* 
- * perform_hv: perform hv=c
- */
-void perform_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
-		int aelec, int belec, double *v, double *c)
-{
-	int i, j, k, l;
-	double valij;
-	
-	init_dbl_array_0(c, ndets);
-
-	for (i = 0; i < ndets; i++) {
-		for (j = i; j < ndets; j++) {
-			valij = hmatels(dlist[i], dlist[j], moints1, moints2,
-				       aelec, belec);
-			c[i] = c[i] + valij * v[j];
-			c[j] = c[j] + valij * v[i];
+		perform_hv_inititalspace(dlist, ndets, moints1, moints2,
+					 aelec, belec, krymin, initv, hvscr);
+		make_subspace_hamiltonian(bscr, hvscr, ndets, cdim, hscr);
+		diagonalize_subspace_ham(hscr, cdim, krymax, hevec, heval);
+		
+		while (cdim <= krymax) {
+			
+			generate_residual_vec(bscr, hvscr, ndets, cdim,
+					      hevec, heval, croot, rvec);
+			rnorm = compute_vector_norm(rvec, ndets);
+			if (rnorm < res_tol) {
+				printf(" Root %d converged! ");
+				printf(" Eigenvalue = %15.8f\n");
+				croot++;
+				cdim+=100;
+				if (croot >= nroot) nroot+=(maxiter*2);
+				continue;
+			}
+			generate_new_vector(rnorm, dgls, heval(croot), ndets,
+					   nvec);
+			orthogonalize_vector(bscr, cdim, ndets, nvec);
+			append_new_vector(bscr, cdim, ndets, nvec);
+			cdim++;
+			compute_hv(dlist, ndets, moints1, moints2, aelec,
+				   belec, bscr[(cdim - 1) * ndets],
+				   hvscr[(cdim - 1) * ndets]);
+			init_dbl_array_0(hscr, (krymax * krymax));
+			make_subspace_hamiltonian(bscr, hvscr, ndets, cdim,
+						  hscr);
+			diagonalize_subspace_ham(hscr, cdim, krymax, hevec,
+						 heval);
 		}
 	}
 	return;

@@ -44,15 +44,15 @@ jayci_exp: $(JEXPO)
 	$(CC) -o $(JEXPX) $(JEXPO) $(MATHLIBS) $(COLIBLIB) -lgfortran
 
 jayci: $(JYCIO)
+	@echo "-----------------------------------------------------------"
+	@echo "=>Building: jayci.x executable."
+	@echo "  "
+	@echo " MATHLIBS = $(MATHLIBS)"
+	@echo " COLIBLIB = $(COLIBLIB)"
+	@echo " DEBUG    = $(DEBUG)"
 	@echo ""
-	@echo "============================================================"
-	@echo ""
-	@echo "MATHLIBS = $(MATHLIBS)"
-	@echo "COLIBLIB = $(COLIBLIB)"
-	@echo "DEBUG    = $(DEBUG)"
 	$(CC) -o $(JYCIX) $(JYCIO) $(MATHLIBS) $(COLIBLIB) $(DEBUG) -lgfortran
-	@echo ""
-	@echo "Build complete."
+	@echo " Build complete."
 	@echo ""
 
 # Clean --------------------------------------------------------------
@@ -61,19 +61,31 @@ clean:
 
 # Rules --------------------------------------------------------------
 %.o:%.c
+	@echo "->Building: $@ "
 	$(CC) -c $< $(DEBUG)
+	@echo ""
 
 dlamch_fcn.o:dlamch_fcn.f90
+	@echo "->Building: $@ "
 	$(FC) -c dlamch_fcn.f90 $(DEBUG) $(FDEBUG)
+	@echo ""
 
 readmoints.o:readmoints.f90
+	@echo "->Building: $@ "
 	$(FC) -c readmoints.f90 $(DEBUG) $(FDEBUG)
+	@echo ""
 
 readnamelist.o:readnamelist.f90
+	@echo "->Building: $@ "
 	$(FC) -c readnamelist.f90 $(DEBUG) $(FDEBUG)
+	@echo ""
 
 ioutil.o:ioutil.c
+	@echo "->Building: $@ "
 	$(CC) -c ioutil.c $(DEBUG) -Wno-implicit-function-declaration
+	@echo ""
 
 mathutil.o:mathutil.c
+	@echo "->Building: $@ "
 	$(CC) -c mathutil.c $(DEBUG) -Wno-implicit-function-declaration
+	@echo ""
