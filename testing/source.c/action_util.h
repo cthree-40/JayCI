@@ -1,4 +1,4 @@
-// File: action_util.h
+/* File: action_util.h */
 /* 
  * note: the subfunctions in this file are listed alphabetically,
  *       not as they appear in action_util.c 
@@ -6,54 +6,83 @@
 #ifndef action_util_h
 #define action_util_h
 
-double eval0_cas(struct det    deti, 
-		 int          aelec, 
-		 int          belec, 
-		 double    *moints1, 
-		 double    *moints2);
+/*
+ * eval0_cas: evaluate diagonal matrix elements between cas-flagged
+ * determinants
+ */
+double eval0_cas(
+	struct det    deti,  /* <i|H|i> */ 
+	int          aelec,  /* alpha electrons */
+	int          belec,  /* beta  electrons */
+	double    *moints1,  /* 1-e integrals   */
+	double    *moints2); /* 2-e integrals   */
 
-double eval0_ncas(struct det    deti, 
- 	 	  int          aelec, 
-		  int          belec, 
-		  double    *moints1, 
-		  double    *moints2);
+/* 
+ * eval0_ncas: evaluate diagonal matrix elements between non-cas-flagged
+ * determinants 
+ */
+double eval0_ncas(
+	struct det    deti,  /* <i|H|i> */ 
+	int          aelec,  /* alpha electrons */
+	int          belec,  /* beta  electrons */
+	double    *moints1,  /* 1-e integrals   */
+	double    *moints2); /* 2-e integrals   */
 
-double eval1_10_cas(struct occstr ostr1, 
-		    long long int    xi, 
-		    long long int    xf,
-		    struct occstr ostr2, 
-		    int             ne1, 
-		    int             ne2, 
-		    double     *moints1,
-		    double     *moints2);
+/*
+ * eval1_10_cas: evaluate the matrix element of a single replacement between
+ * two cas-flagged determinants.
+ */
+double eval1_10_cas(
+	struct occstr ostr1, /* (alpha/beta) occupation string */ 
+	long long int    xi, /* initial orbitals of excitation */
+	long long int    xf, /* final orbitals of excitation   */
+	struct occstr ostr2, /* (beta/alpha) occupation string */
+	int             ne1, /* (alpha/beta) electrons */
+	int             ne2, /* (beta/alpha) electrons */
+	double     *moints1, /* 1-e integrals */
+	double     *moints2);/* 2-e integrals */
+
+/*
+ * eval1_ncas_c0cv0v1: evaluate the matrix element of a single virtual 
+ * virtual replacement between two non-cas-flagged determinants. 
+ */
 double eval1_ncas_c0cv0v1(
-	struct occstr ostr1i, 
-	struct occstr ostr1j,
-	int ne1, 
-	struct occstr ostr2i, 
-	int ne2,
-	double *moints1, 
-	double *moints2);
+	struct occstr ostr1i, /* (alpha/beta) occupation string of det i */ 
+	struct occstr ostr1j, /* (alpha/beta) occupation string of det j */
+	int ne1,              /* (alpha/beta) electrons */
+	struct occstr ostr2i, /* (beta/alpha) occupation string of det i */
+	int ne2,              /* (beta/alpha) electrons */
+	double *moints1,      /* 1-e integrals */
+	double *moints2);     /* 2-e integrals */
 
+/* 
+ * eval1_ncas_c0cv1v0: evaluate the matrix element of a single cas->virtual
+ * replacement between two non-cas-flagged determinants.
+ */
 double eval1_ncas_c0cv1v0(
-	long long int xi, 
-	long long int xf, 
-	struct occstr str1i, 
-	struct occstr str1j,
-	struct occstr str2i, 
-	int ne1, 
-	int ne2,
-	double *moints1,
-	double *moints2);
+	long long int xi,    /* initial CAS orbitals of excitation */
+	long long int xf,    /* final CAS orbitals of excitation   */
+	struct occstr str1i, /* deti (alpha/beta) occupation string */
+	struct occstr str1j, /* detj (alpha/beta) occupation string */
+	struct occstr str2i, /* deti (beta/alpha) occupation string */
+	int ne1,             /* (alpha/beta) electrons */
+	int ne2,             /* (beta/alpha) electrons */
+	double *moints1,     /* 1-e integrals          */
+	double *moints2);    /* 2-e integrals          */
 
-double eval1_ncas_c1cv0v0(struct occstr       occ_str1, 
-			  long long int  init_orbs_cas,
-			  long long int  finl_orbs_cas, 
-			  struct occstr       occ_str2,
-			  int                   nelec1, 
-			  int                   nelec2, 
-			  double              *moints1, 
-			  double              *moints2);
+/*
+ * eval1_ncas_c1cv0v0: evaluate the matrix element of a single cas->cas 
+ * replacement between two non-cas-flagged determinants.
+ */
+double eval1_ncas_c1cv0v0(
+	struct occstr       occ_str1,  /* (alpha/beta) occupation string */ 
+	long long int  init_orbs_cas,  /* inital orbitals of excitation  */
+	long long int  finl_orbs_cas,  /* final orbitals of excitation   */
+	struct occstr       occ_str2,  /* (beta/alpha) occupation string */
+	int                   nelec1,  /* (alpha/beta) electrons */
+	int                   nelec2,  /* (beta/alpha) electrons */
+	double              *moints1,  /* 1-e integrals */
+	double              *moints2); /* 2-e integrals */
 
 double eval2_ncas_c00cv00v11(
 	int *avirti,
@@ -61,6 +90,69 @@ double eval2_ncas_c00cv00v11(
 	int *bvirti,
 	int *bvirtj,
 	double *moints2);
+
+/* 
+ * eval2_ncas_c00cv10v01: evaluate double replacements for non-cas-flagged
+ * determinants with one cas->virt replacement in one string and one
+ * virt->virt replacement in the other string.
+ */
+double eval2_ncas_c00cv10v01(
+	long long int xi,    /* (alpha/beta) initial orbitals of excitation */ 
+	long long int xf,    /* (alpha/beta) final orbitals of excitation */
+	int *vx1i,           /* (alpha/beta) virtual orbitals of det i */
+	int *vx1j,           /* (alpha/beta) virtual orbitals of det j */
+	int *vx2i,           /* (beta/alpha) virtual orbitals of det i */
+	int *vx2j,           /* (beta/alpha) virtual orbitals of det j */
+	double *moints2);    /* 2-e integrals */
+
+
+double eval2_ncas_c00cv10v10(
+	long long int xi, 
+	long long int xf,
+	struct occstr stri, 
+	struct occstr strj,
+	double *moints2);
+
+/* 
+ * eval2_ncas_c00cv11v00: evaluate double replacements for non-cas-flagged
+ * determinants with one cas->virt replacement in each string. 
+ */
+double eval2_ncas_c00cv11v00(
+	long long int xi1, /* (alpha/beta) initial orbitals of excitation */ 
+	long long int xf1, /* (alpha/beta) final orbitals of excitation */
+	int *vxi1,         /* (alpha/beta) virtual orbitals of det i */
+	int *vxj1,         /* (alpha/beta) virtual orbitals of det j */
+	long long int xi2, /* (beta/alpha) initial orbitals of excitation */
+	long long int xf2, /* (beta/alpha) final orbitals of excitation */
+	int *vxi2,         /* (beta/alpha) virtual orbitals of det i */
+	int *vxj2,         /* (beta/alpha) virtual orbitals of det j */
+	double *moints2);  /* 2-e integrals */
+
+/* 
+ * eval2_ncas_c01cv10v00: evaluate double replcaements for non-cas-flagged
+ * determinants with one cas->virt replacement in one string and one
+ * cas->cas replacement in the other string.
+ */
+double eval2_ncas_c01cv10v00(
+	long long int xi1, /* (alpha/beta) initial orbitals of excitation */ 
+	long long int xf1, /* (alpha/beta) final orbitals of excitation */
+	int *vx1i,         /* (alpha/beta) virtual orbital occupations */
+	int *vx1j,         /* (alpha/beta) virtual orbital occupations */
+	long long int xi2, /* (beta/alpha) initial orbitals of excitation */
+	long long int xf2, /* (beta/alpha) final orbitals of excitation */
+	double *moints2);  /* 2-e integrals */
+
+/*
+ * eval2_ncas_c10cv10v00: evaluate double replacements for non-cas-flagged
+ * determinants with one cas->virt replacement and one cas->cas replacement
+ * int the same string.
+ */
+double eval2_ncas_c10cv10v00(
+	long long int xi,  /* (alpha/beta) initial orbitals of excitation */ 
+	long long int xf,  /* (alpha/beta) final orbitals of excitaiton */
+	int *vxi,          /* (alpha/beta) virtual orbitals of det i */
+	int *vxj,          /* (alpha/beta) virtual orbitals of det j */
+	double *moints2);  /* 2-e integrals */
 
 double eval2_ncas_c0cv0v2(
 	int *vxi, 
@@ -163,8 +255,6 @@ double hmatels(
 	struct det detj,
 	double *moints1,
 	double *moints2,
-	int m1len,
-	int m2len,
 	int aelec,
 	int belec);
 

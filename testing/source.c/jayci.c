@@ -251,7 +251,7 @@ void main(int argc, char *argv[])
 	fprintf(stdout, "\nPerforming reference block diagonalization.\n");
 	initscr = (double *) malloc(refdim * refdim * sizeof(double));
 	err = drefblock(detlist, moints1, moints2, m1len, m2len, ci_aelec,
-			ci_belec, refdim, initscr);
+			ci_belec, refdim, initscr, (frzce + nucrep));
 	if (err != 0) {
 	    fprintf(stderr,"*** ERROR in drefblock! ***\n");
 	    exit(1);
@@ -273,6 +273,13 @@ void main(int argc, char *argv[])
 	exit(1);
     }
 
+    /* call davidson diagonalization routine */
+    civec = (double *) malloc(ndets * nroots * sizeof(double));
+    cienergy = (double *) malloc(nroots * sizeof(double));
+    //davidson_diagonalization_routine(detlist, ndets, moints1, moints2, m1len, 
+    //				     m2len, maxiter, ci_aelec, ci_belec, krymin,
+    //                               krymax, nroots, restol, initv, civec, 
+    //                               cienergy); 
     
 	
 			

@@ -13,6 +13,7 @@
 #include "binary.h"
 #include "binarystr.h"
 #include "mathutil.h"
+#include "arrayutil.h"
 #include "action_util.h"
 
 /* drefblock: diagonalizes an explicitly constructed reference space 
@@ -33,38 +34,41 @@
  *  evecs = eigenvectors of diagonalized block */
 int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	      int m1len, int m2len, int aelec, int belec, int refdim, 
-	      double *evecs)
+	      double *evecs, double frzce)
 {
-    int i, j, k;
-    double *hmat;
-    double *evals;
-    int err;
+	int i, j, k, l;
+	double *hmat;
+	double *evals;
+	int err;
 
-    err = 0;
-    
-    hmat = (double *) malloc(refdim * refdim * sizeof(double));
-    evals = (double *) malloc(refdim * sizeof(double));
-			      
-    for (i = 0; i < refdim; i++) {
-	for (j = 0; j < refdim; j++) {
-
-	    k = (i * refdim) + j;
-	    printf("< %3d|H| %3d> = ", i, j);
-	    hmat[k] = hmatels(detlist[i], detlist[j], moints1, moints2,
-			      m1len, m2len, aelec, belec);
-	    printf("%15.8lf\n", hmat[k]);
+	err = 0;
+	
+	hmat = (double *) malloc(refdim * refdim * sizeof(double));
+	evals = (double *) malloc(refdim * sizeof(double));
+	init_dbl_array_0(hmat, (refdim * refdim));
+	init_dbl_array_0(evals,(refdim));
+	for (i = 0; i < 1; i++) {
+		for (j = i; j < refdim; j++) {
+			
+			k = (i * refdim) + j;
+			l = (j * refdim) + i;
+			hmat[k] = hmatels(detlist[i], detlist[j], moints1, moints2,
+					  aelec, belec);
+			printf("%15.8f\n", hmat[k]);
+			hmat[l] = hmat[k];
+		}
 	}
-    }
-
-    /* diagonalize reference block */
-    err = diagmat_dsyevr(hmat, refdim, evecs, evals);
+	exit(1);
+	/* diagonalize reference block */
+	err = diagmat_dsyevr(hmat, refdim, evecs, evals);
         
-    fprintf(stdout,
-	    "Lowest eigenvalue in reference space: %15.8lf\n", evals[0]);
-
-    free(hmat);
-    free(evals);
-
-    return err;
-    
+	fprintf(stdout,
+		"Lowest eigenvalue in reference space: %15.8lf\n", 
+		(evals[0] + frzce));
+	
+	free(hmat);
+	free(evals);
+	
+	return err;
+	
 }

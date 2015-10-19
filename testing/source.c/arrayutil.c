@@ -4,6 +4,7 @@
  * -----------
  * Subfunctions for performing operations on arrays.
  *
+ * init_dbl_array_0: initialize double  array to zero
  * init_int_array_0: initialize integer array to zero
  * ndiffs_array: find number of differences between two arrays
  *
@@ -13,6 +14,18 @@
 
 #include <stdio.h>
 #include "arrayutil.h"
+
+/* 
+ * init_dbl_array_0: initialize double  array to 0
+ */
+void init_dbl_array_0(double *array, int len)
+{
+	int i;
+	for (i = 0; i < len; i++) {
+		array[i] = 0.0;
+	}
+	return;
+}
 
 /* 
  * init_int_array_0: initialize integer array to 0
@@ -46,7 +59,12 @@ int ndiffs_array(int *ar1, int *ar2, int ard1, int ard2)
 	for (i = 0; i < ard1; i++) {
 		test = 0;
 		for (j = 0; j < ard2; j++) {
-			if (ar1[i] != ar2[j]) test++;
+			if (ar1[i] != ar2[j]) {
+				test++;
+			} else {
+				test = 0;
+				break;
+			}
 		}
 		if (test != 0) ndiffs++;
 	}

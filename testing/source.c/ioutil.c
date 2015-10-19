@@ -275,7 +275,7 @@ void readmointegrals(double *moints1, double *moints2, int itype,
 {
      long long int itype8, orbitals8, m1len8, m2len8;
      double energy[2];
-     
+
      itype8 = (long long int) itype;
      orbitals8 = (long long int) orbitals;
      m1len8 = (long long int) m1len;
@@ -286,11 +286,9 @@ void readmointegrals(double *moints1, double *moints2, int itype,
      fprintf(stdout, " Type of integrals: %d\n", itype8);
      fprintf(stdout, " 1-e integrals: %d\n", m1len8);
      fprintf(stdout, " 2-e integrals: %d\n", m2len8);
-     
      /* call fortran subroutine */
      readmoints_(moints1, moints2, &itype8, &orbitals8, &m1len8,
 		&m2len8, energy);
-
      *nuc_rep =  energy[0];
      *fcenergy = energy[1];
      return;

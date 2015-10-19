@@ -110,18 +110,20 @@ int comparedets_ncas(struct det deti, struct det detj,
 		     long long int *axi, long long int *axf, 
 		     long long int *bxi, long long int *bxf)
 {
-	int numx;
-	
+	int numx = 0;
 	/* .. local scalars ..
 	 * samei = electrons in CAS of string of determinant i
 	 * samej = electrons in CAS of string of determinant j
 	 * diffs = output of ndiffbytes calls
 	 * sames = output of nsamebytes calls */
-	int samei, samej;
-	long long int diffs, sames;
+	int samei = 0, samej = 0;
+	long long int diffs = 0, sames = 0;
 	
-	numx = 0;
-	
+	*axi = 0;
+	*bxi = 0;
+	*axf = 0;
+	*bxf = 0;
+
 	*numaxv = compute_virt_diffs(deti.astr, detj.astr);
 	*numbxv = compute_virt_diffs(deti.bstr, detj.bstr);
 	numx = numx + *numaxv + *numbxv;
@@ -141,6 +143,9 @@ int comparedets_ncas(struct det deti, struct det detj,
 	*numaxc = ndiffbytes(deti.astr.byte1, detj.astr.byte1, &diffs);
 	samei = nsamebytes(deti.astr.byte1, diffs, *(&axi));
 	samej = nsamebytes(detj.astr.byte1, diffs, *(&axf));
+	if (*axi == 0 || *axf == 0) {
+		*numaxc = 0;
+	}
 	*numaxcv = abs(samei - samej);
 	*numaxc = *numaxc / 2;
 	*numaxv = *numaxv - *numaxcv;
@@ -148,12 +153,14 @@ int comparedets_ncas(struct det deti, struct det detj,
 	*numbxc = ndiffbytes(deti.bstr.byte1, detj.bstr.byte1, &diffs);
 	samei = nsamebytes(deti.bstr.byte1, diffs, *(&bxi));
 	samej = nsamebytes(detj.bstr.byte1, diffs, *(&bxf));
+	if (*bxi == 0 || *bxf == 0) {
+		*numbxc = 0;
+	}
 	*numbxcv = abs(samei - samej);
 	*numbxc = *numbxc / 2;
 	*numbxv = *numbxv - *numbxcv;
 	
 	numx = *numaxc + *numaxcv + *numaxv + *numbxc + *numbxcv + *numbxv;
-
 	return numx;
 }
 
@@ -169,11 +176,14 @@ int comparedets_ncas(struct det deti, struct det detj,
 int compute_virt_diffs(struct occstr ostri, struct occstr ostrj)
 {
 	int numxv;
-	
-	/* .. local scalars ..
-	 */
 	int i;
 
+	if (ostri.nvrtx >= ostrj.nvrtx ) {
+		i = ostri.nvrtx;
+	} else {
+		i = ostrj.nvrtx;
+	}
+	
 	if (ostri.nvrtx + ostrj.nvrtx == 0) {
 		numxv = 0;
 		return numxv;
@@ -186,7 +196,7 @@ int compute_virt_diffs(struct occstr ostri, struct occstr ostrj)
 	} else {
 		/* both strings have virtual orbitals */
 		numxv = ndiffs_array(
-			ostri.virtx, ostrj.virtx, ostri.nvrtx, ostrj.nvrtx);
+			ostri.virtx, ostrj.virtx, i, i);
 		return numxv;
 	}
 }

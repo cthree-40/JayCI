@@ -2,8 +2,8 @@
 electrons=10
 orbitals=24
 nfrozen=1
-ndocc=0
-nactive=5
+ndocc=4
+nactive=0
 xlevel=2
 printlvl=0
 nfrzvirt=0
@@ -15,5 +15,5 @@ krymin = 3
 restol = 1d-5
 nroots = 1
 prediagr = 1
-refdim = 10
+refdim = 7981
 /
