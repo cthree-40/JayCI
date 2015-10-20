@@ -45,7 +45,7 @@ int processcmdlineargs(int argc, char *argv[], long long int *mem);
  *  generate initial guess
  *  perform davidson algorithm
  *  write vectors to disk: civfl */
-void main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     /* .. local scalars ..
      * mem    = memory to be allocated
@@ -113,7 +113,7 @@ void main(int argc, char *argv[])
     struct det *detlist;
     double *moints1, *moints2;
     double *civec, *cienergy;
-    unsigned char moflname[FLNMSIZE];
+    char moflname[FLNMSIZE];
     double *initscr, *initv;
     double *ptr1, *ptr2;
     
@@ -386,7 +386,7 @@ int processcmdlineargs(int argc, char *argv[], long long int *memory)
 	error = -1;
 	return error;
     } else {
-	fprintf(stdout,"Allocated %d bytes\n", *memory);
+	fprintf(stdout,"Allocated %lld bytes\n", *memory);
 	error = 0;
 	return error;
     }

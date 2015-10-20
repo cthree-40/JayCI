@@ -72,7 +72,7 @@ int diagmat_dsyevr(double *mat, int dim, double *evecs, double *evals)
     free(iwork);
 
     if (info != 0) {
-	fprintf(stderr,"*** ERROR in DSYEVR_! info = %d ***\n", info);
+	fprintf(stderr,"*** ERROR in DSYEVR_! info = %lld ***\n", info);
 	err = -1;
     }
     return err;

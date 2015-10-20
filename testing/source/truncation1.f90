@@ -43,7 +43,7 @@ contains
     !  astr_len   = number of alpha strings after truncation
     !  bstr_len   = number of beta  strings after truncation
     !  dtrm_len   = number of determinants after truncation
-    use combinatorial
+    use combinatorial, only: binom
     use addressing, only: strfind2, k2indc, indexk
     implicit none
 

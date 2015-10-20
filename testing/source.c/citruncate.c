@@ -339,6 +339,7 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
 
      fclose(detfileptr);
      fclose(strfileptr);
+     return err;
 }
 /* str_enfactv: enforce ACTIVE orbital restrictions
  * -------------------------------------------------------------------

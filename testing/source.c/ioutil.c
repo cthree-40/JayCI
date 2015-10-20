@@ -270,7 +270,7 @@ int readinputjayci(int *ci_aelec, int *ci_belec, int *ci_orbs, int *nastr,
  *  nuc_rep  = nuclear repulsion energy
  *  fcenergy = frozen-core energy */
 void readmointegrals(double *moints1, double *moints2, int itype,
-		     int orbitals, unsigned char *moflname, int m1len,
+		     int orbitals, char *restrict moflname, int m1len,
 		     int m2len, double *nuc_rep, double *fcenergy)
 {
      long long int itype8, orbitals8, m1len8, m2len8;
@@ -283,9 +283,9 @@ void readmointegrals(double *moints1, double *moints2, int itype,
      
      fprintf(stdout, "Calling readmoints_\n");
      fprintf(stdout, " Molecular integral file: %s\n", moflname);
-     fprintf(stdout, " Type of integrals: %d\n", itype8);
-     fprintf(stdout, " 1-e integrals: %d\n", m1len8);
-     fprintf(stdout, " 2-e integrals: %d\n", m2len8);
+     fprintf(stdout, " Type of integrals: %lld\n", itype8);
+     fprintf(stdout, " 1-e integrals: %lld\n", m1len8);
+     fprintf(stdout, " 2-e integrals: %lld\n", m2len8);
      /* call fortran subroutine */
      readmoints_(moints1, moints2, &itype8, &orbitals8, &m1len8,
 		&m2len8, energy);

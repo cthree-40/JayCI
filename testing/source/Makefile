@@ -58,7 +58,7 @@ ifneq ($(findstring gfortran,$(COMPLR)),)
 else
 #Intel compilers
 	CPOPS	:= -auto -c -assume byterecl -O3
-	DEBUG	:= -debug -check all -check bounds -check uninit -gen-interfaces -warn interfaces -g -traceback
+#	DEBUG	:= -debug -check all -check bounds -check uninit -gen-interfaces -warn interfaces -g -traceback
 	LKOPT	:= -auto -lpthread
 	VTUNE	:= -g -O3
 endif
@@ -127,25 +127,25 @@ test:	$(OBJSTEST) | $(BIN)
 	@echo " ------------------------------------------------------------------------"
 
 colib:	$(COLIBO) $(UNIXO)
+	chmod +x colib.a
 	$(AR) colib.a $(COLIBO) $(UNIXO)
 	$(RANL) colib.a
 
 %.o:$(SOURCE)/$(UNIXDIR)/%.c
 	@echo " Building $< "
-	$(CC) $(CDEF) -o $@ $<
+	$(CC) -c $(CDEF) -o $@ $<
 
 %.o:$(SOURCE)/$(COLIBDIR)/%.f
 	@echo " Building $< "
-	$(PREFIX) "$(COLIBFC) -o $@ $< $(CPOPS) $(VTUNE) $(DEBUG)"
-	chmod +x colib.a
+	$(PREFIX) "$(COLIBFC) -o $@ $< $(CPOPS) $(VTUNE) "
 
 %.o:$(SOURCE)/%.f
 	@echo " Building $< "
-	$(PREFIX) "$(COMPLR) -o $@ $< $(CPOPS) $(VTUNE)"
+	$(PREFIX) "$(COMPLR) -c -o $@ $< $(CPOPS) $(VTUNE)"
 
 %.o:$(SOURCE)/%.f90
 	@echo " Building $< "
-	$(PREFIX) "$(COMPLR) -cpp -o $@ $< $(CPOPS) $(DEBUG) $(PREPROC) $(VTUNE)"
+	$(PREFIX) "$(COMPLR) -c -cpp -o $@ $< $(CPOPS) $(DEBUG) $(PREPROC) $(VTUNE)"
 
 clean1:
 	$(RM) $(DRIV1) ./*__genmod.f90./*.o ./*.mod 

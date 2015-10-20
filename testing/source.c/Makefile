@@ -4,13 +4,20 @@
 #
 ######################################################################
 
+UNIXDIR := ./UNIX
+COLIBDIR:= ./colib
+
 # Compilers ----------------------------------------------------------
 ifeq ($(NERSC_HOST),edison)
 	CC := cc 
 	FC := ftn
+	AR := ar rv
+	RANL := ranlib
 else
 	CC := gcc 
-	FC := gfortran 
+	FC := gfortran
+	AR := ar rv
+	RANL:= ranlib 
 endif
 
 # Options ------------------------------------------------------------
@@ -19,20 +26,29 @@ CCDEF  := -DFLUSH -DINT64 -DEXTNAME
 CPOPS  := 
 
 # FLAGS --------------------------------------------------------------
-FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
-CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
-	  -fomit-frame-pointer -fstrict-aliasing
-
+ifneq ($(findstring cc,$(CC)),)
+	FFLAGS := -i8 -auto -assume byterecl -O3
+	CFLAGS := -Wall -std=c11 -march=native -funroll-all-loops \
+		  -fomit-frame-pointer -fstrict-aliasing -O3
+else
+	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
+	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
+	          -fomit-frame-pointer -fstrict-aliasing -O3
+endif
 # Debugging ----------------------------------------------------------
-DEBUG  := -g -DDEBUGGING
-FDEBUG := -fbacktrace
-CDEBUG := 
+ifneq ($(findstring cc, $(CC)),)
+	DEBUG  := -g -DDEBUGGING
+	FDEBUG := -traceback
+else
+	DEBUG  := -g -DDEBUGGING
+	FDEBUG := -fbacktrace
+endif
 
 # Libraries ----------------------------------------------------------
 ifeq ($(NERSC_HOST),edison)
-	MATHLIBS := $(BLAS_LIB)
+	MATHLIBS := 
 else
-	MATHLIBS := -L/usr/lib64 -llapack -lblas -lm
+	MATHLIBS := -L/usr/lib64 -llapack -lblas -lm -lgfortran
 endif
 COLIBLIB := ./colib.a
 
@@ -46,16 +62,29 @@ OBJS  := arrayutil.o bitutil.o binary.o combinatorial.o \
 	 straddress.o moindex.o readmoints.o readnamelist.o ioutil.o \
 	 abecalc.o citruncate.o binarystr.o dlamch_fcn.o mathutil.o \
 	 action_util.o prediagfcns.o
+
+COLIBO := blaswrapper.o colib1.o colib2.o colib3.o colib4.o colib5.o \
+	  colib6.o colib7.o colib8.o colib9.o colib10.o
+COLIBF := blaswrapper.f colib1.f colib2.f colib3.f colib4.f colib5.f \
+          colib6.f colib7.f colib8.f colib9.f colib10.f
+UNIXO := fdate.o falloc.o fwtime.o hostnm.o flushstdout.o fsize.o
+UNIXC := fdate.c falloc.c fwtime.c hostnm.c flushstdout.c fsize.c
 TESTO := $(OBJS) test.o
 JEXPO := $(OBJS) jayci_exp.o
 JYCIO := $(OBJS) jayci.o
 
+
 # Build --------------------------------------------------------------
+colib: $(COLIBO) $(UNIXO)
+	chmod +x colib.a
+	$(AR) colib.a $(COLIBO) $(UNIXO)
+	$(RANL) colib.a 
+
 test: $(TESTO)
-	$(CC) -o $(TESTX) $(TESTO) $(MATHLIBS) $(COLIBLIB) -lgfortran
+	$(CC) -o $(TESTX) $(TESTO) $(MATHLIBS) $(COLIBLIB) 
 
 jayci_exp: $(JEXPO)
-	$(CC) -o $(JEXPX) $(JEXPO) $(MATHLIBS) $(COLIBLIB) -lgfortran
+	$(CC) -o $(JEXPX) $(JEXPO) $(MATHLIBS) $(COLIBLIB) 
 
 jayci: $(JYCIO)
 	@echo "-----------------------------------------------------------"
@@ -65,15 +94,23 @@ jayci: $(JYCIO)
 	@echo " COLIBLIB = $(COLIBLIB)"
 	@echo " DEBUG    = $(DEBUG)"
 	@echo ""
-	$(CC) -o $(JYCIX) $(JYCIO) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS) -lgfortran
+	$(CC) -o $(JYCIX) $(JYCIO) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS) 
 	@echo " Build complete."
 	@echo ""
 
 # Clean --------------------------------------------------------------
 clean:
-	rm -rf $(OBJS) test.o jayci_exp.o jayci.o
+	rm -rf $(OBJS) test.o jayci_exp.o jayci.o $(COLIBO) $(UNIXO)
 
 # Rules --------------------------------------------------------------
+%.o: $(UNIXDIR)/%.c
+	@echo "->Building: $@"
+	$(CC) -c $(CCDEF) -o $@ $< $(CFLAGS) -Wno-implicit-function-declaration
+
+%.o: $(COLIBDIR)/%.f
+	@echo "->Building $@"
+	$(FC) -c -o $@ $< $(CPOPS) $(DEBUG) $(FFLAGS)
+
 %.o:%.c
 	@echo "->Building: $@ "
 	$(CC) -c $< $(DEBUG) $(CFLAGS)
