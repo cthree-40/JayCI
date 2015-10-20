@@ -26,7 +26,19 @@ contains
     real*8,  dimension(dim_vecs, num_vecs), intent(inout) :: vectors2
     real*8,  dimension(dim_vecs, num_vecs), intent(in)    :: vectors1
     integer :: i
+    real*8, dimension(dim_vecs) :: v1, v2
 
+    v1 = 0d0
+    v1(2) = 1d0
+    v2 = 0d0
+    CALL acthv (v1(1),moints1,moints2,moints1len,moints2len,&
+        pstring,pstep,plocate,qstring,qstep,qlocate,xreflist,dim_vecs,&
+        pdets,pdetslen,qdets,qdetslen,adets,bdets,aelec,belec,&
+        orbitals,diagonals,nfrozen,ndocc,nactive,v2(1))
+    do i = 1, dim_vecs
+        print "(f15.8)", v2(i)
+    end do
+    stop
   ! Loop over initial vectors
     do i=1, num_vecs
             print *, "    Vector ", i
