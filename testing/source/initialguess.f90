@@ -74,12 +74,14 @@ contains
             ! diagonal elements
             hblock(i,i) = ham_element(detlist(i), detlist(i), moints1, &
               m1len, moints2, m2len, aelec, belec, orbs)
-            do j = 1, refdim
+            do j = i, refdim
                     ! off-diagonal elements
                     hblock(j,i) = ham_element(detlist(j), detlist(i), moints1, &
                       m1len, moints2, m2len, aelec, belec, orbs)
                     hblock(i,j) = hblock(j,i)
-                    write(*,"('<',i3,'|H|',i3,'> = ', f15.8)") (i-1),(j-1), hblock(i,j)
+                    if (i == j) then
+                        write(*,"('<',i4,'|H|',i4,'> = ',f15.8)") (j-1), (i-1), hblock(j,i)
+                    end if
             end do
     end do
 
