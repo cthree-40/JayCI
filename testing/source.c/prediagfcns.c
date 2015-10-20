@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include "binary.h"
 #include "binarystr.h"
 #include "mathutil.h"
@@ -41,7 +42,8 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	double *evals;
 	int err;
 #ifdef DEBUGGING
-	double *ivec, *ovec;
+	double *restrict ivec, *restrict ovec;
+	clock_t begin, end;
 #endif
 	err = 0;
 
@@ -53,11 +55,14 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	init_dbl_array_0(ovec, refdim);
 	ivec[1] = 1.0;
 	printf("Computing hv\n");
+	begin = clock();
 	compute_hv(detlist, refdim, moints1, moints2, aelec, belec,
 		   ivec, ovec);
 	for (i = 0; i < refdim; i++) {
 		printf("%15.8f\n", ovec[i]);
 	}
+	end = clock();
+	printf(" Time: %10.5f\n", ((double) (end - begin) / CLOCKS_PER_SEC));
 	exit(1);
 #endif
 

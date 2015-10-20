@@ -222,7 +222,7 @@ void main(int argc, char *argv[])
     }
     curr_time = clock();
     fprintf(stdout, "Total time reading list: %10.5f sec\n",
-	    (double)((curr_time - prev_time)/CLOCKS_PER_SEC));
+	    (double)(curr_time - prev_time)/CLOCKS_PER_SEC);
 
     /* if parallel, we compute integrals on the fly
      * 09-23-2015: this has not been implemented yet - CLM */

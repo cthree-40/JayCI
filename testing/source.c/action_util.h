@@ -6,6 +6,19 @@
 #ifndef action_util_h
 #define action_util_h
 
+/* 
+ * cas_to_virt_replacements: compute excitations for cas<->virt replacements
+ */
+void cas_to_virt_replacements(
+	int nreps,           /* number of cas->virt replacements */
+	int ncr,             /* number of cas->cas replacements */
+	int nvr,             /* number of virt->virt replacements */
+	long long int xi,    /* cas byte of initial orbitals */
+	long long int xf,    /* cas byte of final orbitals */
+	int *restrict vxi,   /* inital virtual orbitals of excitation */
+	int *restrict vxj,   /* final virtual orbitals of excitation */
+	int *restrict reps); /* replacement arrays */
+
 /*
  * eval0_cas: evaluate diagonal matrix elements between cas-flagged
  * determinants
@@ -279,8 +292,8 @@ void compute_hv(
 	double *moints2,   /* 2-e integrals */
 	int aelec,         /* alpha electrons */
 	int belec,         /* beta  electrons */
-	double *v,         /* input vector */
-	double *c);        /* output vector */
+	double *restrict v,         /* input vector */
+	double *restrict c);        /* output vector */
 
 double hmatels(
 	struct det deti,

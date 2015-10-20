@@ -28,9 +28,9 @@
  * cas_to_virt_replacements: compute excitations for cas<->virt replacements
  */
 void cas_to_virt_replacements(int nreps, int ncr, int nvr, long long int xi, 
-			      long long int xf, int *vxi, int *vxj, int *reps)
+			      long long int xf, int *restrict vxi, int *restrict vxj, 
+			      int *restrict reps)
 {
-	init_int_array_0(reps, 4);
 	if (nreps == 2) {
 		if (xi == 0) {
 			reps[0] = vxi[0];
@@ -81,13 +81,13 @@ void cas_to_virt_replacements(int nreps, int ncr, int nvr, long long int xi,
 /*
  * compute_hv: perform Hv=c
  */
-void compute_hv(struct det *dlist, int ndets, double  *moints1, double *moints2,
-		int aelec, int belec, double *v, double *c)
+void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
+		int aelec, int belec, double *restrict v, double *restrict c)
 {
 	int i, j;
 	double valij;
-	init_dbl_array_0(c, ndets);
-	printf("c initialized...\n");
+//	init_dbl_array_0(c, ndets);
+//	printf("c initialized...\n");
 	for (i = 0; i < ndets; i++) {
 		c[i] = c[i] + hmatels(dlist[i],dlist[i], moints1, moints2, aelec,
 				belec) * v[i];
@@ -703,8 +703,8 @@ double eval1_ncas_c0cv1v0(long long int xi, long long int xf,
 			  struct occstr str2i, int ne1, int ne2,
 			  double *moints1, double *moints2)
 {
-	double val;
-	int ifo[4];    /* initial, final orbitals */
+	double val = 0.0;
+	int ifo[4] = {0};    /* initial, final orbitals */
 	int i1, pindx; /* integral, permuational index */
 	int eostr1[ne1], eostr2[ne2]; /* electron occupation string */
 	
@@ -816,7 +816,7 @@ double eval2_ncas_c0cv2v0(long long int xi, long long int xf, int *vxi,
 {
 	double val;
 	int i1,i2;         /* integral indexes */
-	int ifo[4];       /* initial, final orbitals */
+	int ifo[4] = {0};       /* initial, final orbitals */
 	
 #ifndef BIGCAS
 	cas_to_virt_replacements(2, 0, 0, xi, xf, vxi, vxf, ifo);  
@@ -882,9 +882,9 @@ double eval2_ncas_c00cv10v01(long long int xi, long long int xf,
 			     int *vx1i, int *vx1j,
 			     int *vx2i, int *vx2j, double *moints2)
 {
-	double val;
+	double val = 0.0;
 	int i1, pindx; /* integral index, permuational index */
-	int ifo1[4], ifo2[2];    /* initial, final orbitals */
+	int ifo1[4] = { 0 }, ifo2[2];    /* initial, final orbitals */
 	
 	cas_to_virt_replacements(1,0,0, xi, xf, vx1i, vx1j, ifo1);
 	virtdiffs_single_rep(vx2i, vx2j, ifo2);
@@ -905,7 +905,7 @@ double eval2_ncas_c00cv10v10(long long int xi, long long int xf,
 {
 	double val;
 	int i1,i2, pindx; /* integral indexes, permuational index */
-	int ifo[4];    /* initial, final orbital array       */
+	int ifo[4] = {0};    /* initial, final orbital array       */
 	
 	cas_to_virt_replacements(1, 0, 1, xi, xf, stri.virtx, strj.virtx, ifo);
 	pindx = pow(-1, (abs(ifo[2] - ifo[0]) + abs(ifo[3] - ifo[1])));
@@ -926,7 +926,7 @@ double eval2_ncas_c00cv11v00(long long int xi1, long long int xf1,
 {
 	double val;
 	int i1, pindx; /* integral index, permuational index */
-	int ifo1[4], ifo2[4];   /* initial, final orbital array */
+	int ifo1[4] = {0}, ifo2[4]={0};   /* initial, final orbital array */
 	cas_to_virt_replacements(1,0,0, xi1, xf1, vxi1, vxj1, ifo1);
 	cas_to_virt_replacements(1,0,0, xi2, xf2, vxi2, vxj2, ifo2);
 	pindx = pow(-1, (abs(ifo1[2] - ifo1[0]) + abs(ifo2[2] - ifo1[0])));
@@ -947,7 +947,7 @@ double eval2_ncas_c01cv10v00(struct occstr str1, struct occstr str2,
 {
 	double val;
 	int i1, pindx; /* integral index, permuational index */
-	int ifo1[4], ifo2[2]; /* initial, final orbitals */
+	int ifo1[4] = {0}, ifo2[2]; /* initial, final orbitals */
 	int estr1[ne1], estr2[ne2]; /* (alpha/beta) electron occupation strings */
 
 	cas_to_virt_replacements(1,0,0, xi1, xf1, vx1i, vx1j, ifo1);
@@ -971,7 +971,7 @@ double eval2_ncas_c10cv10v00(struct occstr str, long long int xi,
 {
 	double val;
 	int i1, i2, pindx; /* integral index, permuational index */
-	int ifo[4];    /* initial, final orbital array */
+	int ifo[4] = {0};    /* initial, final orbital array */
 	int estr[ne];  /* electron orbital index string */
 
 	cas_to_virt_replacements(1, 1, 0, xi, xf, vxi, vxj, ifo);

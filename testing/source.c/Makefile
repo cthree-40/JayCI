@@ -6,7 +6,7 @@
 
 # Compilers ----------------------------------------------------------
 ifeq ($(NERSC_HOST),edison)
-	CC := cc
+	CC := cc 
 	FC := ftn
 else
 	CC := gcc 
@@ -20,13 +20,13 @@ CPOPS  :=
 
 # FLAGS --------------------------------------------------------------
 FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
-CFLAGS := -march=native -funroll-loops -ffast-math -fomit-frame-pointer \
-	  -fstrict-aliasing
+CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
+	  -fomit-frame-pointer -fstrict-aliasing
 
 # Debugging ----------------------------------------------------------
 DEBUG  := -g -DDEBUGGING
 FDEBUG := -fbacktrace
-CDEBUG :=
+CDEBUG := 
 
 # Libraries ----------------------------------------------------------
 ifeq ($(NERSC_HOST),edison)
