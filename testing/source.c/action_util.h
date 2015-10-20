@@ -17,8 +17,8 @@ void cas_to_virt_replacements(
 	long long int xf,    /* cas byte of final orbitals */
 	int *restrict vxi,   /* inital virtual orbitals of excitation */
 	int *restrict vxj,   /* final virtual orbitals of excitation */
-	int *restrict reps); /* replacement arrays */
-
+	int *restrict reps,  /* replacement arrays */
+	int ninto);          /* internal orbitals */
 /*
  * eval0_cas: evaluate diagonal matrix elements between cas-flagged
  * determinants
@@ -28,7 +28,8 @@ double eval0_cas(
 	int          aelec,  /* alpha electrons */
 	int          belec,  /* beta  electrons */
 	double    *moints1,  /* 1-e integrals   */
-	double    *moints2); /* 2-e integrals   */
+	double    *moints2,  /* 2-e integrals   */
+	int ninto);          /* internal orbitals */
 
 /* 
  * eval0_ncas: evaluate diagonal matrix elements between non-cas-flagged
@@ -39,8 +40,8 @@ double eval0_ncas(
 	int          aelec,  /* alpha electrons */
 	int          belec,  /* beta  electrons */
 	double    *moints1,  /* 1-e integrals   */
-	double    *moints2); /* 2-e integrals   */
-
+	double    *moints2,  /* 2-e integrals   */
+	int         ninto);  /* internal orbitals */
 /*
  * eval1_10_cas: evaluate the matrix element of a single replacement between
  * two cas-flagged determinants.
@@ -53,7 +54,8 @@ double eval1_10_cas(
 	int             ne1, /* (alpha/beta) electrons */
 	int             ne2, /* (beta/alpha) electrons */
 	double     *moints1, /* 1-e integrals */
-	double     *moints2);/* 2-e integrals */
+	double     *moints2, /* 2-e integrals */
+	int ninto);          /* internal orbitals */
 
 /*
  * eval1_ncas_c0cv0v1: evaluate the matrix element of a single virtual 
@@ -66,7 +68,8 @@ double eval1_ncas_c0cv0v1(
 	struct occstr ostr2i, /* (beta/alpha) occupation string of det i */
 	int ne2,              /* (beta/alpha) electrons */
 	double *moints1,      /* 1-e integrals */
-	double *moints2);     /* 2-e integrals */
+	double *moints2,      /* 2-e integrals */
+	int ninto);           /* internal orbitals */
 
 /* 
  * eval1_ncas_c0cv1v0: evaluate the matrix element of a single cas->virtual
@@ -81,8 +84,8 @@ double eval1_ncas_c0cv1v0(
 	int ne1,             /* (alpha/beta) electrons */
 	int ne2,             /* (beta/alpha) electrons */
 	double *moints1,     /* 1-e integrals          */
-	double *moints2);    /* 2-e integrals          */
-
+	double *moints2,     /* 2-e integrals          */
+	int ninto);          /* internal orbitals */
 /*
  * eval1_ncas_c1cv0v0: evaluate the matrix element of a single cas->cas 
  * replacement between two non-cas-flagged determinants.
@@ -95,7 +98,8 @@ double eval1_ncas_c1cv0v0(
 	int                   nelec1,  /* (alpha/beta) electrons */
 	int                   nelec2,  /* (beta/alpha) electrons */
 	double              *moints1,  /* 1-e integrals */
-	double              *moints2); /* 2-e integrals */
+	double              *moints2,  /* 2-e integrals */
+	int                    ninto); /* internal orbitals */
 
 /*
  * eval2_ncas_c00cv00v11: evaluate single virtual replacements in both
@@ -122,15 +126,16 @@ double eval2_ncas_c00cv10v01(
 	int *vx1j,           /* (alpha/beta) virtual orbitals of det j */
 	int *vx2i,           /* (beta/alpha) virtual orbitals of det i */
 	int *vx2j,           /* (beta/alpha) virtual orbitals of det j */
-	double *moints2);    /* 2-e integrals */
-
+	double *moints2,     /* 2-e integrals */
+	int ninto);
 
 double eval2_ncas_c00cv10v10(
 	long long int xi, 
 	long long int xf,
 	struct occstr stri, 
 	struct occstr strj,
-	double *moints2);
+	double *moints2,
+	int ninto);
 
 /* 
  * eval2_ncas_c00cv11v00: evaluate double replacements for non-cas-flagged
@@ -145,7 +150,8 @@ double eval2_ncas_c00cv11v00(
 	long long int xf2, /* (beta/alpha) final orbitals of excitation */
 	int *vxi2,         /* (beta/alpha) virtual orbitals of det i */
 	int *vxj2,         /* (beta/alpha) virtual orbitals of det j */
-	double *moints2);  /* 2-e integrals */
+	double *moints2,   /* 2-e integrals */
+	int ninto);
 
 /* 
  * eval2_ncas_c01cv10v00: evaluate double replcaements for non-cas-flagged
@@ -163,7 +169,8 @@ double eval2_ncas_c01cv10v00(
 	long long int xf2,  /* (beta/alpha) final orbitals of excitation */
 	int ne1,            /* (alpha/beta) electrons */
 	int ne2,            /* (beta/alpha) electrons */
-	double *moints2);   /* 2-e integrals */
+	double *moints2,    /* 2-e integrals */
+	int ninto);
 
 /*
  * eval2_ncas_c10cv10v00: evaluate double replacements for non-cas-flagged
@@ -177,7 +184,8 @@ double eval2_ncas_c10cv10v00(
 	int *vxi,          /* (alpha/beta) virtual orbitals of det i */
 	int *vxj,          /* (alpha/beta) virtual orbitals of det j */
 	int ne,            /* (alpha/beta) electrons */
-	double *moints2);  /* 2-e integrals */
+	double *moints2,   /* 2-e integrals */
+	int ninto);        /* internal orbitals */
 
 double eval2_ncas_c0cv0v2(
 	int *vxi, 
@@ -189,7 +197,8 @@ double eval2_ncas_c0cv2v0(
 	long long int xf, 
 	int *vxi, 
 	int *vxf, 
-	double *moints2);
+	double *moints2,
+	int ninto);
 
 /*
  * eval2_ncas_c1cv0v1: evaluate cas + virtual replacements for non-cas-flagged
@@ -203,17 +212,28 @@ double eval2_ncas_c1cv0v1(
 	int *vxj,          /* final virtual orbitals */
 	int ne,            /* number of electrons in CAS excitation string */
 	int nvx,           /* number of virtual orbitals in vxi */
-	double *moints2);  /* 2-e integrals */
+	double *moints2,   /* 2-e integrals */
+	int ninto);        /* internal orbitals */
 
-double eval2_11_cas(long long int axi, 
-		    long long int axf, 
-		    long long int bxi,
-		    long long int bxf, 
-		    double   *moints2);
+/*
+ * eval2_11_cas: evaluate the matrix element of one replacement in two strings
+ */
+double eval2_11_cas(
+	long long int axi, /* alpha initial orbitals */
+	long long int axf, /* alpha final orbitals */
+	long long int bxi, /* beta initial orbitals */
+	long long int bxf, /* beta final orbitals */
+	double   *moints2, /* 2-e integrals */
+	int ninto);        /* internal orbitals */
 
-double eval2_20_cas(long long int xi, 
-		    long long int xf, 
-		    double  *moints2);
+/* 
+ * eval2_20_cas: evaluate the matrix element of two replacements in one string
+ */
+double eval2_20_cas(
+	long long int xi, /* initial orbitals */ 
+	long long int xf, /* final orbitals */
+	double  *moints2, /* 2-e integrals */
+	int ninto);       /* internal orbitals */
 
 double evaluate_dets_cas(int         ndiff,
 			 struct det   deti,
@@ -227,7 +247,8 @@ double evaluate_dets_cas(int         ndiff,
 			 int         aelec,
 			 int         belec, 
 			 double   *moints1,
-			 double   *moints2);
+			 double   *moints2,
+			 int ninto);         /* internal orbitals */
 
 double evaluate_dets_ncas(
 	int          ndiff,
@@ -246,41 +267,8 @@ double evaluate_dets_ncas(
 	int           aelec,
 	int           belec, 
 	double     *moints1,
-	double     *moints2);
-
-double evaluate_dets_virt(
-	int detdiff, 
-	struct det deti,
-	struct det detj,
-	int numaxc, 
-	int numbxc,
-	int numaxv,
-	int numbxv,
-	long long int axi,
-	long long int axf, 
-	long long int bxi,
-	long long int bxf,
-	double *moints1,
-	double *moints2,
-	int alec,
-	int belec);
-
-double evaluate_dets_virtcas(
-	int ddiff, 
-	struct det deti, 
-	struct det detj,
-	int naxc, 
-	int nbxc, 
-	int naxv, 
-	int nbxv,
-	long long int axi, 
-	long long int axf,
-	long long int bxi, 
-	long long int bxf,
-	double *moints1, 
-	double *moints2, 
-	int aelec, 
-	int belec);
+	double     *moints2,
+	int           ninto); /* internal orbitals */
 
 /*
  * compute_hv: perform Hv=c
@@ -293,7 +281,8 @@ void compute_hv(
 	int aelec,         /* alpha electrons */
 	int belec,         /* beta  electrons */
 	double *restrict v,         /* input vector */
-	double *restrict c);        /* output vector */
+	double *restrict c,        /* output vector */
+	int ninto);         /* internal orbitals */
 
 double hmatels(
 	struct det deti,
@@ -301,12 +290,14 @@ double hmatels(
 	double *moints1,
 	double *moints2,
 	int aelec,
-	int belec);
+	int belec,
+	int ninto);      /* internal orbitals */
 
 void make_orbital_strings_virt(
 	struct occstr ostr1,
 	int *eostr1,
-	int nelec1);
+	int nelec1,
+	int ninto);             /* internal orbitals */
 
 /* 
  * pindes_single_rep: compute permutational index of single replacement

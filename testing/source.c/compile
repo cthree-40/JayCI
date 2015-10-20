@@ -1,0 +1,41 @@
+malbon@edison10:~/workspace/JayCI/testing/source.c> grep nsamebytes ./*.c
+./binarystr.c:	 * same  = output value of nsamebytes() calls
+./binarystr.c:	 * sames = output of nsamebytes calls */
+./binarystr.c:	same = nsamebytes(deti.astr.byte1, diffs, axi);
+./binarystr.c:	same = nsamebytes(detj.astr.byte1, diffs, axf);
+./binarystr.c:	same = nsamebytes(deti.bstr.byte1, diffs, bxi);
+./binarystr.c:	same = nsamebytes(detj.bstr.byte1, diffs, bxf);
+./binarystr.c:	 * sames = output of nsamebytes calls */
+./binarystr.c:	samei = nsamebytes(deti.astr.byte1, diffs, *(&axi));
+./binarystr.c:	samej = nsamebytes(detj.astr.byte1, diffs, *(&axf));
+./binarystr.c:	samei = nsamebytes(deti.bstr.byte1, diffs, *(&bxi));
+./binarystr.c:	samej = nsamebytes(detj.bstr.byte1, diffs, *(&bxf));
+./bitutil.c: * nsamebytes: compute number of similarities between two bytes
+./bitutil.c: * nsamebytes: compute number of similarities between two bytes
+./bitutil.c:int nsamebytes(long long int byte1, long long int byte2, long long int *sames)
+malbon@edison10:~/workspace/JayCI/testing/source.c> grep comparedets ./*.c
+./action_util.c:		detdiff = comparedets_ncas(
+./action_util.c:		detdiff = comparedets_cas(
+./binarystr.c: * comparedets_cas: compare two cas-flagged determinants 
+./binarystr.c: * comparedets_ncas: compare two non-cas-flagged determinants 
+./binarystr.c: * comparedets_cas: compare CAS bytes of two determinants, 
+./binarystr.c:int comparedets_cas(struct det deti, struct det detj,
+./binarystr.c: * comparedets_ncas: compare determinants that are not cas-flaged
+./binarystr.c:int comparedets_ncas(struct det deti, struct det detj, 
+malbon@edison10:~/workspace/JayCI/testing/source.c> grep hmatels ./*.c
+./action_util.c: *  hmatels: compute matrix element <i|H|j>
+./action_util.c:		c[i] = c[i] + hmatels(dlist[i],dlist[i], moints1, moints2, aelec,
+./action_util.c:			valij = hmatels(dlist[i], dlist[j], moints1, moints2,
+./action_util.c: * hmatels: compute matrix element <i|H|j>
+./action_util.c:double hmatels(struct det deti, struct det detj, double *moints1,
+./prediagfcns.c:			hmat[k] = hmatels(detlist[i], detlist[j], moints1, moints2,
+malbon@edison10:~/workspace/JayCI/testing/source.c> grep nactv ./action.c
+grep: ./action.c: No such file or directory
+malbon@edison10:~/workspace/JayCI/testing/source.c> grep nactv ./actiona_util.c
+grep: ./actiona_util.c: No such file or directory
+malbon@edison10:~/workspace/JayCI/testing/source.c> grep nactv ./action_util.c
+	       double *moints2, int aelec, int belec, int nactv)
+			&numaxcv, &numbxcv, &axi, &axf, &bxi, &bxf, nactv);
+			nactv);
+malbon@edison10:~/workspace/JayCI/testing/source.c> rm compile 
+malbon@edison10:~/workspace/JayCI/testing/source.c> 

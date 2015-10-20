@@ -4,12 +4,20 @@
 
 int ndiffbytes(long long int byte1,
 	       long long int byte2,
+	       int bl,                /* bit length */
 	       long long int *diffs);
 
 int nsamebytes(long long int byte1,
 	       long long int byte2,
+	       int bl,                 /* bit length */
 	       long long int *sames);
 
-void nonzerobits(long long int byt,
-		 int *nzb);
+/*
+ * nonzerobits: find nonzero bits of 64 bit byte
+ */
+void nonzerobits(
+	long long int byt,  /* 64 bit byte */
+	int bl,             /* bit length */
+	int *nzb);          /* numer of nonzero bits */
+
 #endif

@@ -30,6 +30,7 @@ ifneq ($(findstring cc,$(CC)),)
 	FFLAGS := -i8 -auto -assume byterecl -O3
 	CFLAGS := -Wall -std=c11 -march=native -funroll-all-loops \
 		  -fomit-frame-pointer -fstrict-aliasing -O3
+	VTUNE := -g -dynamic
 else
 	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
 	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
@@ -58,7 +59,7 @@ JEXPX := jayci_exp.x
 JYCIX := jayci.x
 
 # Objects ------------------------------------------------------------
-OBJS  := arrayutil.o bitutil.o binary.o combinatorial.o \
+OBJS  := iminmax.o arrayutil.o bitutil.o binary.o combinatorial.o \
 	 straddress.o moindex.o readmoints.o readnamelist.o ioutil.o \
 	 abecalc.o citruncate.o binarystr.o dlamch_fcn.o mathutil.o \
 	 action_util.o prediagfcns.o
@@ -94,7 +95,7 @@ jayci: $(JYCIO)
 	@echo " COLIBLIB = $(COLIBLIB)"
 	@echo " DEBUG    = $(DEBUG)"
 	@echo ""
-	$(CC) -o $(JYCIX) $(JYCIO) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS) 
+	$(CC) -o $(JYCIX) $(JYCIO) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS) $(VTUNE) 
 	@echo " Build complete."
 	@echo ""
 
@@ -113,7 +114,7 @@ clean:
 
 %.o:%.c
 	@echo "->Building: $@ "
-	$(CC) -c $< $(DEBUG) $(CFLAGS)
+	$(CC) -c $< $(DEBUG) $(CFLAGS) $(VTUNE)
 	@echo ""
 
 dlamch_fcn.o:dlamch_fcn.f90

@@ -12,6 +12,6 @@ int drefblock(
 	int belec,
 	int refdim,           /* dimension of reference space */
 	double *evecs,        /* output eigenvectors */
-	double frzce);        /* frozen core energy */ 
-
+	double frzce,         /* frozen core energy */ 
+	int ninto);           /* internal orbitals  */
 #endif

@@ -251,7 +251,8 @@ int main(int argc, char *argv[])
 	fprintf(stdout, "\nPerforming reference block diagonalization.\n");
 	initscr = (double *) malloc(refdim * refdim * sizeof(double));
 	err = drefblock(detlist, moints1, moints2, m1len, m2len, ci_aelec,
-			ci_belec, refdim, initscr, (frzce + nucrep));
+			ci_belec, refdim, initscr, (frzce + nucrep), 
+			(ndocc + nactv));
 	if (err != 0) {
 	    fprintf(stderr,"*** ERROR in drefblock! ***\n");
 	    exit(1);

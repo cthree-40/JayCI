@@ -35,7 +35,7 @@
  *  evecs = eigenvectors of diagonalized block */
 int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	      int m1len, int m2len, int aelec, int belec, int refdim, 
-	      double *evecs, double frzce)
+	      double *evecs, double frzce, int ninto)
 {
 	int i, j, k, l;
 	double *hmat;
@@ -57,7 +57,7 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	printf("Computing hv\n");
 	begin = clock();
 	compute_hv(detlist, refdim, moints1, moints2, aelec, belec,
-		   ivec, ovec);
+		   ivec, ovec, ninto);
 	for (i = 0; i < refdim; i++) {
 		printf("%15.8f\n", ovec[i]);
 	}
@@ -77,7 +77,7 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 			k = (i * refdim) + j;
 			l = (j * refdim) + i;
 			hmat[k] = hmatels(detlist[i], detlist[j], moints1, moints2,
-					  aelec, belec);
+					  aelec, belec, ninto);
 			hmat[l] = hmat[k];
 		}
 	}
