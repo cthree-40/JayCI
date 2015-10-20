@@ -49,4 +49,11 @@ struct occstr str2occstr(int *istr, /* orbital index string */
 			 int nactv); /* number of active orbitals */
 
 
+/*
+ * compute_virt_diffs: compute virtual orbital differences 
+ */
+int compute_virt_diffs(
+	struct occstr ostri, /* occupation string of determinant i */ 
+	struct occstr ostrj); /* occupation string of determinant j */
+
 #endif

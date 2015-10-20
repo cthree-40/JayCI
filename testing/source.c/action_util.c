@@ -16,10 +16,12 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
 #include "arrayutil.h"
 #include "bitutil.h"
 #include "binarystr.h"
+#include "moindex.h"
 #include "action_util.h"
 
 /* 
@@ -79,20 +81,21 @@ void cas_to_virt_replacements(int nreps, int ncr, int nvr, long long int xi,
 /*
  * compute_hv: perform Hv=c
  */
-void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
+void compute_hv(struct det *dlist, int ndets, double  *moints1, double *moints2,
 		int aelec, int belec, double *v, double *c)
 {
-	int i, j, k, l;
+	int i, j;
 	double valij;
 	init_dbl_array_0(c, ndets);
+	printf("c initialized...\n");
 	for (i = 0; i < ndets; i++) {
-		for (j = i; j < ndets; j++) {
-			k = (i * ndets) + j;
-			l = (j * ndets) + i;
+		c[i] = c[i] + hmatels(dlist[i],dlist[i], moints1, moints2, aelec,
+				belec) * v[i];
+		for (j = i+1; j < ndets; j++) {
 			valij = hmatels(dlist[i], dlist[j], moints1, moints2,
 					aelec, belec);
-			c[k] = c[k] + valij;
-			c[l] = c[l] + valij;
+			c[i] = c[i] + valij * v[j];
+			c[j] = c[j] + valij * v[i];
 		}
 	}
 	return;

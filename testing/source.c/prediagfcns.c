@@ -40,9 +40,27 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	double *hmat;
 	double *evals;
 	int err;
-
+#ifdef DEBUGGING
+	double *ivec, *ovec;
+#endif
 	err = 0;
-	
+
+
+#ifdef DEBUGGING
+	ivec = (double *) malloc(refdim * sizeof(double));
+	ovec = (double *) malloc(refdim * sizeof(double));
+	init_dbl_array_0(ivec, refdim);
+	init_dbl_array_0(ovec, refdim);
+	ivec[1] = 1.0;
+	printf("Computing hv\n");
+	compute_hv(detlist, refdim, moints1, moints2, aelec, belec,
+		   ivec, ovec);
+	for (i = 0; i < refdim; i++) {
+		printf("%15.8f\n", ovec[i]);
+	}
+	exit(1);
+#endif
+
 	hmat = (double *) malloc(refdim * refdim * sizeof(double));
 	evals = (double *) malloc(refdim * sizeof(double));
 	init_dbl_array_0(hmat, (refdim * refdim));

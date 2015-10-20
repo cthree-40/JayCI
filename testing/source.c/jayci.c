@@ -26,7 +26,7 @@
 #include "straddress.h"
 #include "moindex.h"
 #include "prediagfcns.h"
-#include "initarray.h"
+#include "arrayutil.h"
 
 
 int genbinarydetlist(struct det *dlist, int aelec, int belec, int orbs,
@@ -245,7 +245,7 @@ void main(int argc, char *argv[])
 
     /* initializing initial vector array */
     initv = (double *) malloc(ndets * krymin * sizeof(double));
-    initarray(initv, (ndets * krymin));
+    init_dbl_array_0(initv, (ndets * krymin));
     
     if (prediagr == 1) {
 	fprintf(stdout, "\nPerforming reference block diagonalization.\n");
