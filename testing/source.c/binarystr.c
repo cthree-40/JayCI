@@ -161,7 +161,7 @@ int comparedets_ncas(struct det deti, struct det detj,
 			     nactv, &diffs);
 	samei = nsamebytes(deti.bstr.byte1, diffs, nactv, *(&bxi));
 	samej = nsamebytes(detj.bstr.byte1, diffs, nactv, *(&bxf));
-	*numaxc = int_min(samei, samej);
+	*numbxc = int_min(samei, samej);
 	*numbxcv = abs(samei - samej);
 	*numbxv = *numbxv - *numbxcv;
 	

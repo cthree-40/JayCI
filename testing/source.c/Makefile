@@ -26,21 +26,26 @@ CCDEF  := -DFLUSH -DINT64 -DEXTNAME
 CPOPS  := 
 
 # FLAGS --------------------------------------------------------------
-ifneq ($(findstring cc,$(CC)),)
+ifeq ($(findstring gfortran,$(FC)),)
+# intel compilers
 	FFLAGS := -i8 -auto -assume byterecl -O3
 	CFLAGS := -Wall -std=c11 -march=native -funroll-all-loops \
 		  -fomit-frame-pointer -fstrict-aliasing -O3
 	VTUNE := -g -dynamic
 else
+# gnu compilers
 	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
 	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
 	          -fomit-frame-pointer -fstrict-aliasing -O3
+
 endif
 # Debugging ----------------------------------------------------------
-ifneq ($(findstring cc, $(CC)),)
-	DEBUG  := -g -DDEBUGGING
+ifeq ($(findstring gfortran,$(FC)),)
+# intel compilers
+	DEBUG  := -g -DDEBUGGING $(VTUNE)
 	FDEBUG := -traceback
 else
+# gnu compilers
 	DEBUG  := -g -DDEBUGGING
 	FDEBUG := -fbacktrace
 endif
@@ -95,7 +100,7 @@ jayci: $(JYCIO)
 	@echo " COLIBLIB = $(COLIBLIB)"
 	@echo " DEBUG    = $(DEBUG)"
 	@echo ""
-	$(CC) -o $(JYCIX) $(JYCIO) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS) $(VTUNE) 
+	$(CC) -o $(JYCIX) $(JYCIO) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS)
 	@echo " Build complete."
 	@echo ""
 
@@ -114,7 +119,7 @@ clean:
 
 %.o:%.c
 	@echo "->Building: $@ "
-	$(CC) -c $< $(DEBUG) $(CFLAGS) $(VTUNE)
+	$(CC) -c $< $(DEBUG) $(CFLAGS)
 	@echo ""
 
 dlamch_fcn.o:dlamch_fcn.f90

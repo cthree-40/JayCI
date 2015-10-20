@@ -765,7 +765,7 @@ double eval1_ncas_c1cv0v0(struct occstr ostr1, long long int xi,
 	
 	int pindx; /* permuational index */
 	int io, fo; /* initial, final orbital */
-	int i1, i2; /* integral indexes */
+	int i1; /* integral indexes */
 	
 	int eostr1[ne1]; /* electron occupation string */
 	int eostr2[ne2]; 
