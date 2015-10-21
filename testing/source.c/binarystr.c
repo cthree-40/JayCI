@@ -154,7 +154,7 @@ int comparedets_ncas(struct det deti, struct det detj,
 	*numaxcv = abs(samei - samej);
 	*numaxv = *numaxv - *numaxcv;
 
-	numx = numx + *numaxc + *numaxcv + *numaxv;
+	numx = *numaxc + *numaxcv + *numaxv;
 	if (numx > 2) return numx;
 
 	*numbxc = ndiffbytes(deti.bstr.byte1, detj.bstr.byte1, 

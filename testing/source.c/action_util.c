@@ -142,9 +142,6 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 			deti, detj, &numaxc, &numbxc, &numaxv, &numbxv,
 			&numaxcv, &numbxcv, &axi, &axf, &bxi, &bxf, nactv);
 		if (detdiff > 2) return val;
-		printf("%d %d %d %d %d %d = %d",
-		       numaxc, numbxc, numaxcv, numbxcv, numaxv, numbxv,
-		       detdiff);
 		val = evaluate_dets_ncas(
 			detdiff, deti, detj, numaxc, numbxc, numaxcv,
 			numbxcv, numaxv, numbxv, axi, axf, bxi, bxf,
