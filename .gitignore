@@ -1,5 +1,12 @@
-test/bin
-test/H2O/archive
-test/build.sh
-test/edison
+testing/bin
+testing/H2O/archive
+testing/build.sh
+testing/edison
 Profile_Info/
+testing/H2O/source/*.mod
+testing/H2O/source/*.o
+testing/H2O/source./*.o
+testing/H2O/jayci_exp/out*
+testing/bin/*.x
+testing/source.x/*.x
+testing/source.c.*.a
