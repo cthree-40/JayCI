@@ -14,10 +14,19 @@ ifeq ($(NERSC_HOST),edison)
 	AR := ar rv
 	RANL := ranlib
 else
-	CC := gcc 
-	FC := gfortran
-	AR := ar rv
-	RANL:= ranlib 
+	ifeq ($(findstring BSD,$(shell uname -s)),)
+	# Building on linux, use GCC compilers
+		CC := gcc 
+		FC := gfortran
+		AR := ar rv
+		RANL:= ranlib
+	else
+	# Building on BSD, use clang and gfortran48
+		CC := clang
+		FC := gfortran48
+		AR := ar rv
+		RANL := ranlib
+	endif
 endif
 
 # Options ------------------------------------------------------------
@@ -54,7 +63,13 @@ endif
 ifeq ($(NERSC_HOST),edison)
 	MATHLIBS := 
 else
-	MATHLIBS := -L/usr/lib64 -llapack -lblas -lm -lgfortran
+	ifeq ($(findstring BSD,$(shell uname -s)),)
+	# building on linux
+		MATHLIBS := -L/usr/lib64 -llapack -lblas -lm -lgfortran
+	else
+		MATHLIBS := -L/usr/local/lib -llapack -lblas \
+				-L/usr/local/lib/gcc48 -lgfortran -lm
+	endif
 endif
 COLIBLIB := ./colib.a
 
