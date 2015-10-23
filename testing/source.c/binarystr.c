@@ -44,13 +44,8 @@ int comparedets_cas(struct det deti, struct det detj,
 		    long long int *bxf, int nactv)
 {
 	int numx;
-	
-	/* .. local scalars ..
-	 * same  = output value of nsamebytes() calls
-	 * diffs = output of ndiffbytes calls 
-	 * sames = output of nsamebytes calls */
 	int same; 
-	long long int diffs, sames;
+	long long int diffs;
 	
 	numx = 0;
 	/* compare alpha strings */
@@ -123,7 +118,7 @@ int comparedets_ncas(struct det deti, struct det detj,
 	 * diffs = output of ndiffbytes calls
 	 * sames = output of nsamebytes calls */
 	int samei = 0, samej = 0;
-	long long int diffs = 0, sames = 0;
+	long long int diffs = 0;
 	
 	*axi = 0;
 	*bxi = 0;

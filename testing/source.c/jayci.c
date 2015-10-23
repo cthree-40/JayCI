@@ -1,5 +1,5 @@
-// File: jayci.c
-/*********************************************************************
+/* File: jayci.c */
+/*
  * jayci: determinant ci algorithm
  *
  * Needs:
@@ -10,10 +10,10 @@
  * Notes:
  *  09-22-2015: command line  memory allocation input not yet 
  *              implemented.
- * -----------------------
+ * 
  * By Christopher L Malbon
  * Dept of Chemistry, The Johns Hopkins University
- ********************************************************************/
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
      * finish_time = finish time */
     int ci_aelec, ci_belec, ci_orbs;
     int nastr, nbstr, ndets;
-    clock_t curr_time, prev_time, start_time, finish_time;
+    clock_t curr_time, prev_time, start_time;
 
     /* .. local arrays .. 
      * detlist = determinant list 
@@ -115,9 +115,8 @@ int main(int argc, char *argv[])
     double *civec, *cienergy;
     char moflname[FLNMSIZE];
     double *initscr, *initv;
-    double *ptr1, *ptr2;
     
-    int i, j, k;
+    int i, j;
 
     start_time = clock();
 
@@ -368,7 +367,7 @@ int processcmdlineargs(int argc, char *argv[], long long int *memory)
     
     for (i = 1; i < argc; i++) {
 	if (*argv[i] == '-') {
-	    while (c = *++argv[i]) {
+	    while ((c = *(++argv[i]))) {
 		switch (c) {
 		case 'm':
 		    *memory = atoi(argv[i+1]);

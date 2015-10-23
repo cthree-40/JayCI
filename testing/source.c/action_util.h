@@ -10,7 +10,7 @@
  * cas_to_virt_replacements: compute excitations for cas<->virt replacements
  */
 void cas_to_virt_replacements(
-	int nreps,           /* number of cas->virt replacements */
+	int ncreps,          /* number of cas->virt replacements */
 	int ncr,             /* number of cas->cas replacements */
 	int nvr,             /* number of virt->virt replacements */
 	long long int xi,    /* cas byte of initial orbitals */
