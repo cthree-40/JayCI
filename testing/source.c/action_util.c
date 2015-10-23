@@ -1,4 +1,4 @@
-// File: action_util.c
+/* File: action_util.c */
 /*
  * action_util
  * -----------
@@ -27,11 +27,11 @@
 /* 
  * cas_to_virt_replacements: compute excitations for cas<->virt replacements
  */
-void cas_to_virt_replacements(int nreps, int ncr, int nvr, long long int xi, 
+void cas_to_virt_replacements(int ncreps, int ncr, int nvr, long long int xi, 
 			      long long int xf, int *restrict vxi, int *restrict vxj, 
 			      int *restrict reps, int ninto)
 {
-	if (nreps == 2) {
+	if (ncreps == 2) {
 		if (xi == 0) {
 			reps[0] = vxi[0];
 			reps[1] = vxi[1];

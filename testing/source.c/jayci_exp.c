@@ -18,7 +18,7 @@
 #include "abecalc.h"
 #include "citruncate.h"
 
-void main()
+int main()
 /* main driver
  * -----------
  * Execution outline:
@@ -65,7 +65,7 @@ void main()
      if (err == 1) {
 	  /* missing jayci.in, terminate. */
 	  fprintf(stderr,"*** ERROR! Missing input file: jayci.in ***\n");
-	  exit(0);
+	  exit(err);
      }
      if (err == 2 || err == 3) {
 	  /* missing input.jayci (OK, we are making this file now.) */
@@ -80,7 +80,7 @@ void main()
 	  /* error reading namelist */
 	  fprintf(stderr,
 		  "*** ERROR! Error reading &general namelist. ***\n");
-	  exit(0);
+	  exit(err);
      }
 
      /* compute alpha/beta electron numbers */
@@ -91,7 +91,7 @@ void main()
 		   &astr_len, &bstr_len, &dtrm_len);
      if (err != 0) {
 	  // ERROR HANDLING //
-	  exit(1);
+	  exit(err);
      }
      
      fprintf(stdout, "Alpha strings = %d\n", astr_len); 
@@ -103,4 +103,5 @@ void main()
      err = geninput(dtrm_len, astr_len, bstr_len, aelec, belec, orbs, nfrzc,
 		    nfrzv);
      
+     return err;
 }
