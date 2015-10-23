@@ -308,6 +308,17 @@ int pindex_single_rep(
 	int fo,    /* final orbital */
 	int lstr);  /* number of electrons */
 
+/*
+ * pindex_single_rep_cas: compute permuational index for single excitation
+ * within CAS. This is done by counting occupations between the orbital in
+ * xi and the orbital in xf.
+ */
+int pindex_single_rep_cas(
+        long long int stri,     /* CAS byte of determinant i     */
+        long long int xi,       /* initial orbital of excitation */
+        long long int xf,       /* final orbital of excitation   */
+        int ninto);             /* number of internal orbitals   */
+
 double single_rep_2e_contribution(
 	int *eocc_str1, 
 	int init_orb, 

@@ -1005,6 +1005,56 @@ void make_orbital_strings_virt(struct occstr ostr1i, int *eostr1, int nelec1,
 	}
 	return;
 }
+/*
+ * pindex_single_rep_cas: compute permuational index for single excitation
+ * within CAS. This is done by counting occupations between the orbital in
+ * xi and the orbital in xf.
+ */
+int pindex_single_rep_cas(long long int stri, long long int xi,
+        long long int xf, int ninto)
+{
+        int pindx = 1; /* permutational index */
+        int i;
+        long long int t; /* 2^64 */
+        long long int x; /* xi ^ xf */
+        
+        /* Right shift $x and $stri until first non-zero bit of $x is 
+         * right aligned. Now, left shift $x and $stri until first nonzero 
+         * value is left aligned.
+         */
+        t = (1 << 63);
+        x = xi ^ xf;
+        for (i = 0; i < 64; i++) {
+                if (x & 0x01) {
+                        stri = stri >> 1;
+                        x = x >> 1;
+                        break;
+                } else {
+                        stri = stri >> 1;
+                        x = x >> 1;
+                }
+        }
+        for (i = 63; i >= 0; i--) {
+                if (x & t) {
+                        stri = stri << 1;
+                        x = x << 1;
+                        break;
+                } else {
+                        stri = stri << 1;
+                        x = x << 1;
+                }
+        }
+       /* count nonzero bits, there will be less than $ninto nonzero bits */
+        for (i = 0; i < ninto; i++) {
+                if (stri & t) {
+                        pindx = pindx * (-1);
+                        stri = stri << 1;
+                } else {
+                        stri = stri << 1;
+                }
+        }
+        return pindx;
+}
 
 /* 
  * pindex_single_rep: compute permuational index for single excitation
