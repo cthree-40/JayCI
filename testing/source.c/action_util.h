@@ -219,13 +219,14 @@ double eval2_ncas_c1cv0v1(
  * eval2_11_cas: evaluate the matrix element of one replacement in two strings
  */
 double eval2_11_cas(
-	long long int axi, /* alpha initial orbitals */
-	long long int axf, /* alpha final orbitals */
-	long long int bxi, /* beta initial orbitals */
-	long long int bxf, /* beta final orbitals */
-	double   *moints2, /* 2-e integrals */
-	int ninto);        /* internal orbitals */
-
+        long long int axi,    /* alpha initial orbitals */
+        long long int axf,    /* alpha final orbitals */
+	long long int bxi,    /* beta initial orbitals */
+	long long int bxf,    /* beta final orbitals */
+	double   *moints2,    /* 2-e integrals */
+        int ninto,            /* internal orbitals */
+        long long int abyte1, /* alpha cas byte */
+        long long int bbyte1);/* beta  cas byte */
 /* 
  * eval2_20_cas: evaluate the matrix element of two replacements in one string
  */

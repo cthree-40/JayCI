@@ -191,7 +191,9 @@ double evaluate_dets_cas(int ndiff, struct det deti, struct det detj,
 	if (ndiff == 2) {
 		/* 1,1 or 2,0 or 0,2 */
 		if (numax == 1) {
-			value = eval2_11_cas(axi, axf, bxi, bxf, moints2, ninto);
+			value = eval2_11_cas(axi, axf, bxi, bxf, moints2, 
+                                        ninto, deti.astr.byte1, 
+                                        deti.bstr.byte1);
 		} else if (numax == 2) {
 			value = eval2_20_cas(axi, axf, moints2, ninto);
 		} else {
@@ -346,7 +348,8 @@ double eval1_10_cas(struct occstr ostr1, long long int xi, long long int xf,
  * eval2_11_cas: evaluate the matrix element of one replacement in two strings
  */
 double eval2_11_cas(long long int axi, long long int axf, long long int bxi,
-		    long long int bxf, double *moints2, int ninto)
+		    long long int bxf, double *moints2, int ninto,
+                    long long int abyte, long long int bbyte)
 {
 	double val;
     
@@ -368,8 +371,10 @@ double eval2_11_cas(long long int axi, long long int axf, long long int bxi,
 	nonzerobits(bxf, ninto, &bfo);
 	
 	/* compute permuation index */
-	pindx = pow(-1, (abs(afo - aio) + abs(bfo - bio)));
-	
+#ifndef BIGCAS
+	pindx = pindex_single_rep_cas(abyte, axi, axf, ninto);
+        pindx = pindx * pindex_single_rep_cas(bbyte, bxi, bxf, ninto);
+#endif
 	/* compute matrix element */
 	i1 = index2e(aio, bio, afo, bfo);
 	i2 = index2e(aio, afo, bio, bfo);
@@ -508,7 +513,8 @@ double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
 			} else if (numaxc == 1) {
 				/* 1,0;1,0 */
 				value = eval2_11_cas(
-					axi, axf, bxi, bxf, moints2, ninto);
+					axi, axf, bxi, bxf, moints2, ninto,
+                                        deti.astr.byte1, deti.bstr.byte1);
 			} else if (numaxc == 2) {
 				/* 2,0;0,0 */
 				value = eval2_20_cas(
@@ -1022,7 +1028,7 @@ int pindex_single_rep_cas(long long int stri, long long int xi,
          * right aligned. Now, left shift $x and $stri until first nonzero 
          * value is left aligned.
          */
-        t = (1 << 63);
+        t = ((long long int) 1) << 63;
         x = xi ^ xf;
         for (i = 0; i < 64; i++) {
                 if (x & 0x01) {
