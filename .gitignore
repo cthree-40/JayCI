@@ -9,4 +9,4 @@ testing/H2O/source.c/*.o
 testing/H2O/jayci_exp/out*
 testing/bin/*.x
 testing/source.c/*.x
-testing/source.c.*.a
+testing/source.c/*.a
