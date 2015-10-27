@@ -57,20 +57,24 @@ int ndiffbytes(long long int byte1, long long int byte2,
 int nsamebytes(long long int byte1, long long int byte2, 
 	       int bl, long long int *sames)
 {
-	int i, nsame;
+	int i, nsame = 0;
 	long long int andbit;
 	
 	andbit = byte1 & byte2;
-	nsame = 0;
+	//nsame = 0;
 	*sames = 0;
-	for (i = 0; i < bl; i++) {
-		if (andbit & 0x01) {
-			*sames = *sames + (1 << i);
-			nsame = nsame + 1;
-		}
-		andbit = andbit >> 1;
-	}
-	
+        if (andbit & 0x01) {
+                *sames = *sames + (1 << 0);
+                nsame = nsame + 1;
+        }
+        andbit = andbit >> 1;
+        for (i = 1; i < bl; i++) {
+                if (andbit & 0x01) {
+                        *sames = *sames + (1 << i);
+                        nsame = nsame + 1;
+                }
+                andbit = andbit >> 1;
+        }
 	return nsame;
 }
 

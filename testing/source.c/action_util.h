@@ -127,7 +127,8 @@ double eval2_ncas_c00cv10v01(
 	int *vx2i,           /* (beta/alpha) virtual orbitals of det i */
 	int *vx2j,           /* (beta/alpha) virtual orbitals of det j */
 	double *moints2,     /* 2-e integrals */
-	int ninto);
+	int ninto,
+        long long int stri1);
 
 double eval2_ncas_c00cv10v10(
 	long long int xi, 
@@ -142,16 +143,18 @@ double eval2_ncas_c00cv10v10(
  * determinants with one cas->virt replacement in each string. 
  */
 double eval2_ncas_c00cv11v00(
-	long long int xi1, /* (alpha/beta) initial orbitals of excitation */ 
-	long long int xf1, /* (alpha/beta) final orbitals of excitation */
-	int *vxi1,         /* (alpha/beta) virtual orbitals of det i */
-	int *vxj1,         /* (alpha/beta) virtual orbitals of det j */
-	long long int xi2, /* (beta/alpha) initial orbitals of excitation */
-	long long int xf2, /* (beta/alpha) final orbitals of excitation */
-	int *vxi2,         /* (beta/alpha) virtual orbitals of det i */
-	int *vxj2,         /* (beta/alpha) virtual orbitals of det j */
-	double *moints2,   /* 2-e integrals */
-	int ninto);
+	long long int xi1,    /* (alpha/beta) initial orbitals of excitation */ 
+	long long int xf1,    /* (alpha/beta) final orbitals of excitation */
+	int *vxi1,            /* (alpha/beta) virtual orbitals of det i */
+	int *vxj1,            /* (alpha/beta) virtual orbitals of det j */
+	long long int xi2,    /* (beta/alpha) initial orbitals of excitation */
+	long long int xf2,    /* (beta/alpha) final orbitals of excitation */
+	int *vxi2,            /* (beta/alpha) virtual orbitals of det i */
+	int *vxj2,            /* (beta/alpha) virtual orbitals of det j */
+	double *moints2,      /* 2-e integrals */
+	int ninto,
+        long long int stri1,  /* (alpha/beta) string of determinant i */
+        long long int stri2); /* (beta/alpha) string of determinant i */
 
 /* 
  * eval2_ncas_c01cv10v00: evaluate double replcaements for non-cas-flagged
@@ -198,7 +201,8 @@ double eval2_ncas_c0cv2v0(
 	int *vxi, 
 	int *vxf, 
 	double *moints2,
-	int ninto);
+	int ninto,
+        long long int str);
 
 /*
  * eval2_ncas_c1cv0v1: evaluate cas + virtual replacements for non-cas-flagged
@@ -234,7 +238,8 @@ double eval2_20_cas(
 	long long int xi, /* initial orbitals */ 
 	long long int xf, /* final orbitals */
 	double  *moints2, /* 2-e integrals */
-	int ninto);       /* internal orbitals */
+	int ninto,        /* internal orbitals */
+        long long int str);
 
 double evaluate_dets_cas(int         ndiff,
 			 struct det   deti,
@@ -300,8 +305,19 @@ void make_orbital_strings_virt(
 	int nelec1,
 	int ninto);             /* internal orbitals */
 
+
+/*
+ * pindex_double_rep_cas: compute permuational index for 2 replacements in
+ * the cas orbitals.
+ */
+int pindex_double_rep_cas(
+        long long int str, /* orbital string */
+        int *io,           /* orbital index of initial replacements */
+        int *fo,           /* orbital index of final replacements */
+        int ninto);        /* number of internal orbitals */
+
 /* 
- * pindes_single_rep: compute permutational index of single replacement
+ * pindex_single_rep: compute permutational index of single replacement
  */
 int pindex_single_rep(
 	int *str,  /* electron orbital string */ 
@@ -319,6 +335,23 @@ int pindex_single_rep_cas(
         long long int xi,       /* initial orbital of excitation */
         long long int xf,       /* final orbital of excitation   */
         int ninto);             /* number of internal orbitals   */
+
+
+/*
+ * pindex_single_rep_cas2virt: compute permutational index for single 
+ * excitaiton from cas byte -> vitual orbitals.
+ */
+int pindex_single_rep_cas2virt(
+        long long int stri,  /* CAS byte of determinant i */
+        long long int xi,    /* intitial orbital of excitation */
+        int ninto);          /* number of internal orbitals */
+
+/*
+ * pindex_single_rep_virt: excitation orbital, virtual orbitals.
+ */
+int pindex_single_rep_virt(
+        int xorb,        /* excitation into virtual orbitals */ 
+        int *vorbs);     /* virtual orbitals containing excitation */
 
 double single_rep_2e_contribution(
 	int *eocc_str1, 

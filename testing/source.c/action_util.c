@@ -195,9 +195,11 @@ double evaluate_dets_cas(int ndiff, struct det deti, struct det detj,
                                         ninto, deti.astr.byte1, 
                                         deti.bstr.byte1);
 		} else if (numax == 2) {
-			value = eval2_20_cas(axi, axf, moints2, ninto);
+			value = eval2_20_cas(axi, axf, moints2, ninto,
+                                        deti.astr.byte1);
 		} else {
-			value = eval2_20_cas(bxi, bxf, moints2, ninto);
+			value = eval2_20_cas(bxi, bxf, moints2, ninto,
+                                        deti.bstr.byte1);
 		}
 	} else if (ndiff == 1) {
 		if (numax == 1) {
@@ -394,7 +396,7 @@ double eval2_11_cas(long long int axi, long long int axf, long long int bxi,
  *  val = <i|H|j> = (xi(1),xi(2)|xf(1),xf(2)) 
  */
 double eval2_20_cas(long long int xi, long long int xf, double *moints2,
-	int ninto)
+	int ninto, long long int str)
 {
 	double val;
 	
@@ -414,8 +416,7 @@ double eval2_20_cas(long long int xi, long long int xf, double *moints2,
 	nonzerobits(xf, ninto, finl_orbs);
 	
 	/* compute permuation index */
-	pindx = pow(-1, (abs(init_orbs[0] - finl_orbs[0]) 
-			 + abs(init_orbs[1] - finl_orbs[1])));
+	pindx = pindex_double_rep_cas(str, init_orbs, finl_orbs, ninto);
 	
 	/* compute matrix element */
 	i1 = index2e(init_orbs[0], init_orbs[1], finl_orbs[0], finl_orbs[1]);
@@ -518,11 +519,13 @@ double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
 			} else if (numaxc == 2) {
 				/* 2,0;0,0 */
 				value = eval2_20_cas(
-					axi, axf, moints2, ninto);
+					axi, axf, moints2, ninto,
+                                        deti.astr.byte1);
 			} else {
 				/* 0,0;2,0 */
 				value = eval2_20_cas(
-					bxi, bxf, moints2, ninto);
+					bxi, bxf, moints2, ninto,
+                                        deti.bstr.byte1);
 			}
 		} else if (ndiff == 1) {
 			if (numaxv == 1) {
@@ -558,7 +561,8 @@ double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
 				value = eval2_ncas_c00cv10v01(
 					axi, axf, deti.astr.virtx, 
 					detj.astr.virtx, deti.bstr.virtx, 
-					detj.bstr.virtx, moints2, ninto);
+					detj.bstr.virtx, moints2, ninto,
+                                        deti.astr.byte1);
 			} else if (numaxc == 1) {
 				/* 1,1,0;0,0,0 */
 				value = eval2_ncas_c10cv10v00(
@@ -577,7 +581,8 @@ double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
 					axi, axf, deti.astr.virtx,
 					detj.astr.virtx, bxi, bxf,
 					deti.bstr.virtx, detj.bstr.virtx,
-					moints2, ninto);
+					moints2, deti.astr.byte1,
+                                        deti.bstr.byte1, ninto);
 			}
 		} else if (ndiff == 1) {
 			/* 0,1,0;0,0,0 */
@@ -594,7 +599,8 @@ double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
 				value = eval2_ncas_c00cv10v01(
 					bxi, bxf, deti.bstr.virtx, 
 					detj.bstr.virtx, deti.astr.virtx, 
-					detj.astr.virtx, moints2, ninto);
+					detj.astr.virtx, moints2, ninto,
+                                        deti.bstr.byte1);
 			} else if (numbxv == 1) {
 				/* 0,0,0;0,1,1 */
 				value = eval2_ncas_c00cv10v10(
@@ -622,10 +628,12 @@ double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
 		}	
 	} else if (numaxcv == 2) {
 		value = eval2_ncas_c0cv2v0(
-			axi, axf, deti.astr.virtx, detj.astr.virtx, moints2, ninto);
+			axi, axf, deti.astr.virtx, detj.astr.virtx, moints2,
+                        ninto, deti.astr.byte1);
 	} else if (numbxcv == 2) {
 		value = eval2_ncas_c0cv2v0(
-			bxi, bxf, deti.bstr.virtx, detj.bstr.virtx, moints2, ninto);
+			bxi, bxf, deti.bstr.virtx, detj.bstr.virtx, moints2, 
+                        ninto, deti.bstr.byte1);
 	}
 	
 	return value;
@@ -815,18 +823,27 @@ double eval2_ncas_c0cv0v2(int *vxi, int *vxj, double *moints2)
  *                     determinants
  */
 double eval2_ncas_c0cv2v0(long long int xi, long long int xf, int *vxi, 
-			  int *vxf, double *moints2, int ninto)
+			  int *vxf, double *moints2, int ninto,
+                          long long int str)
 {
 	double val;
 	int i1,i2;         /* integral indexes */
-	int ifo[4] = {0};       /* initial, final orbitals */
-	
+        int pindx = 1;     /* permutational index */
+	int ifo[4] = {0};  /* initial, final orbitals */
+        long long int t;   /* pseudo-excitation byte */
+        /* use pseudo-excitation byte to find number of bytes between
+         * cas orbital in excitation and virtuals. */
 #ifndef BIGCAS
 	cas_to_virt_replacements(2, 0, 0, xi, xf, vxi, vxf, ifo, ninto);  
 #endif
+        for (i1 = 1; i1 >= 0; i1--) {
+                t = ((long long int) 1) << (ifo[i1] - 1);
+                pindx = pindx * pindex_single_rep_cas2virt(str, t, ninto);
+        }
+        pindx = pindx * (-1);
 	i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
 	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
-	val = (moints2[i1 - 1] - moints2[i2 - 1]);
+	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	return val;
 }
 
@@ -885,7 +902,7 @@ double eval2_ncas_c00cv00v11(int *avirti, int *avirtj, int *bvirti, int *bvirtj,
 double eval2_ncas_c00cv10v01(long long int xi, long long int xf,
 			     int *vx1i, int *vx1j,
 			     int *vx2i, int *vx2j, double *moints2,
-			     int ninto)
+			     int ninto, long long int stri1)
 {
 	double val = 0.0;
 	int i1, pindx; /* integral index, permuational index */
@@ -893,7 +910,13 @@ double eval2_ncas_c00cv10v01(long long int xi, long long int xf,
 	
 	cas_to_virt_replacements(1,0,0, xi, xf, vx1i, vx1j, ifo1, ninto);
 	virtdiffs_single_rep(vx2i, vx2j, ifo2);
-	pindx = pow(-1, (abs(ifo1[2] - ifo1[0]) + abs(ifo2[1] - ifo2[0])));
+        if (xi != 0x00) {
+                pindx = pindex_single_rep_cas2virt(stri1, xi, ninto);
+                pindx = pindx * pindex_single_rep_virt(ifo1[2], vx1j);
+        } else {
+                pindx = pindex_single_rep_cas2virt(stri1, xf, ninto);
+                pindx = pindx * pindex_single_rep_virt(ifo1[2], vx1i);
+        }
 	i1 = index2e(ifo1[0], ifo1[2], ifo2[0], ifo2[1]);
 	val = pindx * moints2[i1 - 1];
 	return val;	
@@ -913,7 +936,18 @@ double eval2_ncas_c00cv10v10(long long int xi, long long int xf,
 	int ifo[4] = {0};    /* initial, final orbital array       */
 	
 	cas_to_virt_replacements(1,0,1,xi,xf,stri.virtx,strj.virtx, ifo, ninto);
-	pindx = pow(-1, (abs(ifo[2] - ifo[0]) + abs(ifo[3] - ifo[1])));
+        if (xi != 0x00) {
+#ifndef BIGCAS
+                pindx = pindex_single_rep_cas2virt(stri.byte1, xi, ninto);
+#endif
+                pindx = pindx * pindex_single_rep_virt(ifo[2], strj.virtx);
+        } else {
+#ifndef BIGCAS
+                pindx = pindex_single_rep_cas2virt(strj.byte1, xf, ninto);
+#endif
+                pindx = pindx * pindex_single_rep_virt(ifo[2], stri.virtx);
+        }
+
 	i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
 	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
 	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
@@ -927,14 +961,16 @@ double eval2_ncas_c00cv10v10(long long int xi, long long int xf,
 double eval2_ncas_c00cv11v00(long long int xi1, long long int xf1,
 			     int *vxi1, int *vxj1, long long int xi2,
 			     long long int xf2, int *vxi2, int *vxj2,
-			     double *moints2, int ninto)
+			     double *moints2, int ninto,
+                             long long int stri1, long long int stri2)
 {
 	double val;
 	int i1, pindx; /* integral index, permuational index */
 	int ifo1[4] = {0}, ifo2[4]={0};   /* initial, final orbital array */
 	cas_to_virt_replacements(1,0,0, xi1, xf1, vxi1, vxj1, ifo1, ninto);
 	cas_to_virt_replacements(1,0,0, xi2, xf2, vxi2, vxj2, ifo2, ninto);
-	pindx = pow(-1, (abs(ifo1[2] - ifo1[0]) + abs(ifo2[2] - ifo1[0])));
+	pindx = pindex_single_rep_cas2virt(stri1, xi1, ninto);
+        pindx = pindx * pindex_single_rep_cas2virt(stri2, xi2, ninto);
 	i1 = index2e(ifo1[0], ifo1[2], ifo2[0], ifo2[2]);
 	val = pindx * moints2[i1 - 1];
 	return val;
@@ -953,14 +989,21 @@ double eval2_ncas_c01cv10v00(struct occstr str1, struct occstr str2,
 	double val;
 	int i1, pindx; /* integral index, permuational index */
 	int ifo1[4] = {0}, ifo2[2]; /* initial, final orbitals */
-	int estr1[ne1], estr2[ne2]; /* (alpha/beta) electron occupation strings */
 
 	cas_to_virt_replacements(1,0,0, xi1, xf1, vx1i, vx1j, ifo1, ninto);
 	nonzerobits(xi2, ninto, &(ifo2[0]));
 	nonzerobits(xf2, ninto, &(ifo2[1]));
-	pindx = pindex_single_rep(estr2, ifo2[0], ifo1[1], ne2);
-	pindx = pindx * pindex_single_rep(estr1, ifo1[0], ifo1[1], ne1); 
-	i1 = index2e(ifo1[0], ifo1[2], ifo2[0], ifo2[1]);
+#ifndef BIGCAS
+	pindx = pindex_single_rep_cas(str2.byte1, xi2, xf2, ninto);
+        if (xi2 != 0x00) {
+                pindx = pindx * pindex_single_rep_cas2virt(
+                                str1.byte1, xi2, ninto);
+        } else {
+                pindx = pindx * pindex_single_rep_cas2virt(
+                                str1.byte1, xf2, ninto);
+        }
+#endif
+        i1 = index2e(ifo1[0], ifo1[2], ifo2[0], ifo2[1]);
 	val = pindx * moints2[i1 - 1];
 	return val;
 }
@@ -983,7 +1026,8 @@ double eval2_ncas_c10cv10v00(struct occstr str, long long int xi,
 	cas_to_virt_replacements(1, 1, 0, xi, xf, vxi, vxj, ifo, ninto);
 	make_orbital_strings_virt(str, estr, ne, ninto);
 	pindx = pindex_single_rep(estr, ifo[0], ifo[2], ne);
-	pindx = pindx * pindex_single_rep(estr, ifo[1], ifo[3], ne);
+	//***
+        pindx = (-1) * pindx * pindex_single_rep(estr, ifo[1], ifo[3], ne);
 	i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
 	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
 	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
@@ -1011,6 +1055,43 @@ void make_orbital_strings_virt(struct occstr ostr1i, int *eostr1, int nelec1,
 	}
 	return;
 }
+
+/*
+ * pindex_double_rep_cas: compute permuational index for 2 replacements in
+ * the cas orbitals.
+ */
+int pindex_double_rep_cas(long long int str, int *io, int *fo, int ninto)
+{
+        int pindx = 1; /* permutational index */
+        long long int xi, xf; /* initial, final orbitals */
+        int i;
+        for (i = 0; i < 2; i++ ) {
+                xi = ((long long int ) 1) << (io[0] - 1);
+                xf = ((long long int ) 1) << (fo[0] - 1);
+                pindx = pindx * pindex_single_rep_cas(str, xi, xf, ninto);
+        }
+        return pindx;
+}
+
+/*
+ * pindex_single_rep_cas2virt: compute permutational index for single 
+ * excitaiton from cas byte -> vitual orbitals.
+ */
+int pindex_single_rep_cas2virt(long long int stri, long long int xi,
+        int ninto)
+{
+        int pindx; /* permuational index */
+        int i;
+        long long int xf; /* (psuedo final cas orbital */
+
+        /* Turn on the (ninto + 1) bit, and treat this like a single cas
+         * excitation.
+         */
+        xf= ((long long int) 1) << ninto;
+        pindx = pindex_single_rep_cas(stri, xi, xf, ninto);
+        return pindx;
+}
+        
 /*
  * pindex_single_rep_cas: compute permuational index for single excitation
  * within CAS. This is done by counting occupations between the orbital in
@@ -1087,6 +1168,26 @@ int pindex_single_rep(int *str, int io, int fo, int lstr)
 	return pindx;
 }
 	
+/*
+ * pindex_single_rep_virt: excitation orbital, virtual orbitals.
+ */
+int pindex_single_rep_virt(int xorb, int *vorbs)
+{
+        int pindx = 1;
+        /* Check the second virtual occupation. If this occupation is
+         * zero, then we drop out; else, we check where xorb is.
+         */
+        if (vorbs[1] == 0) {
+                return pindx;
+        } else {
+                if (xorb == vorbs[0]) {
+                        return pindx;
+                } else {
+                        pindx = (-1) * pindx;
+                        return pindx;
+                }
+        }
+}
 /*
  * single_rep_2e_contribution: compute contribution of 2e integrals to
  * single replacements.

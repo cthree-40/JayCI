@@ -128,25 +128,45 @@ int comparedets_ncas(struct det deti, struct det detj,
 	*numaxv = compute_virt_diffs(deti.astr, detj.astr);
 	*numbxv = compute_virt_diffs(deti.bstr, detj.bstr);
 	numx = numx + *numaxv + *numbxv;
-	if (numx > 2) return numx;
-	
-	/* Compare CAS byte. 
-	 * After comparing check for CAS<->Virtual excitations. 
-	 *
-	 * This is done by comparing the number of electrons in the CAS 
-	 * spaces of determinant i and determinant j. 
-	 * 
-	 * When we divide num{a,b}xc by 2 the result is rounded down
-	 * giving us only CAS->CAS excitations, which is what we want. 
-	 *
-	 * We then subtract the CAS->Virt excitation number from 
-	 * the differences in the virtual orbitals.*/
+	if (numx > 2) {
+                return numx;
+        } 
+        
+        /* get CAS->Virt excitations */
+        *numaxcv = abs(deti.astr.nvrtx - detj.astr.nvrtx);
+        *numbxcv = abs(deti.bstr.nvrtx - detj.bstr.nvrtx);
+        
+        if (*numaxcv + *numbxcv == 0 && numx == 2) {
+                if (deti.astr.byte1 ^ detj.astr.byte1 != 0x00) {
+                        numx+=10;
+                        return numx;
+                }
+                if (deti.bstr.byte1 ^ detj.bstr.byte1 != 0x00) {
+                        numx+=10;
+                        return numx;
+                }
+                *numaxc = 0;
+                *numbxc = 0;
+                return numx;
+        }
+        /*        *numaxc = ndiffbytes(deti.astr.byte1, detj.astr.byte1,
+                                nactv, &diffs);
+                *numbxc = ndiffbytes(deti.bstr.byte1, detj.bstr.byte1,
+                                nactv, &diffs);
+                if (*numaxc + *numbxc != 0) {
+                        numx+=10;
+                        return numx;
+                } else {
+                        return numx;
+                }
+        }*/
+
+	/* Compare CAS byte. */
 	*numaxc = ndiffbytes(deti.astr.byte1, detj.astr.byte1, 
 			     nactv, &diffs);
 	samei = nsamebytes(deti.astr.byte1, diffs, nactv, *(&axi));
 	samej = nsamebytes(detj.astr.byte1, diffs, nactv, *(&axf));
 	*numaxc = int_min(samei, samej);
-	*numaxcv = abs(samei - samej);
 	*numaxv = *numaxv - *numaxcv;
 
 	numx = *numaxc + *numaxcv + *numaxv;
@@ -157,7 +177,6 @@ int comparedets_ncas(struct det deti, struct det detj,
 	samei = nsamebytes(deti.bstr.byte1, diffs, nactv, *(&bxi));
 	samej = nsamebytes(detj.bstr.byte1, diffs, nactv, *(&bxf));
 	*numbxc = int_min(samei, samej);
-	*numbxcv = abs(samei - samej);
 	*numbxv = *numbxv - *numbxcv;
 	
 	numx = numx + *numbxc + *numbxcv + *numbxv;

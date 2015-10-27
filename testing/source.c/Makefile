@@ -97,9 +97,9 @@ JYCIO := $(OBJS) jayci.o
 
 # Build --------------------------------------------------------------
 colib: $(COLIBO) $(UNIXO)
-	chmod +x colib.a
 	$(AR) colib.a $(COLIBO) $(UNIXO)
 	$(RANL) colib.a 
+	chmod +x colib.a
 
 test: $(TESTO)
 	$(CC) -o $(TESTX) $(TESTO) $(MATHLIBS) $(COLIBLIB) 
