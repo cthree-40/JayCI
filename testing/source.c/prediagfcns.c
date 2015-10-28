@@ -43,13 +43,13 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	int err;
 #ifdef DEBUGGING
 	double *restrict ivec, *restrict ovec;
-	clock_t begin, end;
+        clock_t begin, end;
 #endif
 	err = 0;
 
 
 #ifdef DEBUGGING
-	ivec = (double *) malloc(refdim * sizeof(double));
+        ivec = (double *) malloc(refdim * sizeof(double));
 	ovec = (double *) malloc(refdim * sizeof(double));
 	init_dbl_array_0(ivec, refdim);
 	init_dbl_array_0(ovec, refdim);

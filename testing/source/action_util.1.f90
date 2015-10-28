@@ -501,6 +501,10 @@ contains
                       if ( p .eq. 0 ) then
                          cycle loop_pstring2
                       end if
+                      if(XrefList(o) .eq. 405 .or. &
+                                      Xreflist(p + qlocate(i)) .eq. 405) then
+                                      print *, " Eps = ", eps2
+                      end if
                       iVIndx = XRefList(o)
                       oVIndx = XRefList(p + qLocate(i))
                       OutVector(oVIndx) = OutVector(oVIndx) + int1e3*InVector(iVIndx)

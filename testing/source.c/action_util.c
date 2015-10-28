@@ -23,6 +23,7 @@
 #include "binarystr.h"
 #include "moindex.h"
 #include "action_util.h"
+#include "binary.h"
 
 /* 
  * cas_to_virt_replacements: compute excitations for cas<->virt replacements
@@ -581,8 +582,8 @@ double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
 					axi, axf, deti.astr.virtx,
 					detj.astr.virtx, bxi, bxf,
 					deti.bstr.virtx, detj.bstr.virtx,
-					moints2, deti.astr.byte1,
-                                        deti.bstr.byte1, ninto);
+					moints2, ninto, deti.astr.byte1,
+                                        deti.bstr.byte1);
 			}
 		} else if (ndiff == 1) {
 			/* 0,1,0;0,0,0 */
@@ -969,9 +970,21 @@ double eval2_ncas_c00cv11v00(long long int xi1, long long int xf1,
 	int ifo1[4] = {0}, ifo2[4]={0};   /* initial, final orbital array */
 	cas_to_virt_replacements(1,0,0, xi1, xf1, vxi1, vxj1, ifo1, ninto);
 	cas_to_virt_replacements(1,0,0, xi2, xf2, vxi2, vxj2, ifo2, ninto);
-	pindx = pindex_single_rep_cas2virt(stri1, xi1, ninto);
-        pindx = pindx * pindex_single_rep_cas2virt(stri2, xi2, ninto);
-	i1 = index2e(ifo1[0], ifo1[2], ifo2[0], ifo2[2]);
+	if (xi1 != 0x00) {
+                //stri1 = stri1 | xi1;
+                pindx = pindex_single_rep_cas2virt(stri1, xi1, ninto);
+        } else {
+                //stri1 = stri1 | xf1;
+                pindx = pindex_single_rep_cas2virt(stri1, xf1, ninto);
+        }
+        if (xi2 != 0x00) {
+                //stri2 = stri2 | xi2;
+                pindx = pindx * pindex_single_rep_cas2virt(stri2, xi2, ninto);
+        } else {
+                //stri2 = stri2 | xf2;
+                pindx = pindx * pindex_single_rep_cas2virt(stri2, xf2, ninto);
+        }
+        i1 = index2e(ifo1[0], ifo1[2], ifo2[0], ifo2[2]);
 	val = pindx * moints2[i1 - 1];
 	return val;
 }
@@ -995,12 +1008,12 @@ double eval2_ncas_c01cv10v00(struct occstr str1, struct occstr str2,
 	nonzerobits(xf2, ninto, &(ifo2[1]));
 #ifndef BIGCAS
 	pindx = pindex_single_rep_cas(str2.byte1, xi2, xf2, ninto);
-        if (xi2 != 0x00) {
+        if (xi1 != 0x00) {
                 pindx = pindx * pindex_single_rep_cas2virt(
-                                str1.byte1, xi2, ninto);
+                                str1.byte1, xi1, ninto);
         } else {
                 pindx = pindx * pindex_single_rep_cas2virt(
-                                str1.byte1, xf2, ninto);
+                                str1.byte1, xf1, ninto);
         }
 #endif
         i1 = index2e(ifo1[0], ifo1[2], ifo2[0], ifo2[1]);
@@ -1026,7 +1039,6 @@ double eval2_ncas_c10cv10v00(struct occstr str, long long int xi,
 	cas_to_virt_replacements(1, 1, 0, xi, xf, vxi, vxj, ifo, ninto);
 	make_orbital_strings_virt(str, estr, ne, ninto);
 	pindx = pindex_single_rep(estr, ifo[0], ifo[2], ne);
-	//***
         pindx = (-1) * pindx * pindex_single_rep(estr, ifo[1], ifo[3], ne);
 	i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
 	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
