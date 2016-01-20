@@ -2,15 +2,25 @@
 #ifndef bitutil_h
 #define bitutil_h
 
-int ndiffbytes(long long int byte1,
-	       long long int byte2,
-	       int bl,                /* bit length */
-	       long long int *diffs);
+/*
+ * ndiffbytes: compute number of differences between two bytes
+ */
+int ndiffbytes(
+        long long int           byte1,
+        long long int           byte2,
+        int           length_of_bytes,
+        long long int       *xor_byte
+        );
 
-int nsamebytes(long long int byte1,
-	       long long int byte2,
-	       int bl,                 /* bit length */
-	       long long int *sames);
+/*
+ * nsamebytes: compute number of similarities between two bytes
+ */
+int nsamebytes(
+        long long int           byte1,
+        long long int           byte2,
+        int           length_of_bytes,                 /* bit length */
+        long long int       *and_byte
+        );
 
 /*
  * nonzerobits: find nonzero bits of 64 bit byte

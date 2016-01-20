@@ -1,8 +1,10 @@
 /* File: mathutil.c */
 /*
- * mathutil: math functions interfacing with LAPACK
+ * mathutil: math functions, some interfacing with LAPACK
  * -------------------------------------------------------------------
+ * compute_vector_norm: compute norm of a vector
  * diagmat_dsyevr: diagonalizes a square matrix using dsyevr
+ * dot_product: computes dot product of two vectors.
  *
  * By Christopher L Malbon
  * Dept of Chemistry, The Johns Hopkins University
@@ -18,12 +20,22 @@
  */
 extern double _dlamch_fcn_();
 
+/*
+ * compute_vector_norm: compute euclidean norm of vector.
+ */
+double compute_vector_norm(double *v, int d)
+{
+    double nrm, dp;
+    dp = dot_product(v, v, d);
+    nrm = sqrt(dp);
+    return nrm;
+}
 
 /* 
  * diagmat_dsyevr: diagonalizes a square matrix using the dsyevr
  * LAPACK subroutine
  */
- int diagmat_dsyevr(double *mat, int dim, double *evecs, double *evals)
+int diagmat_dsyevr(double *mat, int dim, double *evecs, double *evals)
 {
     unsigned char jobz[1]  = "v"; /* return eigenvectors and eigenvalues */
     unsigned char range[1] = "a"; /* compute all eigenvectors */
@@ -77,3 +89,15 @@ extern double _dlamch_fcn_();
     return err;
 }
     
+/*
+ * dot_product: compute the dot product of two vectors
+ */
+double dot_product(double *u, double *v, int d)
+{
+    int i;
+    double dp = 0.0;
+    for (i = 0; i < d; i++) {
+        dp += u[i] * v[i];
+    }
+    return dp;
+}

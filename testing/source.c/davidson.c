@@ -7,9 +7,10 @@
  * Yarkony Group, Dept. of Chemistry, The Johns Hopkins University
  * (C) 2015 -
  *
- * Subfunctions contains:
+ * Subfunctions:
+ *  diagonalize_subspace_ham: diagaonalize the v.Hv subspace
  *  davidson_diagonalization_routine: davidson algorithm
- *
+ *  perform_hv_initialspace: perform Hv=c on initial space
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,6 +29,10 @@
  * 4) generate new vector w
  * 5) perform Hw=c
  * 6) go to (2) with new space including w
+ */
+
+/* 
+ * davidson_diagaonalization_routine: davidson algorithm.
  */
 void davidson_diagonalization_routine(struct det *dlist, int ndets, 
 				      double *moints1, double *moints2, 
@@ -110,6 +115,25 @@ void davidson_diagonalization_routine(struct det *dlist, int ndets,
 	return;
 }
 
+/*
+ * make_subspace_hamiltonian: build v.Hv subspace hamiltonian.
+ */
+void make_subspace_hamiltonian(double *v, double *hv, int ndt, int nv,
+        double *vhv)
+{
+    int i, j;
+    double *p;
+    p = vhv;
+    /* Compute v(i).Hv(j). vHv is stored in column-major order. */
+    for (i = 0; i < nv; i++) {
+        for (j = 0; j < nv; j++) {
+            *p = dot_product(v[j * ndt], hv[i * ndt], ndt);
+            p++;
+        }
+    }
+    return;
+}
+
 /* 
  * perform_hv_initialspace: perform hv on inital vector space for davidson
  * algorithm
@@ -126,4 +150,4 @@ void perform_hv_initialspace(struct det *dlist, int ndets, double *moints1,
 	}
 	return;
 }
-	
+

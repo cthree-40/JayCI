@@ -43,26 +43,30 @@ int comparedets_cas(struct det deti, struct det detj,
 		    long long int *axf, long long int *bxi, 
 		    long long int *bxf, int nactv)
 {
-	int numx;
-	int same; 
-	long long int diffs;
+	int numx = 0;
+	int samei = 0, samej = 0; 
+	long long int diffs = 0;
 	
 	numx = 0;
+        *axi = 0;
+        *axf = 0;
+        *bxi = 0;
+        *bxf = 0;
 	/* compare alpha strings */
 	*numax = ndiffbytes(deti.astr.byte1, detj.astr.byte1, 
 			    nactv, &diffs);
-	same = nsamebytes(deti.astr.byte1, diffs, nactv, axi);
-	same = nsamebytes(detj.astr.byte1, diffs, nactv, axf);
+	samei = nsamebytes(deti.astr.byte1, diffs, nactv, axi);
+	samej = nsamebytes(detj.astr.byte1, diffs, nactv, axf);
+	*numax = int_min(samei, samej);
 	numx = numx + *numax;
-	*numax = *numax / 2;
-	
+
 	/* compare beta strings */
 	*numbx = ndiffbytes(deti.bstr.byte1, detj.bstr.byte1, 
 			    nactv, &diffs);
-	same = nsamebytes(deti.bstr.byte1, diffs, nactv, bxi);
-	same = nsamebytes(detj.bstr.byte1, diffs, nactv, bxf);
+	samei = nsamebytes(deti.bstr.byte1, diffs, nactv, bxi);
+	samej = nsamebytes(detj.bstr.byte1, diffs, nactv, bxf);
+	*numbx = int_min(samei, samej);
 	numx = numx + *numbx;
-	*numbx = *numbx / 2;
 	
 #ifdef BIGCAS
 	if ((ndocc + nactv) > 64) {
@@ -76,10 +80,7 @@ int comparedets_cas(struct det deti, struct det detj,
 		numx = numx + *numbx;
 	}
 #endif
-	/* Note: numx is NOT excitation number. It is the differences in 
-	 * binary representations of the two bytes. You must divide the
-	 * final numx, including virtual excitations , to get excitation 
-	 * number. */
+        
 	return numx;
 }
 

@@ -227,8 +227,8 @@ int main(int argc, char *argv[])
      * 09-23-2015: this has not been implemented yet - CLM */
 #ifndef PARALLEL
     fprintf(stdout, "Reading in molecular integrals.\n");
-    m1len = index1e(ci_orbs, ci_orbs);
-    m2len = index2e(ci_orbs, ci_orbs, ci_orbs, ci_orbs);
+    m1len = index1e(orbs,orbs);
+    m2len = index2e(orbs,orbs,orbs,orbs);
     itype = 1;
     strncpy(moflname, "moints", FLNMSIZE);
     moints1 = (double *) malloc(m1len * sizeof(double));

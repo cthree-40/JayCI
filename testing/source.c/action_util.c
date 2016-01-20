@@ -56,7 +56,7 @@ void cas_to_virt_replacements(int ncreps, int ncr, int nvr, long long int xi,
 			nonzerobits(xi, ninto, &(reps[0]));
 			if (reps[1] == 0) {
 				nonzerobits(xf, ninto, &(reps[2]));
-				nonzerobits(xi, ninto, &(reps[0]));
+				//nonzerobits(xi, ninto, &(reps[0]));
 				virtdiffs_single_cas_to_virt(vxj, vxi, &(reps[1]));
 			} else {
 				nonzerobits(xf, ninto, &(reps[2]));
@@ -151,7 +151,6 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 		detdiff = comparedets_cas(
 			deti, detj, &numaxc, &numbxc, &axi, &axf, &bxi, &bxf,
 			nactv);
-		detdiff = detdiff / 2;
 		if (detdiff > 2) return val;
 		val = evaluate_dets_cas(
 			detdiff, deti, detj, numaxc, numbxc, axi, axf,
@@ -374,14 +373,14 @@ double eval2_11_cas(long long int axi, long long int axf, long long int bxi,
 	nonzerobits(bxf, ninto, &bfo);
 	
 	/* compute permuation index */
+        
 #ifndef BIGCAS
 	pindx = pindex_single_rep_cas(abyte, axi, axf, ninto);
         pindx = pindx * pindex_single_rep_cas(bbyte, bxi, bxf, ninto);
 #endif
 	/* compute matrix element */
 	i1 = index2e(aio, bio, afo, bfo);
-	i2 = index2e(aio, afo, bio, bfo);
-	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
+	val = pindx * (moints2[i1 - 1]);
 	
 	return val;
 }
@@ -1034,15 +1033,28 @@ double eval2_ncas_c10cv10v00(struct occstr str, long long int xi,
 	double val;
 	int i1, i2, pindx; /* integral index, permuational index */
 	int ifo[4] = {0};    /* initial, final orbital array */
+    long long int b1, b2, b3; /* cas orbital bytes */
 	int estr[ne];  /* electron orbital index string */
 
 	cas_to_virt_replacements(1, 1, 0, xi, xf, vxi, vxj, ifo, ninto);
+    b1 = ((long long int) 1) << (ifo[1] - 1);
+    b2 = ((long long int) 1) << (ifo[0] - 1);
+    b3 = ((long long int) 1) << (ifo[2] - 1);
 	make_orbital_strings_virt(str, estr, ne, ninto);
-	pindx = pindex_single_rep(estr, ifo[0], ifo[2], ne);
-        pindx = (-1) * pindx * pindex_single_rep(estr, ifo[1], ifo[3], ne);
+	pindx = pindex_single_rep_cas(str.byte1, b1, b3, ninto);
+#ifdef DEBUGGING
+    fprintf(stdout, "\n---\n %d %d %d %d \n %d %d = %d\n", estr[0], estr[1],
+            estr[2], estr[3], ifo[0], ifo[2], pindx);
+#endif
+    pindx = pindx * pindex_single_rep_cas2virt(str.byte1, b2, ninto);
+#ifdef DEBUGGING
+    fprintf(stdout, "%d %d = %d\n", ifo[1], ifo[3], pindx);
+#endif
+    //pindx = pindex_single_rep(estr, ifo[1], ifo[3], ne);
+    //pindx = pindx * pindex_single_rep(estr, ifo[0], ifo[2], ne);
 	i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
 	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
-	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
+	val = pindx * (moints2[i2 - 1] - moints2[i1 - 1]);
 	return val;
 }
 
@@ -1116,7 +1128,18 @@ int pindex_single_rep_cas(long long int stri, long long int xi,
         int i;
         long long int t; /* 2^64 */
         long long int x; /* xi ^ xf */
-        
+#ifdef DEBUGGING
+//        char st1[65], st2[65], st3[65];
+//        st1[64] = '\0';
+//        st2[64] = '\0';
+//        st3[64] = '\0';
+//        llint2bin(stri, st1);
+//        llint2bin(xi,   st2);
+//        llint2bin(xf,   st3);
+//        printf(" STRI = %.*s\n", 64, st1);
+//        printf(" XI = %.*s\n", 64, st2);
+//        printf(" XF = %.*s\n", 64, st3);
+#endif
         /* Right shift $x and $stri until first non-zero bit of $x is 
          * right aligned. Now, left shift $x and $stri until first nonzero 
          * value is left aligned.
@@ -1133,6 +1156,10 @@ int pindex_single_rep_cas(long long int stri, long long int xi,
                         x = x >> 1;
                 }
         }
+#ifdef DEBUGGING
+//        llint2bin(stri, st1);
+//        printf(" STRI = %.*s\n", 64, st1);
+#endif
         for (i = 63; i >= 0; i--) {
                 if (x & t) {
                         stri = stri << 1;
@@ -1143,15 +1170,21 @@ int pindex_single_rep_cas(long long int stri, long long int xi,
                         x = x << 1;
                 }
         }
+#ifdef DEBUGGING
+//        llint2bin(stri, st1);
+//        printf(" STRI = %.*s\n", 64, st1);
+#endif
        /* count nonzero bits, there will be less than $ninto nonzero bits */
-        for (i = 0; i < ninto; i++) {
+        for (i = 0; i <= ninto; i++) {
                 if (stri & t) {
-                        pindx = pindx * (-1);
-                        stri = stri << 1;
+                    //printf(" \n PERMUTATION!\n");
+                    pindx = pindx * (-1);
+                    stri = stri << 1;
                 } else {
                         stri = stri << 1;
                 }
         }
+//        printf("\n PINDX= %d\n", pindx);
         return pindx;
 }
 
