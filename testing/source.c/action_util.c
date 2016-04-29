@@ -56,7 +56,6 @@ void cas_to_virt_replacements(int ncreps, int ncr, int nvr, long long int xi,
 			nonzerobits(xi, ninto, &(reps[0]));
 			if (reps[1] == 0) {
 				nonzerobits(xf, ninto, &(reps[2]));
-				//nonzerobits(xi, ninto, &(reps[0]));
 				virtdiffs_single_cas_to_virt(vxj, vxi, &(reps[1]));
 			} else {
 				nonzerobits(xf, ninto, &(reps[2]));
@@ -88,8 +87,7 @@ void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
 {
 	int i, j;
 	double valij;
-//	init_dbl_array_0(c, ndets);
-//	printf("c initialized...\n");
+
 	for (i = 0; i < ndets; i++) {
 		c[i] = c[i] + hmatels(dlist[i],dlist[i], moints1, moints2, aelec,
 				      belec, ninto) * v[i];
@@ -1030,32 +1028,22 @@ double eval2_ncas_c10cv10v00(struct occstr str, long long int xi,
 			     int *vxj, int ne, double *moints2,
 			     int ninto)
 {
-	double val;
-	int i1, i2, pindx; /* integral index, permuational index */
-	int ifo[4] = {0};    /* initial, final orbital array */
+    double val;
+    int i1, i2, pindx; /* integral index, permuational index */
+    int ifo[4] = {0};    /* initial, final orbital array */
     long long int b1, b2, b3; /* cas orbital bytes */
-	int estr[ne];  /* electron orbital index string */
-
-	cas_to_virt_replacements(1, 1, 0, xi, xf, vxi, vxj, ifo, ninto);
+    int estr[ne];  /* electron orbital index string */
+    
+    cas_to_virt_replacements(1, 1, 0, xi, xf, vxi, vxj, ifo, ninto);
     b1 = ((long long int) 1) << (ifo[1] - 1);
     b2 = ((long long int) 1) << (ifo[0] - 1);
     b3 = ((long long int) 1) << (ifo[2] - 1);
-	make_orbital_strings_virt(str, estr, ne, ninto);
-	pindx = pindex_single_rep_cas(str.byte1, b1, b3, ninto);
-#ifdef DEBUGGING
-    fprintf(stdout, "\n---\n %d %d %d %d \n %d %d = %d\n", estr[0], estr[1],
-            estr[2], estr[3], ifo[0], ifo[2], pindx);
-#endif
-    pindx = pindx * pindex_single_rep_cas2virt(str.byte1, b2, ninto);
-#ifdef DEBUGGING
-    fprintf(stdout, "%d %d = %d\n", ifo[1], ifo[3], pindx);
-#endif
-    //pindx = pindex_single_rep(estr, ifo[1], ifo[3], ne);
-    //pindx = pindx * pindex_single_rep(estr, ifo[0], ifo[2], ne);
-	i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
-	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
-	val = pindx * (moints2[i2 - 1] - moints2[i1 - 1]);
-	return val;
+    make_orbital_strings_virt(str, estr, ne, ninto);
+    pindx = pindex_single_rep_cas(str.byte1, b1, b3, ninto);
+    i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
+    i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
+    val = pindx * (moints2[i2 - 1] - moints2[i1 - 1]);
+    return val;
 }
 
 /* 
@@ -1122,70 +1110,49 @@ int pindex_single_rep_cas2virt(long long int stri, long long int xi,
  * xi and the orbital in xf.
  */
 int pindex_single_rep_cas(long long int stri, long long int xi,
-        long long int xf, int ninto)
+			  long long int xf, int ninto)
 {
-        int pindx = 1; /* permutational index */
-        int i;
-        long long int t; /* 2^64 */
-        long long int x; /* xi ^ xf */
-#ifdef DEBUGGING
-//        char st1[65], st2[65], st3[65];
-//        st1[64] = '\0';
-//        st2[64] = '\0';
-//        st3[64] = '\0';
-//        llint2bin(stri, st1);
-//        llint2bin(xi,   st2);
-//        llint2bin(xf,   st3);
-//        printf(" STRI = %.*s\n", 64, st1);
-//        printf(" XI = %.*s\n", 64, st2);
-//        printf(" XF = %.*s\n", 64, st3);
-#endif
-        /* Right shift $x and $stri until first non-zero bit of $x is 
-         * right aligned. Now, left shift $x and $stri until first nonzero 
-         * value is left aligned.
-         */
-        t = ((long long int) 1) << 63;
-        x = xi ^ xf;
-        for (i = 0; i < 64; i++) {
-                if (x & 0x01) {
-                        stri = stri >> 1;
-                        x = x >> 1;
-                        break;
-                } else {
-                        stri = stri >> 1;
-                        x = x >> 1;
-                }
-        }
-#ifdef DEBUGGING
-//        llint2bin(stri, st1);
-//        printf(" STRI = %.*s\n", 64, st1);
-#endif
-        for (i = 63; i >= 0; i--) {
-                if (x & t) {
-                        stri = stri << 1;
-                        x = x << 1;
-                        break;
-                } else {
-                        stri = stri << 1;
-                        x = x << 1;
-                }
-        }
-#ifdef DEBUGGING
-//        llint2bin(stri, st1);
-//        printf(" STRI = %.*s\n", 64, st1);
-#endif
-       /* count nonzero bits, there will be less than $ninto nonzero bits */
-        for (i = 0; i <= ninto; i++) {
-                if (stri & t) {
-                    //printf(" \n PERMUTATION!\n");
-                    pindx = pindx * (-1);
-                    stri = stri << 1;
-                } else {
-                        stri = stri << 1;
-                }
-        }
-//        printf("\n PINDX= %d\n", pindx);
-        return pindx;
+    int pindx = 1; /* permutational index */
+    int i;
+    long long int t; /* 2^64 */
+    long long int x; /* xi ^ xf */
+    /* Right shift $x and $stri until first non-zero bit of $x is 
+     * right aligned. Now, left shift $x and $stri until first nonzero 
+     * value is left aligned.
+     */
+    t = ((long long int) 1) << 63;
+    x = xi ^ xf;
+    for (i = 0; i < 64; i++) {
+	if (x & 0x01) {
+	    stri = stri >> 1;
+	    x = x >> 1;
+	    break;
+	} else {
+	    stri = stri >> 1;
+	    x = x >> 1;
+	}
+    }
+    for (i = 63; i >= 0; i--) {
+	if (x & t) {
+	    stri = stri << 1;
+	    x = x << 1;
+	    break;
+	} else {
+	    stri = stri << 1;
+	    x = x << 1;
+	}
+    }
+    /* count nonzero bits, there will be less than $ninto nonzero bits */
+    for (i = 0; i <= ninto; i++) {
+	if (stri & t) {
+	    //printf(" \n PERMUTATION!\n");
+	    pindx = pindx * (-1);
+	    stri = stri << 1;
+	} else {
+	    stri = stri << 1;
+	}
+    }
+    return pindx;
 }
 
 /* 

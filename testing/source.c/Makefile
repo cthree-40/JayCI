@@ -9,21 +9,20 @@ COLIBDIR:= ./colib
 
 # Compilers ----------------------------------------------------------
 ifeq ($(NERSC_HOST),edison)
-	CC := cc 
+	CC := cc -fopenmp -I ./include 
 	FC := ftn
 	AR := ar rv
 	RANL := ranlib
 else
-	ifeq ($(findstring BSD,$(shell uname -s)),)
-	# Building on linux, use GCC compilers
-		CC := gcc 
+	ifeq ($(NERSC_HOST),cori)
+		CC := gcc -fopenmp -I ./include
 		FC := gfortran
 		AR := ar rv
 		RANL:= ranlib
 	else
-	# Building on BSD, use clang and gfortran48
-		CC := clang
-		FC := gfortran48
+	# Assuming standard Linux
+		CC := gcc -fopenmp -I ./include
+		FC := gfortran
 		AR := ar rv
 		RANL := ranlib
 	endif
@@ -79,7 +78,8 @@ JEXPX := jayci_exp.x
 JYCIX := jayci.x
 
 # Objects ------------------------------------------------------------
-OBJS  := iminmax.o arrayutil.o bitutil.o binary.o combinatorial.o \
+OBJS  := errorlib.o cmdline.o iminmax.o arrayutil.o bitutil.o binary.o \
+	 progheader.o combinatorial.o \
 	 straddress.o moindex.o readmoints.o readnamelist.o ioutil.o \
 	 abecalc.o citruncate.o binarystr.o dlamch_fcn.o mathutil.o \
 	 action_util.o prediagfcns.o
