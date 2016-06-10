@@ -1,5 +1,0 @@
-/ options
-/ keywords
- 'wien' 'unix' 'linux'  'milstd1753' 'format'
- 'blas2' 'blas3' 'pipemode' 'f90' 'RCLU4' 'spinorbit'   'largefiles' / flags
-/ filenames #not used in pipemode
