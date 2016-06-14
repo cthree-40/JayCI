@@ -116,25 +116,16 @@ void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
 		int aelec, int belec, double *restrict v, double *restrict c,
 		int ninto, struct rowmap *hmap)
 {
-/* -- MPI options -- */
-#ifdef _OPENMP
-	int nthreads, tid, chunk;
-#endif
-	
 	int i, j;
 	double valij;
 	struct section *csec; /* current section of row */
 
-#ifdef _OPENMP
-	nthreads = omp_get_num_threads();
-	chunk = ndets / nthreads;
-#endif
 	/* OMP Section */
 #pragma omp parallel \
-	shared(ndets,c,v,hmap,moints1,moints2,dlist,ninto,aelec,belec,chunk) \
+	shared(ndets,c,v,hmap,moints1,moints2,dlist,ninto,aelec,belec) \
 	private(csec,i,j,valij)
 	{
-#pragma omp for schedule(dynamic, chunk)
+#pragma omp for schedule(dynamic)
 	/* loop over hmap */
 	for (i = 0; i < ndets; i++) {
 		csec = hmap[i].sec;

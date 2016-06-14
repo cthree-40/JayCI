@@ -164,7 +164,7 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 		perform_hv_initspace(dlist, ndets, moints1, moints2, aelec,
 				     belec, ninto, hmap, ckdim, vscr, cscr);
 		make_subspacehmat(vscr, cscr, ndets, ckdim, hscr);
-		if (plvl > 0) {
+		if (plvl > 3) {
 			fprintf(stdout, "\n Subspace hamiltonian:\n");
 			print_array_2d(hscr, ckdim, ckdim);
 		}
@@ -193,8 +193,9 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 				fprintf(stdout, " Eigenvalue = %15.8lf\n",
 					(heval[croot - 1] + totfrze));
 				croot++;
+				/* ckdim+=100 forces rebuilding of subspace */
 				ckdim+=100;
-				if (croot == nroots) {
+				if (croot > nroots) {
 					fprintf(stdout,
 						"\n ** CI CONVERGED! ** \n");
 					return error;
@@ -216,7 +217,7 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 			
 			/* make subspace hamiltonian */
 			make_subspacehmat(vscr, cscr, ndets, ckdim, hscr);
-			if (plvl > 0) {
+			if (plvl > 3) {
 				fprintf(stdout, "\n Subspace Hamiltonian:\n");
 				print_array_2d(hscr, ckdim, ckdim);
 			}
@@ -341,34 +342,8 @@ void perform_hv_initspace(struct det *dlist, int ndets, double *moints1,
 			  struct rowmap *hmap, int nvec, double **vecs,
 			  double **hvecs)
 {
-	int i, j, k;
+	int i;
 	
-#ifdef DEBUGGING
-	double *v1, *c1;
-	FILE *fptr;
-	char  fname[30];
-	
-	v1 = (double *) malloc(ndets * sizeof(double));
-	c1 = (double *) malloc(ndets * sizeof(double));
-	for (j = 0; j < 1; j++) {
-		for (i = 0; i < ndets; i++) {
-			v1[i] = 0.0;
-			c1[i] = 0.0;
-		}
-		v1[j] = 1.0;
-		sprintf(fname, "file.%d", j);
-		fptr = fopen(fname, "w");
-		compute_hv(dlist, ndets, moints1, moints2, aelec, belec, v1, c1,
-			   ninto, hmap);
-		printf("Writing %d elements to file %d.\n", ndets, j);
-		for (i = 0; i < ndets; i++) {
-			k = fprintf(fptr, "%15.8lf\n", c1[i]);
-		}
-		fclose(fptr);
-	}
-	exit(1);
-	
-#endif
 	/* Loop over vectors */
 	for (i = 0; i < nvec; i++) {
 		compute_hv(dlist, ndets, moints1, moints2, aelec, belec, vecs[i],

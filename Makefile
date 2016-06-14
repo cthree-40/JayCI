@@ -156,6 +156,10 @@ CDS := cd $(SDIR)
 RM  := rm -rf
 
 # Build --------------------------------------------------------------
+all: colib jayci_exp jayci
+	@echo "Finished building jayci."
+	@echo ""
+
 colib: $(COLIBOBJS) $(UNIXOBJS) | $(LDIR)
 	@echo ""
 	@echo "------------------------------------------------------"
@@ -214,7 +218,7 @@ jayci_exp: $(JEXPOBJS) | $(BDIR)
 jayci: $(JYCIOBJS) | $(BDIR)
 	@echo ""
 	@echo "------------------------------------------------------"
-	@echo "   JAYCI_EXP PROGRAM "
+	@echo "   JAYCI PROGRAM "
 	@echo " Program version:	$(JAYCIVER)"
 	@echo " Test program:		$(TESTEXE)"
 	@echo " BLAS/LAPACK Lib:	$(MATHLIBS)"

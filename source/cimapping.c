@@ -70,9 +70,6 @@ void convertrow2map(int *row, int n2v, struct rowmap *v2v)
  */
 int generate_cimap(struct det *dlist, int ndets, int nactv, struct rowmap *hmap)
 {
-#ifdef _OPENMP
-	int tid, nthreads, chunk;
-#endif
 	int i, j = 0;
 	int v;
 	int ddiff;
@@ -80,17 +77,13 @@ int generate_cimap(struct det *dlist, int ndets, int nactv, struct rowmap *hmap)
 	long long int axi, axf, bxi, bxf;
 	int row[ndets];
 
-#ifdef _OPENMP
-	nthreads = omp_get_num_threads();
-	chunk = ndets / nthreads;
-#endif
 	/* OMP Section */
 #pragma omp parallel \
-	shared(ndets, dlist, chunk, nactv, hmap) \
+	shared(ndets, dlist, nactv, hmap) \
 	private(i, j, v, naxc, nbxc, naxv, nbxv, naxcv, nbxcv, \
 		axi, bxi, axf, bxf, row, ddiff)
 	{
-#pragma omp for schedule(dynamic, chunk)
+#pragma omp for schedule(dynamic)
 	/* Loop over each row in H. Flag nonzero matrix elements, creating
 	 * an array of elements 1 or 0. */
 	for (i = 0; i < ndets; i++) {
