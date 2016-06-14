@@ -13,7 +13,7 @@
 ######################################################################
 
 # Release version
-JAYCIVER := 1.0.0
+JAYCIVER := 1.0.1
 
 # Get OS name and version
 UNAME	:= $(shell uname -a)
