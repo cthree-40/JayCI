@@ -272,3 +272,7 @@ $(SDIR)/ioutil.o:$(SDIR)/ioutil.c
 $(SDIR)/mathutil.o:$(SDIR)/mathutil.c
 	$(CC) -c -o $(SDIR)/mathutil.o $(SDIR)/mathutil.c $(DEBUG) $(CFLAGS) -Wno-implicit-function-declaration
 	@echo ""
+
+$(BDIR) $(LDIR):
+	@echo "Creating directory $@"
+	mkdir -p $@
