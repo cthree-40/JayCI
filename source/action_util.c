@@ -121,11 +121,11 @@ void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
 	struct section *csec; /* current section of row */
 
 	/* OMP Section */
-#pragma omp parallel \
+#pragma omp parallel						       \
 	shared(ndets,c,v,hmap,moints1,moints2,dlist,ninto,aelec,belec) \
 	private(csec,i,j,valij)
 	{
-#pragma omp for schedule(dynamic)
+#pragma omp for schedule(runtime)
 	/* loop over hmap */
 	for (i = 0; i < ndets; i++) {
 		csec = hmap[i].sec;
@@ -135,13 +135,15 @@ void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
 						moints2, aelec, belec, ninto);
 				c[i] = c[i] + valij * v[j];
 				/* off diagonals */
-				if (i != j) c[j] = c[j] + valij * v[i];
+				if (i != j) {
+#pragma omp atomic update
+					c[j] = c[j] + valij * v[i];
+				}
 			}
 			csec = csec->next;
 		}
 	}
-	}
-	/* End of OMP Section */
+	}/* End of OMP Section */
 	return;
 }
 

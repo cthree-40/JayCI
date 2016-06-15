@@ -83,7 +83,7 @@ int generate_cimap(struct det *dlist, int ndets, int nactv, struct rowmap *hmap)
 	private(i, j, v, naxc, nbxc, naxv, nbxv, naxcv, nbxcv, \
 		axi, bxi, axf, bxf, row, ddiff)
 	{
-#pragma omp for schedule(dynamic)
+#pragma omp for schedule(guided)
 	/* Loop over each row in H. Flag nonzero matrix elements, creating
 	 * an array of elements 1 or 0. */
 	for (i = 0; i < ndets; i++) {

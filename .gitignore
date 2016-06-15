@@ -1,5 +1,7 @@
 Profile_Info/
+bin/*
 bin/jayci*
+lib/*
 testing/
 source/*.o
 source/colib/*.o
