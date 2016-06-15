@@ -133,6 +133,7 @@ void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
 			for (j = (csec->first + i); j <= (csec->last + i); j++) {
 				valij = hmatels(dlist[i], dlist[j], moints1,
 						moints2, aelec, belec, ninto);
+#pragma omp atomic update
 				c[i] = c[i] + valij * v[j];
 				/* off diagonals */
 				if (i != j) {
