@@ -1,0 +1,10 @@
+/* iminmax.h */
+#ifndef _iminmax_h
+#define _iminmax_h
+
+/* int_minimum: return minimum of two integers */
+int int_minimum(
+	int a,
+	int b);
+
+#endif

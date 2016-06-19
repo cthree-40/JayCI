@@ -27,7 +27,7 @@
 #include "cimapping.h"
 #include "action_util.h"
 
-/* -- MPI options -- */
+/* -- OpenMP options -- */
 #ifdef _OPENMP
 #include <omp.h>
 #else

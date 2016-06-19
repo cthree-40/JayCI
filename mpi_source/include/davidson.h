@@ -133,18 +133,6 @@ void print_iteration_info(
     );
 
 /*
- * test_convergence: test convergence of davidson algorithm. returns
- * convergence flag.
- */
-int test_convergence(
-	double rnorm, /* Norm of residual vector */
-	double restol, /* Convergence tolerance of residual vector norm */
-	int croot, /* Current root */
-	int nroots /* Number of roots to solve for */
-	);
-
-
-/*
  * truncate_kspace: truncate the krylov space from krymax to krymin.
  */
 int truncate_kspace(

@@ -25,16 +25,6 @@ void convertrow2map(
     struct rowmap *v2v /* rowmap structure of above array */
     );
 
-
-/*
- * deallocate_cimap: deallocate a cimap linked list array.
- */
-int deallocate_cimap(
-	struct rowmap *hmap,
-	int ndets
-	);
-
-	
 /*
  * generate_cimap: generate map for evaluating nonzero matrix elements of
  * the CI Hamiltonian.

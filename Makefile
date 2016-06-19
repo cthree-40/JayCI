@@ -11,6 +11,7 @@
 # 2016-06-10:     1.0.0
 # 2016-06-13:     1.0.1
 # 2016-06-14:     1.0.2
+# 2016-06-19:     1.1.0
 ######################################################################
 
 # Release version
@@ -48,11 +49,13 @@ CORI:=cori
 EDISON:=edison
 ifneq ($(filter cori edison,$(NERSC_HOST)),)
 	CC := cc -fopenmp -I $(IDIR) 
+	MPICC := cc -fopenmp -I $(IDIR)
 	FC := ftn
 	AR := ar rv
 	RANL := ranlib
 else
 	CC := gcc -fopenmp -I $(IDIR)
+	MPICC := mpicc -fopenmp -I $(IDIR)
 	FC := gfortran
 	AR := ar rv
 	RANL := ranlib
@@ -100,7 +103,8 @@ endif
 COLIBLIB := $(LDIR)/colib.a
 
 # Objects for jayci
-OBJS := errorlib.o \
+OBJS := timestamp.o \
+	errorlib.o \
 	allocate_mem.o \
 	cmdline.o \
 	iminmax.o \

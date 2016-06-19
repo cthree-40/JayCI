@@ -143,6 +143,32 @@ void print_array_2d(double **array, int rows, int cols)
     return;
 }
 
+/*
+ * print_civectors: print out ci vectors
+ */
+int print_civectors(double **civec, int ndets, int roots, double *cival)
+{
+	int error = 0; /* error flag */
+	int i, j;
+	FILE *fptr;
+	/* Open file and print eigenvalues and eigenvectors */
+	fptr = fopen("civector.dat", "w");
+	if (fptr == NULL) {
+		error = 1;
+		error_flag(error, "print_civectors");
+		return error;
+	}
+	fprintf(fptr, "%d\n\n", roots);
+	for (i = 0; i < roots; i++) {
+		fprintf(fptr, "%15.8lf\n\n", cival[i]);
+		for (j = 0; j < ndets; j++) {
+			fprintf(fptr, "%15.8lf\n", civec[i][j]);
+		}
+	}
+	close(fptr);
+	return error;
+}
+
 /* readdaiinput: read diagonalization algorithm input.
  * -------------------------------------------------------------------
  * Calls readnamelist which returns a chracter array

@@ -9,7 +9,7 @@
 #include "binarystr.h"
 #include "cimapping.h"
 
-/* -- MPI options -- */
+/* -- OpenMP options -- */
 #ifdef _OPENMP
 #include <omp.h>
 #else
@@ -64,6 +64,27 @@ void convertrow2map(int *row, int n2v, struct rowmap *v2v)
 	return;
 }
 
+/*
+ * deallocate_cimap: deallocate a cimap linked list array.
+ */
+int deallocate_cimap(struct rowmap *hmap, int ndets)
+{
+	struct section *tsec; /* temporary section */
+	struct section *csec; /* current section */
+	int i;
+
+	for (i = 0; i < ndets; i++) {
+		csec = hmap[i].sec;
+		while (csec->next != NULL) {
+			tsec = csec;
+			csec = csec->next;
+			free(tsec);
+		}
+		free(csec);
+	}
+	free(hmap);
+	return i;
+}
 /*
  * generate_cimap: generate map for evaluating nonzero matrix elements of
  * the CI Hamiltonian.

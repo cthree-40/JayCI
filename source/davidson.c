@@ -92,6 +92,7 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	   int plvl)
 {
 	int error = 0; /* error flag */
+	int cflag = 0; /* convergence flag */
 	double **hscr = NULL; /* krylov space hamiltonian v.Hv array */
 	double *hscr_1d = NULL; /* one-dimensional form of v.Hv for
 				 * interface with F90 */
@@ -109,6 +110,7 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	int croot = 0; /* current root solving for {1..nroot} */
 	int ckdim = 0; /* current dimension of krylov space */
 	int citer = 0; /* current iteration */
+	int i;
 	
 	/* allocate scratch arrays. size is constant throughout routine. */
 	error = allocate_mem_double(&hscr, krymax, krymax);
@@ -187,20 +189,22 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 			print_iteration_info(heval, ckdim, croot,
 					     rnorm, totfrze);
 			/* test convergence */
-			if (rnorm < restol) {
-				fprintf(stdout, "\n Root %d converged!\n",
-					croot);
-				fprintf(stdout, " Eigenvalue = %15.8lf\n",
-					(heval[croot - 1] + totfrze));
+			cflag = test_convergence(rnorm, restol, croot, nroots);
+			if (cflag > 2) {
+				/* Error */
+				error_flag(cflag, "dvdalg");
+				return cflag;
+			} else if (cflag == 2) {
+				/* CI converged */
+				fprintf(stdout, "\n ** CI CONVERGED! **\n");
+				break; /* leave while loop */
+			} else if (cflag == 1) {
+				/* Root converged */
+				fprintf(stdout,"Root %d converged!\n", croot);
 				croot++;
-				/* ckdim+=100 forces rebuilding of subspace */
-				ckdim+=100;
-				if (croot > nroots) {
-					fprintf(stdout,
-						"\n ** CI CONVERGED! ** \n");
-					return error;
-				}
-				continue; /* leave subloop */
+				break; /* leave while loop */
+			} else {
+				fprintf(stdout, "Root not yet converged.\n");
 			}
 			
 			/* generate new vector to add to space */
@@ -239,10 +243,32 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 			error_flag(error, "dvdalg");
 			return error;
 		}
+		if (cflag == 2) {
+			break;
+		}
 		ckdim = krymin;
 		init_dbl_2darray_0(cscr, ndets, krymax);
 	}
 	fprintf(stdout, " Davidson algorithm finished.\n");
+	/* copy arrays into final vectors, civec and cival */
+	cparray_1d1d(heval, ckdim, cival, nroots);
+	for (i = 0; i < nroots; i++) {
+		cival[i] = cival[i] +  totfrze;
+	}
+	cparray_2d2d(vscr, ndets, ckdim, civec, ndets, nroots);
+	/* Free 1-dimensional arrays */
+	free(heval);
+	free(rvec);
+	free(nvec);
+	free(hscr_1d);
+	free(hevec_1d);
+	free(vscr_1d);
+	free(tscr_1d);
+	/* Free 2-dimensional arrays */
+	deallocate_mem(&hscr, krymax, krymax);
+	deallocate_mem(&cscr, ndets, krymax);
+	deallocate_mem(&vscr, ndets, krymax);
+	deallocate_mem(&hevec, ndets, krymax);
 	
 	return error;
 }
@@ -359,7 +385,6 @@ void print_iteration_info(double *heval, int ckdim, int croot, double rnorm,
 			  double totfrze)
 {
 	int i;
-	fprintf(stdout, "\n");
 	for (i = 0; i < 70; i++) {
 		fprintf(stdout, "-");
 	}
@@ -372,6 +397,30 @@ void print_iteration_info(double *heval, int ckdim, int croot, double rnorm,
 }
 
 /*
+ * test_convergence: test convergence of davidson algorithm. returns
+ * convergence flag.
+ */
+int test_convergence(double rnorm, double restol, int croot, int nroots)
+{
+	int cflag = 0; /* convergence flag */
+	/* Root is not converged */
+	if (rnorm >= restol) {
+		return cflag; /* return 0 */
+	}
+	/* Root is converged */
+	if (rnorm < restol) {
+		if (croot < nroots) { /* Not final root */
+			cflag = 1;
+			return cflag; /* return 1 */
+		} else if ( croot == nroots) { /* final root */
+			cflag = 2;
+			return cflag; /* return 2 */
+		}
+	}
+	error_flag(3, "test_convergence");
+	return 3;
+}
+/*
  * truncate_kspace: truncate the krylov space from krymax to krymin.
  */
 int truncate_kspace(double **vscr, int vlen, int krymin, int krymax,
@@ -379,7 +428,6 @@ int truncate_kspace(double **vscr, int vlen, int krymin, int krymax,
 		    double *scr)
 {
 	int error = 0; /* error flag */
-	int i, j, k;
 	/* copy arrays into proper 1d scratch arrays */
 	cparray_2d1d(vscr, vlen, krymax, vscr1d);
 	cparray_2d1d(hevec, krymax, krymax, hevec1d);

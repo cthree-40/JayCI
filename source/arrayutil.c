@@ -4,7 +4,9 @@
  * -----------
  * Subfunctions for performing operations on arrays.
  *
+ * cparray_1d1d: copy contents of 1d array into 1d array.
  * cparray_2d1d: copy contents of 2d array into 1d array.
+ * cparray_2d2d: copy contents of 2d array into 2d array.
  * cparray_1d2d: copy contents of 1d array into 2d array.
  * find_pos_in_array_lnsrch: find position of integer in array. linear search.
  * init_dbl_array_0: initialize double  array to zero
@@ -13,6 +15,11 @@
  * ndiffs_array: find number of differences between two arrays
  * sort_array_fast_onesub: sort array with one index out of order
  *
+ * NOTE: Concerning 2-d arrays: rows and columns correspond to the array in
+ * "true" matrix form. This is the OPPOSITE of the arrays ACTUAL form in a
+ * C program. This is done to keep array references consistent with how they
+ * are used in the master program and in f90 subroutines.
+ *
  * By Christopher L Malbon
  * Dept. of Chemistry, The Johns Hopkins University
  */
@@ -20,6 +27,23 @@
 #include <stdio.h>
 #include "iminmax.h"
 #include "arrayutil.h"
+
+/*
+ * cparray_1d1d: copy contents of 1-d array to 1-d array.
+ */
+void cparray_1d1d(double *array1, int len1, double *array2, int len2)
+{
+	int i;
+	/* Test bounds */
+	if (len1 > len2) {
+		fprintf(stderr, "WARNING ");
+		fprintf(stderr, "cparray_1d1d: %d > %d!\n", len1, len2);
+	}
+	for (i = 0; i < len2; i++) {
+		array2[i] = array1[i];
+	}
+	return;
+}
 
 /*
  * cparray_1d2d: copy contents of 1-d array to 2-d array.
@@ -52,6 +76,34 @@ void cparray_2d1d(double **array_2d, int rows, int cols, double *array_1d)
 	}
 	return;
 }
+
+/*
+ * cparray_2d2d: copy contents of 2-d array into 2-d array.
+ */
+void cparray_2d2d(double **array1, int rows1, int cols1, double **array2,
+		  int rows2, int cols2)
+{
+	int i, j;
+	/* Check bounds */
+	if (rows1 > rows2) {
+		fprintf(stderr, "WARNING: ");
+		fprintf(stderr, "cparray_2d2d: (rows) %d > %d\n",
+			rows1, rows2);
+	}
+	if (cols1 > cols2) {
+		fprintf(stderr, "WARNING: ");
+		fprintf(stderr, "cparray_2d2d: (cols) %d > %d\n",
+			cols1, cols2);
+	}
+	/* copy array */
+	for (i = 0; i < cols2; i++) {
+		for (j = 0; j < rows2; j++) {
+			array2[i][j] = array1[i][j];
+		}
+	}
+	return;
+}
+
 
 /* 
  * find_pos_in_array_lnsrch: find position of integer in array. linear search.

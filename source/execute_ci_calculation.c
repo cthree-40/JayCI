@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include "timestamp.h"
 #include "errorlib.h"
 #include "allocate_mem.h"
 #include "binarystr.h"
@@ -44,10 +45,10 @@ int execute_ci_calculation(int aelec, int belec, int orbs, int nastr, int nbstr,
 	double *cival = NULL; /* final ci eigenvalues */
 	struct rowmap *hmap = NULL; /* valid <i|H|j> combinations */
 	
-	clock_t curr_time, prev_time, start_time;
+	clock_t curr_time, prev_time;
 	
-	start_time = clock();
-	fprintf(stdout, " Start time: %10.5lf\n", (double) start_time);
+	fprintf(stdout, " Start time: ");
+	timestamp();
 	
 	/* Compute total contribution of nuclei and frozen core. Compute the
 	   number of internal orbitals. */
@@ -110,5 +111,18 @@ int execute_ci_calculation(int aelec, int belec, int orbs, int nastr, int nbstr,
 	error = dvdalg(detlist, ndets, moints1, moints2, aelec, belec, hdgls,
 		       ninto, totfrze, maxiter, krymin, krymax, nroots, restol,
 		       hmap, civec, cival, prediag_routine, plvl);
+
+        /* Print final vectors to file */
+	error = print_civectors(civec, ndets, nroots, cival);
+	if (error != 0) {
+		error_flag(error, "execute_ci_calculation");
+	}
+
+	/* Free memory */
+	free(hdgls);
+	free(cival);
+	free(detlist);
+	deallocate_cimap(hmap, ndets);
+	deallocate_mem(&civec, ndets, nroots);
 	return error;
 }

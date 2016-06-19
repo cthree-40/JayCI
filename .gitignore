@@ -6,3 +6,4 @@ testing/
 source/*.o
 source/colib/*.o
 source/UNIX/*.o
+mpi-source/
