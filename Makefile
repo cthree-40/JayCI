@@ -16,6 +16,7 @@
 
 # Release version
 JAYCIVER := 1.0.2
+PJAYCIVER:= 1.0.0
 
 # Get OS name and version
 UNAME	:= $(shell uname -a)
@@ -31,12 +32,15 @@ bindir	:= bin
 libdir	:= lib
 tstdir	:= test
 srcdir	:= source
+mpisrc	:= mpi_source
 JDIR	:= $(shell pwd)
 BDIR	:= $(JDIR)/$(bindir)
 LDIR	:= $(JDIR)/$(libdir)
 SDIR	:= $(JDIR)/$(srcdir)
+MPISDIR := $(JDIR)/$(mpisrc)
 TDIR	:= $(JDIR)/$(tstdir)
 IDIR	:= $(SDIR)/include
+MPIIDIR := $(MPISDIR)/include
 UNIXDIR := $(SDIR)/UNIX
 COLIBDIR:= $(SDIR)/colib
 
@@ -49,14 +53,16 @@ CORI:=cori
 EDISON:=edison
 ifneq ($(filter cori edison,$(NERSC_HOST)),)
 	CC := cc -fopenmp -I $(IDIR) 
-	MPICC := cc -fopenmp -I $(IDIR)
+	MPICC := cc -fopenmp -I $(MPIIDIR)
 	FC := ftn
+	MPIFC := ftn
 	AR := ar rv
 	RANL := ranlib
 else
 	CC := gcc -fopenmp -I $(IDIR)
-	MPICC := mpicc -fopenmp -I $(IDIR)
+	MPICC := mpicc -fopenmp -I $(MPIIDIR)
 	FC := gfortran
+	MPIFC := mpif90
 	AR := ar rv
 	RANL := ranlib
 endif
@@ -132,6 +138,25 @@ OBJS := timestamp.o \
 	davidson.o \
 	execute_ci_calculation.o \
 	run_jayci.o
+
+# Objects for mpi_jayci
+MPIOBJS := timestamp.o \
+	   errorlib.o \
+	   iminmax.o \
+           combinatorial.o \
+	   arrayutil.o \
+	   progheader.o \
+           bitutil.o \
+	   binary.o \
+	   straddress.o \
+           moindex.o \
+           readmoints.o \
+	   readnamelist.o \
+           ioutil.o \
+	   binarystr.o \
+	   genbindet.o \
+	   execute_pci_calculation.o
+
 # Objects for colib library 
 COLIBO:=blaswrapper.o colib1.o colib2.o colib3.o colib4.o colib5.o colib6.o \
 	colib7.o colib8.o colib9.o colib10.o
@@ -143,9 +168,11 @@ UNIXC := fdate.c falloc.c fwtime.c hostnm.c flushstdout.c fsize.c
 TESTO := $(OBJS) test.o
 JEXPO := $(OBJS) jayci_exp.o
 JYCIO := $(OBJS) jayci.o
+MPIJYCIO := $(MPIOBJS) pjayci.o
 
 JEXPOBJS := $(addprefix $(SDIR)/,$(JEXPO))
 JYCIOBJS := $(addprefix $(SDIR)/,$(JYCIO))
+PJYCIOBJS:= $(addprefix $(MPISDIR)/,$(MPIJYCIO))
 TESTOBJS := $(addprefix $(SDIR)/,$(TESTO))
 COLIBOBJS:= $(addprefix $(COLIBDIR)/,$(COLIBO))
 COLIBSRCF:= $(addprefix $(COLIBDIR)/,$(COLIBF))
@@ -154,11 +181,13 @@ UNIXSRCC := $(addprefix $(UNIXDIR)/,$(UNIXC))
 
 # Set up executable names
 JCIEXE := $(BDIR)/jayci-$(JAYCIVER)-$(OS)-$(ARC)
+PJCIEXE:= $(BDIR)/pjayci-$(PJAYCIVER)-$(OS)-$(ARC)
 JXPEXE := $(BDIR)/jayci_exp-$(JAYCIVER)-$(OS)-$(ARC)
 TESTEXE:= $(TDIR)/test.x
 COLIBF := $(LDIR)/colib-$(JAYCIVER)-$(OS)-$(ARC).a
 
 CDS := cd $(SDIR)
+CDPS:= cd $(MPISDIR)
 RM  := rm -rf
 
 # Build --------------------------------------------------------------
@@ -241,10 +270,30 @@ jayci: $(JYCIOBJS) | $(BDIR)
 	@echo " Finished build."	
 	@echo ""
 
+pjayci: $(PJYCIOBJS) | $(BDIR)
+	@echo ""
+	@echo "------------------------------------------------------"
+	@echo "   PJAYCI PROGRAM "
+	@echo " Program version:	$(PJAYCIVER)"
+	@echo " Test program:		$(TESTEXE)"
+	@echo " BLAS/LAPACK Lib:	$(MATHLIBS)"
+	@echo " COLIB library:		$(COLIBLIB)"
+	@echo " Debug flags:		$(DEBUG)"
+	@echo " C Compiler options:	$(CFLAGS)"
+	@echo " F90 Compiler options:	$(FFLAGS)"
+	@echo "------------------------------------------------------"
+	$(CDPS); $(MPICC) -o $(PJCIEXE) $(PJYCIOBJS) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS)
+	@echo "------------------------------------------------------"
+	@echo " Creating symbolic link to new binary"
+	ln -sf $(PJCIEXE) $(BDIR)/pjayci
+	@echo "------------------------------------------------------"
+	@echo " Finished build."	
+	@echo ""
+
 # Clean --------------------------------------------------------------
 clean:
-	rm -rf $(JYCIOBJS) 
-	rm -rf $(SDIR)test.o $(SDIR)/jayci_exp.o $(SDIR)/jayci.o 
+	rm -rf $(JYCIOBJS) $(PJYCIOBJS)
+	rm -rf $(SDIR)test.o $(MPISDIR)/test.o $(SDIR)/jayci_exp.o $(MPISDIR)/mpi_jayci.o $(SDIR)/jayci.o 
 	rm -rf $(COLIBOBJS) $(UNIXOBJS)
 
 # Rules --------------------------------------------------------------
@@ -276,6 +325,22 @@ $(SDIR)/ioutil.o:$(SDIR)/ioutil.c
 
 $(SDIR)/mathutil.o:$(SDIR)/mathutil.c
 	$(CC) -c -o $(SDIR)/mathutil.o $(SDIR)/mathutil.c $(DEBUG) $(CFLAGS) -Wno-implicit-function-declaration
+	@echo ""
+
+$(MPISDIR)/%.o:$(MPISDIR)/%.c
+	$(MPICC) -c -o $@ $< $(DEBUG) $(CFLAGS)
+	@echo ""
+
+$(MPISDIR)/readnamelist.o:$(MPISDIR)/readnamelist.f90
+	$(MPIFC) -c -o $(MPISDIR)/readnamelist.o $(MPISDIR)/readnamelist.f90 $(DEBUG) $(FDEBUG) $(FFLAGS)
+	@echo ""
+
+$(MPISDIR)/readmoints.o:$(MPISDIR)/readmoints.f90
+	$(MPIFC) -c -o $(MPISDIR)/readmoints.o $(MPISDIR)/readmoints.f90 $(DEBUG) $(FDEBUG) $(FFLAGS)
+	@echo ""
+
+$(MPISDIR)/ioutil.o:$(MPISDIR)/ioutil.c
+	$(MPICC) -c -o $(MPISDIR)/ioutil.o $(MPISDIR)/ioutil.c $(DEBUG) $(CFLAGS) -Wno-implicit-function-declaration
 	@echo ""
 
 $(BDIR) $(LDIR):

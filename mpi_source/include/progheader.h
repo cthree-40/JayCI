@@ -14,7 +14,7 @@ void print_bars(
 /*
  * print_jayciheader: print header for jayci.x program to stdout.
  */
-void print_jayciheader();
+void print_pjayciheader();
 
 
     

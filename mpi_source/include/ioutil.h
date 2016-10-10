@@ -25,6 +25,16 @@ void print_array_2d(
     int cols
     );
 
+/*
+ * print_civectors: print out ci vectors
+ */
+int print_civectors(
+	double **civec,
+	int ndets,
+	int roots,
+	double *cival
+	);
+
 void readdaiinput(int *maxiter,
 		  int *krymin,
 		  int *krymax,

@@ -3,6 +3,16 @@
 #define arrayutil_h
 
 /*
+ * cparray_1d1d: copy contents of 1-d array to 1-d array.
+ */
+void cparray_1d1d(
+	double *array1, /* Array to copy from */
+	int len1, /* Length of array 1 */
+	double *array2, /* Array to copy TO */
+	int len2 /* Length of array 2 */
+	);
+
+/*
  * cparray_1d2d: copy contents of 1-d array to 2-d array.
  */
 void cparray_1d2d(
@@ -21,6 +31,18 @@ void cparray_2d1d(
     int cols,
     double *array_1d
     );
+
+/*
+ * cparray_2d2d: copy contents of 2-d array into 2-d array.
+ */
+void cparray_2d2d(
+	double **array1, /* Array to copy FROM */
+	int rows1, /* Rows of array 1 */
+	int cols1, /* Columns of array 1 */
+	double **array2, /* Array to copy TO */
+	int rows2, /* Rows of array 2 */
+	int cols2 /* Columns of array 2 */
+	);
 
 /* 
  * find_pos_in_array_lnsrch: find position of integer in array. linear search.

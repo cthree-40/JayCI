@@ -20,9 +20,9 @@ void print_bars(int num)
 /*
  * print_jayciheader: print header for jayci.x program to stdout.
  */
-void print_jayciheader()
+void print_pjayciheader()
 {
-	char *program = "** jayci.x **";
+	char *program = "** pjayci.x **";
 	char *name = "Christopher L Malbon (cthree-40)";
 	char *group = "Yarkony Group";
 	char *institution="Department of Chemistry, The Johns Hopkins University";
