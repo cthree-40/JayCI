@@ -12,6 +12,9 @@
 #include "binary.h"
 #include "binarystr.h"
 #include "ioutil.h"
+#include "cimapping.h"
+#include "genbindet.h"
+#include "action_util.h"
 #include "execute_pci_calculation.h"
 
 /*
@@ -51,7 +54,11 @@ void execute_pci_calculation(int aelec, int belec, int orbs, int nastr,
 	double **civec = NULL; /* final CI eigenvectors */
 	double *cival = NULL; /* final ci eigenvalues */
 	struct rowmap *hmap = NULL; /* valid <i|H|j> combinations */
-	
+	int totelm; /* total matrix elements to evaluate */\
+		
+	int map_chunk = 0; /* Map chunk size */
+	int map_lwrbnd = 0, map_uppbnd = 0; /* Map chunk lower/upper bounds */
+	int nrows = 0; /* number of rows in hmap */
 	clock_t curr_time, prev_time;
 
 	/* Create MPI Type for BCast */
@@ -72,7 +79,8 @@ void execute_pci_calculation(int aelec, int belec, int orbs, int nastr,
 	offsets[2] = offsetof(struct det, cas);
 	MPI_Type_create_struct(3, blocklengths, offsets, types, &mpi_det_type);
 	MPI_Type_commit(&mpi_det_type);
-
+	/* */
+	
 	MPI_Comm_size(MPI_COMM_WORLD, &mpi_num_procs);
 	MPI_Comm_rank(MPI_COMM_WORLD, &mpi_proc_rank);
 
@@ -82,7 +90,7 @@ void execute_pci_calculation(int aelec, int belec, int orbs, int nastr,
 	if (mpi_proc_rank == mpi_root) {
 		fprintf(stdout, " Start time: ");
 		timestamp();
-		totfrze = nucrep = frzcore;
+		totfrze = nucrep + frzcore;
 		ninto = ndocc + nactv;
 		/* Read &dgalinfo namelist. */
 		readdaiinput(&maxiter, &krymin, &krymax, &nroots,
@@ -94,7 +102,7 @@ void execute_pci_calculation(int aelec, int belec, int orbs, int nastr,
 	}
 	MPI_Bcast(&ninto, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
 
-	/* Read in det.list. */
+	/* Read in det.list on master process. Broadcast the list to slaves. */
 	detlist = (struct det *) malloc(ndets * sizeof(struct det));
 	init_detlist(detlist, ndets);
 	if (mpi_proc_rank == mpi_root) {
@@ -108,6 +116,26 @@ void execute_pci_calculation(int aelec, int belec, int orbs, int nastr,
 	MPI_Bcast(detlist, ndets, mpi_det_type, mpi_root, MPI_COMM_WORLD);
 
 	/* Generate map of valid CI matrix elements */
+	/* Divide <i|H|j> matrix up into sections for each process to handle. */
+	if (plvl > 0 && mpi_proc_rank == mpi_root) printf("Generating cimap.\n");
+	map_chunk = get_upptri_size(ndets);
+	map_chunk = map_chunk / mpi_num_procs;
+	map_lwrbnd = get_upptri_row((mpi_proc_rank * map_chunk), ndets);
+	map_uppbnd = get_upptri_row(((mpi_proc_rank + 1) * map_chunk), ndets);
+	if (plvl > 1 && mpi_proc_rank == mpi_root)
+		printf("Chunksize = %15d\n", map_chunk);
+	if (plvl > 1) printf("proc %2d: lower bound = %10d, upper bound = %10d\n",
+			     mpi_proc_rank, map_lwrbnd, map_uppbnd);
+	/* Generate partial hmap for selected rows. */
+	nrows = map_uppbnd - map_lwrbnd;
+	hmap = (struct rowmap *) malloc(sizeof(struct rowmap));
+	error = pci_generate_cimap(detlist, ndets, nactv, map_lwrbnd, map_uppbnd,
+				   hmap, nrows);
+	/* Get total "on" elements for each process. Sort sections of hmap to
+	 * balance the computational load. */
+	error = get_total_nelm(hmap, nrows, &totelm);
+	printf("%d: %d \n", mpi_proc_rank, totelm);
+
 	return;
 }
 		

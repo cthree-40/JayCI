@@ -10,9 +10,11 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ioutil.h"
 #include "progheader.h"
 #include "moindex.h"
+#include "arrayutil.h"
 #include "execute_pci_calculation.h"
 /*
  * pjayci: parallel implementation of determinant-based CI algorithm.
@@ -37,8 +39,6 @@ int main(int argc, char *argv[])
 	
 	double nucrep_energy = 0.0;  /* nuclear repulsion energy */
 	double frzcore_energy = 0.0; /* frozen core orbital energy */
-	
-	int i, j;
 	
 	/* Initialize MPI */
 	MPI_Init(&argc, &argv);

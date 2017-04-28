@@ -155,6 +155,8 @@ MPIOBJS := timestamp.o \
            ioutil.o \
 	   binarystr.o \
 	   genbindet.o \
+	   cimapping.o \
+           action_util.o \
 	   execute_pci_calculation.o
 
 # Objects for colib library 
@@ -184,14 +186,13 @@ JCIEXE := $(BDIR)/jayci-$(JAYCIVER)-$(OS)-$(ARC)
 PJCIEXE:= $(BDIR)/pjayci-$(PJAYCIVER)-$(OS)-$(ARC)
 JXPEXE := $(BDIR)/jayci_exp-$(JAYCIVER)-$(OS)-$(ARC)
 TESTEXE:= $(TDIR)/test.x
-COLIBF := $(LDIR)/colib-$(JAYCIVER)-$(OS)-$(ARC).a
-
+COLIBX := $(LDIR)/colib-$(JAYCIVER)-$(OS)-$(ARC).a
 CDS := cd $(SDIR)
 CDPS:= cd $(MPISDIR)
 RM  := rm -rf
 
 # Build --------------------------------------------------------------
-all: colib jayci_exp jayci
+all: colib jayci_exp jayci pjayci
 	@echo "Finished building jayci."
 	@echo ""
 
@@ -201,14 +202,14 @@ colib: $(COLIBOBJS) $(UNIXOBJS) | $(LDIR)
 	@echo "   COLIB LIBRARY "
 	@echo " Program Version:        $(JAYCIVER)"
 	@echo " Archiver (AR):		$(AR)"
-	@echo " Library file name:	$(COLIBF)"
+	@echo " Library file name:	$(COLIBX)"
 	@echo "------------------------------------------------------"
-	$(CDS); $(AR) $(COLIBF) $(COLIBOBJS) $(UNIXOBJS)
-	$(RANL) $(COLIBF)
-	chmod +x $(COLIBF)
+	$(CDS); $(AR) $(COLIBX) $(COLIBOBJS) $(UNIXOBJS)
+	$(RANL) $(COLIBX)
+	chmod +x $(COLIBX)
 	@echo "------------------------------------------------------"
 	@echo " Creating symbolic link to new library"
-	ln -sf $(COLIBF) $(LDIR)/colib.a
+	ln -sf $(COLIBX) $(LDIR)/colib.a
 	@echo "------------------------------------------------------"
 	@echo " Finished build."
 	@echo ""
