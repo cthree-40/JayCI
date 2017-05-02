@@ -1,22 +1,31 @@
 ######################################################################
-# Makefile for jayci
+# Makefile for jayci, pjayci, and dycicalc
 # --------------------------------------------------------------------
 # By Christopher L Malbon
 # Yarkony Group
 # Department of Chemistry
 # The Johns Hopkins University
 #
+# JAYCI ----------------
 # Date		Version
 # -----------	-------
 # 2016-06-10:     1.0.0
 # 2016-06-13:     1.0.1
 # 2016-06-14:     1.0.2
 # 2016-06-19:     1.1.0
+# ----------------------
+#
+# PJAYCI ---------------
+# Date          Version
+# -----------   -------
+# 
+# ----------------------
 ######################################################################
 
 # Release version
 JAYCIVER := 1.0.2
 PJAYCIVER:= 1.0.0
+DYCICALCVER:= 1.0.0
 
 # Get OS name and version
 UNAME	:= $(shell uname -a)
@@ -38,6 +47,7 @@ BDIR	:= $(JDIR)/$(bindir)
 LDIR	:= $(JDIR)/$(libdir)
 SDIR	:= $(JDIR)/$(srcdir)
 MPISDIR := $(JDIR)/$(mpisrc)
+DYCISDIR:= $(JDIR)/$(dycisrc)
 TDIR	:= $(JDIR)/$(tstdir)
 IDIR	:= $(SDIR)/include
 MPIIDIR := $(MPISDIR)/include
@@ -109,55 +119,63 @@ endif
 COLIBLIB := $(LDIR)/colib.a
 
 # Objects for jayci
-OBJS := timestamp.o \
-	errorlib.o \
-	allocate_mem.o \
-	cmdline.o \
-	iminmax.o \
-	arrayutil.o \
-	bitutil.o \
-	binary.o \
-	progheader.o \
-	combinatorial.o \
-	straddress.o \
-	moindex.o \
-	readmoints.o \
-	readnamelist.o \
-	ioutil.o \
-	abecalc.o \
-	citruncate.o \
-	binarystr.o \
-	dlamch_fcn.o \
-	mathutil.o \
-	cimapping.o \
-	action_util.o \
-	prediagfcns.o \
-	genbindet.o \
-	det2string.o \
-	initguess_sbd.o \
-	davidson.o \
-	execute_ci_calculation.o \
-	run_jayci.o
+OBJS := 	timestamp.o \
+		errorlib.o \
+		allocate_mem.o \
+		cmdline.o \
+		iminmax.o \
+		arrayutil.o \
+		bitutil.o \
+		binary.o \
+		progheader.o \
+		combinatorial.o \
+		straddress.o \
+		moindex.o \
+		readmoints.o \
+		readnamelist.o \
+		ioutil.o \
+		abecalc.o \
+		citruncate.o \
+		binarystr.o \
+		dlamch_fcn.o \
+		mathutil.o \
+		cimapping.o \
+		action_util.o \
+		prediagfcns.o \
+		genbindet.o \
+		det2string.o \
+		initguess_sbd.o \
+		davidson.o \
+		execute_ci_calculation.o \
+		run_jayci.o
 
 # Objects for mpi_jayci
-MPIOBJS := timestamp.o \
-	   errorlib.o \
-	   iminmax.o \
-           combinatorial.o \
-	   arrayutil.o \
-	   progheader.o \
-           bitutil.o \
-	   binary.o \
-	   straddress.o \
-           moindex.o \
-           readmoints.o \
-	   readnamelist.o \
-           ioutil.o \
-	   binarystr.o \
-	   genbindet.o \
-	   cimapping.o \
-           action_util.o \
-	   execute_pci_calculation.o
+MPIOBJS :=	timestamp.o \
+	   	errorlib.o \
+	   	iminmax.o \
+		combinatorial.o \
+	   	arrayutil.o \
+	   	progheader.o \
+		bitutil.o \
+	   	binary.o \
+	   	straddress.o \
+		moindex.o \
+		readmoints.o \
+	   	readnamelist.o \
+		ioutil.o \
+	   	binarystr.o \
+	   	genbindet.o \
+	   	cimapping.o \
+		action_util.o \
+	   	execute_pci_calculation.o
+
+DYCIOBJS := 	errorlib.o \
+		moindex.o \
+		readmoints.o \
+		readnamelist.o \
+		ioutil.o \
+		progheader.o \
+	    	run_dycicalc.o
 
 # Objects for colib library 
 COLIBO:=blaswrapper.o colib1.o colib2.o colib3.o colib4.o colib5.o colib6.o \
@@ -171,10 +189,12 @@ TESTO := $(OBJS) test.o
 JEXPO := $(OBJS) jayci_exp.o
 JYCIO := $(OBJS) jayci.o
 MPIJYCIO := $(MPIOBJS) pjayci.o
+DYCIO := $(DYCIOBJS) dycicalc.o
 
 JEXPOBJS := $(addprefix $(SDIR)/,$(JEXPO))
 JYCIOBJS := $(addprefix $(SDIR)/,$(JYCIO))
 PJYCIOBJS:= $(addprefix $(MPISDIR)/,$(MPIJYCIO))
+DYCIOBJS := $(addprefix $(SDIR)/,$(DYCIO))
 TESTOBJS := $(addprefix $(SDIR)/,$(TESTO))
 COLIBOBJS:= $(addprefix $(COLIBDIR)/,$(COLIBO))
 COLIBSRCF:= $(addprefix $(COLIBDIR)/,$(COLIBF))
@@ -185,6 +205,7 @@ UNIXSRCC := $(addprefix $(UNIXDIR)/,$(UNIXC))
 JCIEXE := $(BDIR)/jayci-$(JAYCIVER)-$(OS)-$(ARC)
 PJCIEXE:= $(BDIR)/pjayci-$(PJAYCIVER)-$(OS)-$(ARC)
 JXPEXE := $(BDIR)/jayci_exp-$(JAYCIVER)-$(OS)-$(ARC)
+DYCIEXE:= $(BDIR)/dycicalc-$(DYCICALCVER)-$(OS)-$(ARC)
 TESTEXE:= $(TDIR)/test.x
 COLIBX := $(LDIR)/colib-$(JAYCIVER)-$(OS)-$(ARC).a
 CDS := cd $(SDIR)
@@ -192,7 +213,7 @@ CDPS:= cd $(MPISDIR)
 RM  := rm -rf
 
 # Build --------------------------------------------------------------
-all: colib jayci_exp jayci pjayci
+all: colib jayci_exp jayci pjayci dycicalc
 	@echo "Finished building jayci."
 	@echo ""
 
@@ -289,6 +310,25 @@ pjayci: $(PJYCIOBJS) | $(BDIR)
 	ln -sf $(PJCIEXE) $(BDIR)/pjayci
 	@echo "------------------------------------------------------"
 	@echo " Finished build."	
+	@echo ""
+
+dycicalc: $(DYCIOBJS) | $(BDIR)
+	@echo ""
+	@echo "------------------------------------------------------"
+	@echo "   DYCICALC PROGRAM "
+	@echo " Program version:	$(DYCICALCVER)"
+	@echo " BLAS/LAPACK Lib:	$(MATHLIBS)"
+	@echo " COLIB library:		$(COLIBLIB)"
+	@echo " Debug flags:		$(DEBUG)"
+	@echo " C Compiler options: 	$(CFLAGS)"
+	@echo " F90 Compiler options:	$(FFLAGS)"
+	@echo "------------------------------------------------------"
+	$(CDS); $(CC) -o $(DYCIEXE) $(DYCIOBJS) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS)
+	@echo "------------------------------------------------------"
+	@echo " Creating symbolic link to new binary"
+	ln -sf $(DYCIEXE) $(BDIR)/dycicalc
+	@echo "------------------------------------------------------"
+	@echo " Finished build."
 	@echo ""
 
 # Clean --------------------------------------------------------------

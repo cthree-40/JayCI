@@ -6,6 +6,15 @@
 #define MAX_LINE_SIZE     300
 #define MAX_NAMELIST_SIZE  30
 
+/* check_for_file
+ * --------------
+ * Check if file exists and can be opened for desired operation.
+ */
+int check_for_file(
+        char *filename,     /* name of file */
+        char *fileoperation /* mode */
+        );
+
 int checkinputfiles();
 
 int geninput(int dlen,

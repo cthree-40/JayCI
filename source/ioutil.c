@@ -27,7 +27,25 @@ extern void _readnamelist_(long long int  nmlist,
                            long long int *err);
 /*************************/
 
-int checkinputfiles()
+/* check_for_file
+ * --------------
+ * Check if file exists and can be opened for desired operation.
+ */
+int check_for_file(char *filename, char *fileoperation)
+{
+        int iexists = 0;
+        FILE *fptr = NULL;
+        char error_message[80];
+        fptr = fopen(filename, fileoperation);
+        if (fptr == NULL){
+                sprintf(error_message,"Cannot open file: '%s'; mode: '%s'!",
+                       filename, fileoperation);
+                iexists = 1;
+                printf("Error: %s\n", error_message);
+        }
+        return iexists;
+}
+
 /* checkinputfiles
  * ---------------
  * Check for the following input files:
@@ -37,60 +55,25 @@ int checkinputfiles()
  *  (4) = det.list    = determinant input list
  * Returns integer value of missing input file.
  */
+int checkinputfiles()
 {
-     /* local pointers 
-      * fptr = file pointer */
-     FILE *fptr;
-
      /* local scalars
       * err = error handling */
-     int err;
+     int err = 0;
 
-     err = 0;
-     
-     fptr = fopen("jayci.in","r");
-     if (fptr == NULL) {
-	  err = 1;
-	  fprintf(stderr,
-		  "*** ERROR: Missing input file: jayci.in! ***\n");
-	  return err;
-     } else {
-	  fclose(fptr);
-     }
-
-     fptr = fopen("input.jayci","r");
-     if (fptr == NULL) {
-	  err = 2;
-	  fprintf(stderr,
-		  "*** ERROR: Missing input file: input.jayci! ***\n");
-	  return err;
-     } else {
-	  fclose(fptr);
-     }
-
-     fptr = fopen("moints", "r");
-     if (fptr == NULL) {
-	  err = 3;
-	  fprintf(stderr,
-		  "*** ERROR: Missing molecular integral file: moints! ***\n");
-	  return err;
-     } else {
-	  fclose(fptr);
-     }
-
-     fptr = fopen("det.list", "r");
-     if (fptr == NULL) {
-	  err = 4;
-	  fprintf(stderr,
-		  "*** ERROR: Missing determinant list file! ***\n");
-	  return err;
-     } else {
-	  fclose(fptr);
-     }
+     err = check_for_file("jayci.in","r");
+     if (err != 0) return err;
+     err = check_for_file("input.jayci","r");
+     if (err != 0) return err;
+     err = check_for_file("moints","r");
+     if (err != 0) return err;
+     err = check_for_file("det.list","r");
+     if (err != 0) return err;
 
      return err;
      
 }
+
 /* geninput: generate input for jayci.x 
  * -------------------------------------------------------------------
  * Input:
@@ -216,6 +199,30 @@ void readdaiinput(int *maxiter,  int *krymin, int *krymax, int *nroots,
     
     return;
 }
+
+/* read_dysonorb_input: read dyson orbital input namelist file.
+ * -------------------------------------------------------------------
+ * Calls readnamelist which returns a character array
+ * nmlstr[0] = wvfcn_file0: n+1 electron wavefunction
+ * nmlstr[1] = wvfcn_file1: n   electron wavefunction
+ */
+void read_dysonorb_input(char *wvfcn_file0, char *wvfcn_file1, int *err)
+{
+        /* dynml = 3, Read in dyson orbital namelist. */
+        long long int dynml = 3; 
+        char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};
+
+        *err = 0;
+        readnamelist_(&dynml, nmlstr, &err);
+        if (err != 0) return;
+
+        /* stream input into proper values */
+        sscanf(nmlstr[0], "%s", wvfcn_file0);
+        sscanf(nmlstr[1], "%s", wvfcn_file1);
+        
+        return;
+}
+
 /* readgeninput: read general wavefunction input.
  * -------------------------------------------------------------------
  * Calls readnamelist which returns a character array
