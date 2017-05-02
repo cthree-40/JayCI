@@ -8,7 +8,7 @@ Notes
 ------
 <p>Currently, molecular integrals must be written in the SIFS format
 of the Columbus7 electronic structure suite.</p>
-<p>Compilers: gfortran, Intel Fortran Compiler</p>
+<p>Compilers: gfortran, gcc, Intel C Compiler, Intel Fortran Compiler</p>
 <p>Math Libraries: BLAS and LAPACK.</p>
 
 
