@@ -127,13 +127,17 @@ void print_array_2d(double **array, int rows, int cols)
 }
 
 /*
- * print_civectors: print out ci vectors
+ * print_civectors: print out ci information and vectors
  */
-int print_civectors(double **civec, int ndets, int roots, double *cival)
+int print_civectors(int aelec, int belec, int orbs, double **civec,
+                    int ndets, int roots, double *cival)
 {
 	int error = 0; /* error flag */
+        int tot_elec = 0; /* total electrons */
 	int i, j;
 	FILE *fptr;
+
+        tot_elec = aelec + belec;
 	/* Open file and print eigenvalues and eigenvectors */
 	fptr = fopen("civector.dat", "w");
 	if (fptr == NULL) {
@@ -141,15 +145,64 @@ int print_civectors(double **civec, int ndets, int roots, double *cival)
 		error_flag(error, "print_civectors");
 		return error;
 	}
+        fprintf(fptr, "%d %d %d\n", tot_elec, orbs, ndets);
 	fprintf(fptr, "%d\n\n", roots);
 	for (i = 0; i < roots; i++) {
 		fprintf(fptr, "%15.8lf\n\n", cival[i]);
 		for (j = 0; j < ndets; j++) {
-			fprintf(fptr, "%15.8lf\n", civec[i][j]);
+			fprintf(fptr, "%15.12lf\n", civec[i][j]);
 		}
+                fprintf(fptr, "\n");
 	}
-	close(fptr);
+	fclose(fptr);
 	return error;
+}
+
+/*
+ * read_civectors: read in ci information and vectors
+ */
+int read_civectors(int aelec, int belec, int orbs, double **civec,
+                   int ndets, int roots, double *cival)
+{
+        int error = 0; /* error flag */
+        int tot_elec = 0; /* total electrons */
+        int fl_totelec, fl_ndets, fl_roots, fl_orbs; /* file values */
+        int i, j;
+        FILE *fptr;
+
+        tot_elec = aelec + belec;
+        /* Open file and read eigenvalues and eigenvetors */
+        fptr = fopen("civector.dat", "r");
+        if (fptr == NULL) {
+                error = 1;
+                error_flag(error, "read_civectors");
+                return error;
+        }
+        fscanf(fptr, "%d %d %d\n", &fl_totelec, &fl_orbs, &fl_ndets);
+        if (fl_totelec != tot_elec || fl_orbs != orbs ||
+            fl_ndets != ndets) {
+                error = 2;
+                error_message("incorrect parameters", "read_civectors");
+                error_flag(error, "read_civectors");
+                return error;
+        }
+        fscanf(fptr, "%d\n\n", &fl_roots);
+        if (fl_roots < roots) {
+                error = 10 + fl_roots;
+                error_message("File contains less roots than desired",
+                              "read_civectors");
+                error_flag(error, "read_civectors");
+                return error;
+        }
+        for (i = 0; i < roots; i++) {
+                fscanf(fptr, "%lf\n\n", &(cival[i]));
+                for (j = 0; j < ndets; j++) {
+                        fscanf(fptr, "%lf\n", &(civec[i][j]));
+                }
+                fscanf(fptr, "\n");
+        }
+        fclose(fptr);
+        return error;
 }
 
 /* readdaiinput: read diagonalization algorithm input.
@@ -205,8 +258,21 @@ void readdaiinput(int *maxiter,  int *krymin, int *krymax, int *nroots,
  * Calls readnamelist which returns a character array
  * nmlstr[0] = wvfcn_file0: n+1 electron wavefunction
  * nmlstr[1] = wvfcn_file1: n   electron wavefunction
+ * nmlstr[2] = nstates0: n+1 electron wavefunction states to read
+ * nmlstr[3] = nstates1: n   electron wavefunction states to read
+ * nmlstr[4] = nelecs0 : n+1 electrons
+ * nmlstr[5] = nelecs1 : n   electrons
+ * nmlstr[6] = norbs0  : n+1 orbitals
+ * nmlstr[7] = norbs1  : n   orbitals
+ * nmlstr[8] = ndets0  : n+1 determinants
+ * nmlstr[9] = ndets1  : n   determinants
+ * nmlstr[10]= ninto0  : n+1 electron internal orbitals
+ * nmlstr[11]= ninto1  : n   electron internal orbitals
  */
-void read_dysonorb_input(char *wvfcn_file0, char *wvfcn_file1, int *err)
+void read_dysonorb_input(char *wvfcn_file0, char *wvfcn_file1, int *nstates0,
+                         int *nstates1, int *nelecs0, int *nelecs1, int *norbs0,
+                         int *norbs1, int *ndets0, int *ndets1, int *ninto0,
+                         int *ninto1, int *err)
 {
         /* dynml = 3, Read in dyson orbital namelist. */
         long long int dynml = 3; 
@@ -219,7 +285,17 @@ void read_dysonorb_input(char *wvfcn_file0, char *wvfcn_file1, int *err)
         /* stream input into proper values */
         sscanf(nmlstr[0], "%s", wvfcn_file0);
         sscanf(nmlstr[1], "%s", wvfcn_file1);
-        
+        sscanf(nmlstr[2], "%d", nstates0);
+        sscanf(nmlstr[3], "%d", nstates1);
+        sscanf(nmlstr[4], "%d", nelecs0);
+        sscanf(nmlstr[5], "%d", nelecs1);
+        sscanf(nmlstr[6], "%d", norbs0);
+        sscanf(nmlstr[7], "%d", norbs1);
+        sscanf(nmlstr[8], "%d", ndets0);
+        sscanf(nmlstr[9], "%d", ndets1);
+        sscanf(nmlstr[10], "%d", ninto0);
+        sscanf(nmlstr[11], "%d", ninto1);
+
         return;
 }
 
@@ -233,6 +309,8 @@ void read_dysonorb_input(char *wvfcn_file0, char *wvfcn_file1, int *err)
  *  nmlist[4] = nactive
  *  nmlist[5] = xlevel
  *  nmlist[6] = nfrzvirt
+ *  nmlist[7] = printlvl
+ *  nmlist[8] = printwvf
  *
  * Output:
  *  elec = number of electrons in system (alpha + beta)
@@ -242,10 +320,12 @@ void read_dysonorb_input(char *wvfcn_file0, char *wvfcn_file1, int *err)
  *  nactive = number of active orbitals
  *  xlevel = excitaion level (Default is 2)
  *  nfrzvirt = number of frozen virtual orbitals
+ *  printlvl = print level
+ *  printwvf = print wavefunctions (0: no; 1: yes)
  *  err = error handling: n = missing variable n */
-void readgeninput(int *elec,    int *orbs,   int *nfrozen,  int *ndocc,
-	          int *nactive, int *xlevel, int *nfrzvirt, int *printlvl,
-                  int *err)
+void readgeninput(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt, int *printlvl,
+                  int *printwvf, int *err)
 {
      /* local scalars
       * gnml = namelist to read in */
@@ -271,10 +351,12 @@ void readgeninput(int *elec,    int *orbs,   int *nfrozen,  int *ndocc,
      sscanf(nmlstr[5], "%d", xlevel);
      sscanf(nmlstr[6], "%d", nfrzvirt);
      sscanf(nmlstr[7], "%d", printlvl);
+     sscanf(nmlstr[8], "%d", printwvf);
 
      return;
      
 }
+
 /* readinputjayci: read the input file input.jayci
  * -------------------------------------------------------------------
  * Output:

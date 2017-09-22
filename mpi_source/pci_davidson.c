@@ -2,12 +2,14 @@
 /*
  * Davidson algorithm for pjayci.c
  */
+#include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "errorlib.h"
 #include "ioutil.h"
 #include "arrayutil.h"
 #include "allocate_mem.h"
+#include "initguess_sbd.h"
 #include "pci_davidson.h"
 
 /*
@@ -39,8 +41,8 @@ int pdvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
         double *nvec = NULL; /* new vector */
         double rnorm = 0.0;
 
-        double *mpi_cvec = NULL; /* hv=c (mpi portion) */
-        double *mpi_vvec = NULL; /* hv=c (mpi portion) */
+        double **mpi_cvec = NULL; /* hv=c (mpi portion) */
+        double **mpi_vvec = NULL; /* hv=c (mpi portion) */
         
         int croot = 0;
         int ckdim = 0;
@@ -57,7 +59,7 @@ int pdvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
                 error = error + allocate_mem_double(&vscr, ndets, krymax);
                 error = error + allocate_mem_double(&hevec, krymax, krymax);
                 if (error != 0) {
-                        error_flag(errror,"mem allocation: dvdalg");
+                        error_flag(error,"mem allocation: dvdalg");
                         return error;
                 }
                 init_dbl_2darray_0(hscr, krymax, krymax);
@@ -82,8 +84,12 @@ int pdvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
         }
 
         /* Allocate arrays to compute Hv=c for each mpi process. */
-        mpi_cvec = (double *) malloc(nrows * sizeof(double));
-        mpi_vvec = (double *) malloc(ndets * sizeof(double));
+        error = allocate_mem_double(&mpi_cvec, ndets, krymax);
+        error = error + allocate_mem_double(&mpi_vvec, ndets, krymax);
+        if (error != 0) {
+                error_flag(error, "mem allocation: dvdalg");
+                return error;
+        }
         
         /* Compute diagonal matrix elements <i|H|i>. This is done on the root
 	 * process. It is needed for the Davidson algorithm. */
@@ -96,5 +102,29 @@ int pdvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 				     (hdgls[0] + totfrze));
 	}
 
+        /* Generate initial guess vectors by diagonalizing an upper block of
+         * the Hamiltonian. Send the initial guess vectors to the slave nodes */
+        if (mpi_proc_rank == mpi_root) {
+                if (plvl > 0) printf("Computing initial guess.\n");
+                error = initguess_sbd(dlist, ndets, moints1, moints2, aelec,
+                                      belec, ninto, krymin, mpi_vvec);
+                if (error != 0) {
+                        error_flag(error, "pdvdalg");
+                        return error;
+                }
+                
+        }
+        for (i = 0; i < krymin; i++) {
+                MPI_Bcast(mpi_vvec[i], ndets, MPI_DOUBLE, mpi_root,
+                          MPI_COMM_WORLD);
+        }
+
+        /* Perform H[n,n+rows;ndets]v[ndets,i]=c[ndets,i] for row slice of H */
+        for (i = 0; i < krymin; i++) {
+                compute_hv(detlist, ndets, moints1, moints2, aelec, belec,
+                           mpi_vvec[i], mpi_cvec[i], ninto, hmap);
+                /* Collect c contributions, and add them for each process */
+                
+        }
         
 }

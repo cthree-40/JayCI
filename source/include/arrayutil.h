@@ -59,6 +59,14 @@ void init_dbl_array_0(
 	double *array,  /* array to initialize */
 	int len);       /* dimension of array  */
 
+/*
+ * init_dbl_array_1: initialize doulbe array to 1
+ */
+void init_dbl_array_1(
+        double *array,
+        int len
+        );
+
 /* 
  * init_dbl_2darray_0: initialize double  array to 0
  */

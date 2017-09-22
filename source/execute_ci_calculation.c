@@ -17,6 +17,7 @@
 #include "action_util.h"
 #include "davidson.h"
 #include "det2string.h"
+#include "write_wavefunction.h"
 #include "execute_ci_calculation.h"
 
 /*
@@ -25,12 +26,12 @@
 int execute_ci_calculation(int aelec, int belec, int orbs, int nastr, int nbstr,
 			   int ndets, int ndocc, int nactv, double *moints1,
 			   double *moints2, double nucrep, double frzcore,
-			   int plvl)
+			   int plvl, int pwvf)
 {
 	int error = 0; /* error flag */
 	double totfrze = 0.0; /* nucrep + frzcore */
 	int ninto = 0; /* internal orbitals (docc + active) */
-	
+        
 	int maxiter = 0; /* maximum number of davidson algorithm iterations */
 	int krymin = 0; /* minimum size of the krylov space */
 	int krymax = 0; /* maximum size of the krylov space */
@@ -44,7 +45,9 @@ int execute_ci_calculation(int aelec, int belec, int orbs, int nastr, int nbstr,
 	double **civec = NULL; /* final CI eigenvectors */
 	double *cival = NULL; /* final ci eigenvalues */
 	struct rowmap *hmap = NULL; /* valid <i|H|j> combinations */
-	
+
+        int i;
+        
 	clock_t curr_time, prev_time;
 	
 	fprintf(stdout, " Start time: ");
@@ -110,14 +113,24 @@ int execute_ci_calculation(int aelec, int belec, int orbs, int nastr, int nbstr,
 	/* Davidson algorithm */
 	error = dvdalg(detlist, ndets, moints1, moints2, aelec, belec, hdgls,
 		       ninto, totfrze, maxiter, krymin, krymax, nroots, restol,
-		       hmap, civec, cival, prediag_routine, plvl);
+		       hmap, civec, cival, prediag_routine, plvl, orbs);
 
+        /* Print final eigenvalues */
+        for (i = 0; i < nroots; i++) {
+                fprintf(stdout, " Total CI Energy for root # %2d: %15.8lf\n",
+                        i, cival[i]);
+        }
         /* Print final vectors to file */
-	error = print_civectors(civec, ndets, nroots, cival);
+	error = print_civectors(aelec, belec, orbs, civec, ndets, nroots, cival);
 	if (error != 0) {
 		error_flag(error, "execute_ci_calculation");
 	}
-
+        if (pwvf == 1) {
+                fprintf(stdout, " Printing wavefunction info to ciwvfcn.dat.\n");
+                write_wavefunction(detlist, ndets, nroots, civec, cival, orbs,
+                                   ninto, (aelec + belec));
+        }
+        
 	/* Free memory */
 	free(hdgls);
 	free(cival);

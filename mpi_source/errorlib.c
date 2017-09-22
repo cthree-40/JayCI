@@ -19,4 +19,16 @@ void error_flag(int error_value, char *function_name)
 {
     fprintf(stderr, "*** Error: ");
     fprintf(stderr, "%s: %d\n", function_name, error_value);
+    return;
+}
+
+/*
+ * error_message: Alert user to function flagging and error, printing
+ * a warning message. 
+ */
+void error_message(char *function_name, char *message)
+{
+        fprintf(stderr, "*** Error: ");
+        fprintf(stderr, "%s: %s\n", function_name, message);
+        return;
 }

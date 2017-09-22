@@ -136,6 +136,8 @@ void execute_pci_calculation(int aelec, int belec, int orbs, int nastr,
 	error = get_total_nelm(hmap, nrows, &totelm);
 	printf("%d: %d \n", mpi_proc_rank, totelm);
 
+        /* Call davidson algorithm subroutine. */
+        
 	return;
 }
 		

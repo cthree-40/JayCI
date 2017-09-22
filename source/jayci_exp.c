@@ -41,11 +41,13 @@ int main()
       * nactv  = number of active orbitals
       * nfrzv  = number of frozen virtual orbitals
       * xlevel = excitation level
-      * prntlvl= print level */
+      * prntlvl= print level 
+      * printwvf = print wavefunction */
      int elec, orbs;
      int nfrzc, ndocc, nactv, nfrzv;
      int xlevel;
      int prntlvl;
+     int printwvf;
 
      /* local scalars
       * err    = error handling 
@@ -75,7 +77,7 @@ int main()
 
      /* read the &general namelist */
      readgeninput(&elec, &orbs, &nfrzc, &ndocc, &nactv, &xlevel,
-		  &nfrzv, &prntlvl, &err);
+		  &nfrzv, &prntlvl, &printwvf, &err);
      if (err != 0) {
 	  /* error reading namelist */
 	  fprintf(stderr,

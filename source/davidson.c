@@ -23,6 +23,7 @@
 #include "action_util.h"
 #include "mathutil.h"
 #include "initguess_sbd.h"
+#include "initguess_roldv.h"
 #include "davidson.h"
 
 /*
@@ -84,12 +85,13 @@ int diag_subspacehmat(double **hmat, double **hevec, double *heval, int dim,
  * cival = eigenvalues; cival[nroots] double array
  * predr = prediagonalization routine
  * plvl = print level
+ * norbs = total number of CI orbitals
  */
 int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	   int aelec, int belec, double *hdgls, int ninto, double totfrze,
 	   int maxiter, int krymin, int krymax, int nroots, double restol,
 	   struct rowmap *hmap, double **civec, double *cival, int predr,
-	   int plvl)
+	   int plvl, int norbs)
 {
 	int error = 0; /* error flag */
 	int cflag = 0; /* convergence flag */
@@ -149,8 +151,16 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	
 	/* Generate initial guess vectors by diagonalizing an upper block
 	 * of the Hamiltonian. */
-	error = initguess_sbd(dlist, ndets, moints1, moints2, aelec,
-			      belec, ninto, krymin, vscr);
+        if (predr == 1) {
+                error = initguess_sbd(dlist, ndets, moints1, moints2, aelec,
+                                      belec, ninto, krymin, vscr);
+        } else if (predr == 2) {
+                error = initguess_roldv(vscr,krymin,norbs,aelec,belec,ndets);
+        } else {
+                fprintf(stderr, "No initial guess routine selected!\n");
+                error = -1;
+        }
+        
 	if (error != 0) {
 		error_flag(error, "dvdalg");
 		return error;
@@ -323,44 +333,6 @@ void make_subspacehmat(double **v, double **hv, int ndets, int ckdim,
 }
 
 /*
- * orthonormalize_vector: orthogonalize and normalize new vector to space
- * of basis vectors.
- */
-void orthonormalize_vector(double **bvecs, int nbv, int vlen, double *nvec)
-{
-	
-	double nvnorm; /* norm of orthogonalized vector */
-	double ovrlp; /* overlap of new vector with basis vectors */
-	int i, j;
-	/* Loop over space removing the overlap of the new vector with each basis
-	 * vector. */
-	for (i = 0; i < nbv; i++) {
-		ovrlp = dot_product(bvecs[i], nvec, vlen);
-		for (j = 0; j < vlen; j++) {
-			nvec[j] = nvec[j] - ovrlp * bvecs[i][j];
-		}
-	}
-	/* Normalize this vector */
-	nvnorm = compute_vector_norm(nvec, vlen);
-	for (i = 0; i < vlen; i++) {
-		nvec[i] = nvec[i] / nvnorm;
-	}
-	/* check orthogonalization */
-	for (i = 0; i < nbv; i++) {
-		ovrlp = dot_product(bvecs[i], nvec, vlen);
-		if (ovrlp > 0.000001) {
-			printf("*** Warning: ovrlp = %15.8lf ***\n", ovrlp);
-		}
-	}
-	/* check norm */
-	nvnorm = compute_vector_norm(nvec, vlen);
-	if (pow(nvnorm - 1.0, 2) > 0.0000001) {
-		printf("*** Warning: nvnorm = %15.8lf ***\n", nvnorm);
-	}
-	return;
-}
-
-/*
  * perform_hv_initspace: perform hv on inital vectors.
  */
 void perform_hv_initspace(struct det *dlist, int ndets, double *moints1,
@@ -388,12 +360,24 @@ void print_iteration_info(double *heval, int ckdim, int croot, double rnorm,
 	for (i = 0; i < 70; i++) {
 		fprintf(stdout, "-");
 	}
-	fprintf(stdout, "\n  Eigenvalues: ");
+	fprintf(stdout, "\n  Eigenvalues:\n");
 	for (i = 0; i < ckdim; i++) {
-		fprintf(stdout, " %15.8lf", (heval[i] + totfrze));
+                if ((i + 1) < croot) {
+                        fprintf(stdout, "   Root #%2d  %15.8lf *CONVERGED*\n",
+                                (i + 1), (heval[i] + totfrze));
+                } else if ((i + 1) == croot) {
+                        fprintf(stdout, "   Root #%2d  %15.8lf ||r||: %15.8lf\n",
+                                (i + 1), (heval[i] + totfrze), rnorm);
+                } else {
+                        fprintf(stdout, "   Root #%2d  %15.8lf\n",
+                                (i + 1), (heval[i] + totfrze));
+                }
 	}
-	fprintf(stdout, "\n  ||r||: %15.8lf\n", rnorm);
-	return;
+        for (i = 0; i < 70; i++) {
+		fprintf(stdout, "-");
+	}
+        fprintf(stdout,"\n");
+        return;
 }
 
 /*

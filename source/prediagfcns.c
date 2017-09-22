@@ -15,6 +15,7 @@
 #include "binarystr.h"
 #include "mathutil.h"
 #include "arrayutil.h"
+#include "cimapping.h"
 #include "action_util.h"
 #include "prediagfcns.h"
 

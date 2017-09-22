@@ -50,12 +50,13 @@ int diag_subspacehmat(
  * cival = eigenvalues; cival[nroots] double array
  * predr = prediagonalization routine
  * plvl = print level
+ * norbs = total number of orbitals (excluding frozen core)
  */
 int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	   int aelec, int belec, double *hdgls, int ninto, double totfrze,
 	   int maxiter, int krymin, int krymax, int nroots, double restol,
 	   struct rowmap *hmap, double **civec, double *cival, int predr,
-	   int plvl);
+	   int plvl, int norbs);
 
 /*
  * generate_newvector: build correction vector.
@@ -91,17 +92,6 @@ void make_subspacehmat(
     int ndets, /* dimension of basis vectors (number of determinants) */
     int ckdim, /* current dimension of krylov space */
     double **hmat /* krylov space hamiltonian */
-    );
-
-/*
- * orthonormalize_vector: orthogonalize and normalize new vector to space
- * of basis vectors.
- */
-void orthonormalize_vector(
-    double **bvecs, /* basis vectors */
-    int nbv, /* number of basis vectors */
-    int vlen, /* length of each vector */
-    double *nvec /* new vector; vector to be normalized */
     );
 
 /*

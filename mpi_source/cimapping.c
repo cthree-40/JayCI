@@ -8,6 +8,14 @@
 #include "binarystr.h"
 #include "cimapping.h"
 
+/* --- OpenMP library ----------------------------*/
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#define omp_get_thread_num() 0
+#endif
+/*------------------------------------------------*/
+
 /*
  * convertrow2map: convert row of bits into rowmap structure.
  */

@@ -38,11 +38,27 @@ void print_array_2d(
  * print_civectors: print out ci vectors
  */
 int print_civectors(
+        int aelec, /* alpha electrons */
+        int belec, /* beta  electrons */
+        int orbs, /* number of molecular orbitals */
 	double **civec,
 	int ndets,
 	int roots,
 	double *cival
 	);
+
+/*
+ * read_civectors: read in ci information and vectors
+ */
+int read_civectors(
+        int aelec,
+        int belec,
+        int orbs,
+        double **civec,
+        int ndets,
+        int roots,
+        double *cival
+        );
 
 void readdaiinput(int *maxiter,
 		  int *krymin,
@@ -53,6 +69,21 @@ void readdaiinput(int *maxiter,
 		  double *restol,
 		  int *err);
 
+void read_dysonorb_input(
+        char *wvfcn_file0,
+        char *wvfcn_file1,
+        int *nstates0,
+        int *nstates1,
+        int *nelecs0,
+        int *nelecs1,
+        int *norbs0,
+        int *norbs1,
+        int *ndets0,
+        int *ndets1,
+        int *ninto0,
+        int *ninto1,
+        int *err);
+
 void readgeninput(int *elec,
                   int *orbs,
 		  int *nfrozen,
@@ -61,7 +92,8 @@ void readgeninput(int *elec,
 		  int *xlevel,
 		  int *nfrzvirt,
 		  int *printlvl,
-		  int *err);
+                  int *printwvf,
+                  int *err);
 
 int readinputjayci(int *ci_aelec,
 		   int *ci_belec,

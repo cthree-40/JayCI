@@ -11,4 +11,13 @@ void error_flag(
     char *function_name /* Name of function flagging error */
     );
 
+/*
+ * error_message: Alert user to function flaggin an error and print
+ * error message.
+ */
+void error_message(
+        char *emessage,     /* Error message to print */
+        char *function_name /* Function name */
+        );
+
 #endif

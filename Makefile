@@ -145,7 +145,10 @@ OBJS := 	timestamp.o \
 		genbindet.o \
 		det2string.o \
 		initguess_sbd.o \
+		initguess_roldv.o \
 		davidson.o \
+		write_wavefunction.o \
+		read_wavefunction.o \
 		execute_ci_calculation.o \
 		run_jayci.o
 
@@ -170,11 +173,26 @@ MPIOBJS :=	timestamp.o \
 	   	execute_pci_calculation.o
 
 DYCIOBJS := 	errorlib.o \
+		arrayutil.o \
+		allocate_mem.o \
+		abecalc.o \
+		combinatorial.o \
+		straddress.o \
+		iminmax.o \
+		bitutil.o \
+		binary.o \
+		binarystr.o \
 		moindex.o \
 		readmoints.o \
 		readnamelist.o \
 		ioutil.o \
+		read_wavefunction.o \
+		write_wavefunction.o \
 		progheader.o \
+		cimapping.o \
+		action_util.o \
+		dysoncomp.o \
+		execute_dycicalc.o \
 	    	run_dycicalc.o
 
 # Objects for colib library 
@@ -333,8 +351,9 @@ dycicalc: $(DYCIOBJS) | $(BDIR)
 
 # Clean --------------------------------------------------------------
 clean:
-	rm -rf $(JYCIOBJS) $(PJYCIOBJS)
-	rm -rf $(SDIR)test.o $(MPISDIR)/test.o $(SDIR)/jayci_exp.o $(MPISDIR)/mpi_jayci.o $(SDIR)/jayci.o 
+	rm -rf $(JYCIOBJS) $(PJYCIOBJS) $(DYCIOBJS)
+	rm -rf $(SDIR)/test.o $(MPISDIR)/test.o $(SDIR)/jayci_exp.o $(MPISDIR)/mpi_jayci.o $(SDIR)/jayci.o 
+	rm -rf $(SDIR)/dycicalc.o
 	rm -rf $(COLIBOBJS) $(UNIXOBJS)
 
 # Rules --------------------------------------------------------------

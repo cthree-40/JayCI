@@ -131,6 +131,18 @@ void init_dbl_array_0(double *array, int len)
 	return;
 }
 
+/*
+ * init_dbl_array_1: initialize doulbe array to 1
+ */
+void init_dbl_array_1(double *array, int len)
+{
+        int i;
+        for (i = 0; i < len; i++) {
+                array[i] = 1.0;
+        }
+        return;
+}
+
 /* 
  * init_dbl_2darray_0: initialize double  array to 0
  */

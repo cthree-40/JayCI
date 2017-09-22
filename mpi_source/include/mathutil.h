@@ -9,7 +9,6 @@
  * diagmat_dsyevr:      diagonalizes a square matrix using dsyevr
  * dot_product:         computes dot product of two vectors.
  * matmul_dgemm:        matrix multiplication with dgemm.  
- * orthonormalize_vector: orthonormalize a vector to a space.
  */
 #ifndef mathutil_h
 #define mathutil_h
@@ -56,17 +55,6 @@ int matmul_dgemm(
     double *matc,
     int row_c,
     int col_c
-    );
-
-/*
- * orthonormalize_vector: orthogonalize and normalize new vector to space
- * of basis vectors.
- */
-void orthonormalize_vector(
-    double **bvecs, /* basis vectors */
-    int nbv, /* number of basis vectors */
-    int vlen, /* length of each vector */
-    double *nvec /* new vector; vector to be normalized */
     );
 
 #endif

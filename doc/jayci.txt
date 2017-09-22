@@ -1,0 +1,21 @@
+
+JayCI Documentation
+
+Compilation:
+
+Installation Notes:
+
+Files:
+ civector.dat - Output file. This file contains the final CI vectors for all
+                roots. Its format is as follows:
+                %d %d %d (total electrons, total orbitals, total determinants)
+                %d       (number of roots)
+                [Empty Line]
+                -- Repeated for N roots --
+                %15.8lf  (Eigenvalue of root N)
+                [Empty Line]
+                %15.8lf  (Element i of root N eigenvector)
+                [Empty Line]
+                --------------------------
+                
+

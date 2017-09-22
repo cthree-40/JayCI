@@ -41,7 +41,8 @@ int run_jayci()
 	int ndocc = 0; /* number of CAS doubly-occupied orbitals */
 	int xlvl = 0; /* excitation level. must be <= 2 */
 	int printlvl = 0; /* print level */
-	
+        int printwvf = 0; /* print wavefunction info */
+        
 	/* .. input.jayci scalars .. */
 	int ci_aelec = 0; /* ci alpha electrons */
 	int ci_belec = 0; /* ci beta electrons */
@@ -52,7 +53,7 @@ int run_jayci()
 	
 	/* Read &general namelist input. */
 	readgeninput(&electrons, &orbitals, &nfrzc, &ndocc, &nactv, &xlvl,
-		     &nfrzv, &printlvl, &error);
+		     &nfrzv, &printlvl, &printwvf, &error);
 	if (error != 0) {
 		error_flag(error, "run_jayci");
 		return error;
@@ -96,7 +97,8 @@ int run_jayci()
 	printf("Executing CI calculation.\n");
 	error = execute_ci_calculation(ci_aelec, ci_belec, ci_orbs, nastr, nbstr,
 				       ndets, ndocc, nactv, moints1, moints2,
-				       nucrep_energy, frzcore_energy, printlvl);
+				       nucrep_energy, frzcore_energy, printlvl,
+                                       printwvf);
 	if (error != 0) {
 		error_flag(error, "run_jayci");
 		return error;

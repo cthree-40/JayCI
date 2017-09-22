@@ -6,7 +6,6 @@
  * diagmat_dsyevr: diagonalizes a square matrix using dsyevr
  * dot_product: computes dot product of two vectors.
  * matmul_dgemm: perform A_ij B_jk = C_ik with dgemm
- * orthonormalize_vector: orthonormalize vector to space
  *
  * By Christopher L Malbon
  * Dept of Chemistry, The Johns Hopkins University
@@ -130,42 +129,4 @@ int matmul_dgemm(double *mata, int row_a, int col_a, double *matb, int row_b,
     dgemm_(&transa, &transb, &m, &n, &k, &alpha, mata, &lda, matb, &ldb, &beta,
 	   matc, &ldc);
     return error;
-}
-
-/*
- * orthonormalize_vector: orthogonalize and normalize new vector to space
- * of basis vectors.
- */
-void orthonormalize_vector(double **bvecs, int nbv, int vlen, double *nvec)
-{
-	
-	double nvnorm; /* norm of orthogonalized vector */
-	double ovrlp; /* overlap of new vector with basis vectors */
-	int i, j;
-	/* Loop over space removing the overlap of the new vector with each basis
-	 * vector. */
-	for (i = 0; i < nbv; i++) {
-		ovrlp = dot_product(bvecs[i], nvec, vlen);
-		for (j = 0; j < vlen; j++) {
-			nvec[j] = nvec[j] - ovrlp * bvecs[i][j];
-		}
-	}
-	/* Normalize this vector */
-	nvnorm = compute_vector_norm(nvec, vlen);
-	for (i = 0; i < vlen; i++) {
-		nvec[i] = nvec[i] / nvnorm;
-	}
-	/* check orthogonalization */
-	for (i = 0; i < nbv; i++) {
-		ovrlp = dot_product(bvecs[i], nvec, vlen);
-		if (ovrlp > 0.000001) {
-			printf("*** Warning: ovrlp = %15.8lf ***\n", ovrlp);
-		}
-	}
-	/* check norm */
-	nvnorm = compute_vector_norm(nvec, vlen);
-	if (pow(nvnorm - 1.0, 2) > 0.0000001) {
-		printf("*** Warning: nvnorm = %15.8lf ***\n", nvnorm);
-	}
-	return;
 }
