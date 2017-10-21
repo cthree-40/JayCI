@@ -93,9 +93,9 @@ ifeq ($(findstring gfortran,$(FC)),)
 	VTUNE := -g -dynamic
 else
 # gnu compilers
-	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
+	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O0
 	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
-	          -fomit-frame-pointer -fstrict-aliasing -O3
+	          -fomit-frame-pointer -fstrict-aliasing -O0
 endif
 
 # Debugging flags
@@ -133,6 +133,7 @@ OBJS := 	timestamp.o \
 		moindex.o \
 		readmoints.o \
 		readnamelist.o \
+		readmocoef.o \
 		ioutil.o \
 		abecalc.o \
 		citruncate.o \
@@ -165,6 +166,7 @@ MPIOBJS :=	timestamp.o \
 		moindex.o \
 		readmoints.o \
 	   	readnamelist.o \
+		readmocoef.o \
 		ioutil.o \
 	   	binarystr.o \
 	   	genbindet.o \
@@ -185,7 +187,9 @@ DYCIOBJS := 	errorlib.o \
 		moindex.o \
 		readmoints.o \
 		readnamelist.o \
+		readmocoef.o \
 		ioutil.o \
+		buildao.o \
 		read_wavefunction.o \
 		write_wavefunction.o \
 		progheader.o \
@@ -377,6 +381,10 @@ $(SDIR)/readmoints.o:$(SDIR)/readmoints.f90
 
 $(SDIR)/readnamelist.o:$(SDIR)/readnamelist.f90
 	$(FC) -c -o $(SDIR)/readnamelist.o $(SDIR)/readnamelist.f90 $(DEBUG) $(FDEBUG) $(FFLAGS)
+	@echo ""
+
+$(SDIR)/readmocoef.o:$(SDIR)/readmocoef.f90
+	$(FC) -c -o $(SDIR)/readmocoef.o $(SDIR)/readmocoef.f90 $(DEBUG) $(FDEBUG) $(FFLAGS)
 	@echo ""
 
 $(SDIR)/ioutil.o:$(SDIR)/ioutil.c

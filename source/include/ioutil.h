@@ -17,6 +17,16 @@ int check_for_file(
 
 int checkinputfiles();
 
+int find_str_count_in_file(
+        char *string,
+        FILE *fptr
+        );
+
+FILE *find_str_line(
+        char *string,
+        FILE *fptr
+        );
+
 int geninput(int dlen,
 	     int alen,
 	     int blen,
@@ -102,6 +112,14 @@ int readinputjayci(int *ci_aelec,
 		   int *nbstr,
 		   int *ndets);
 
+/* readmocoeffs: subroutine to read molecular coefficient file.
+ * -------------------------------------------------------------------
+ * Calls fortran subroutine readmocoef()
+ *
+ *
+ */
+void readmocoeffs(double *c, int clen);
+
 void readmointegrals(double *moints1,
 		     double *moints2,
 		     int type,
@@ -111,5 +129,14 @@ void readmointegrals(double *moints1,
 		     int m2len,
 		     double *nuc_rep,
 		     double *fcenergy);
+
+/*
+ * substring: gets substring from string and returns pointer to said
+ * substring.
+ */
+char *substring(
+        char *string,
+        int position,
+        int length);
 
 #endif

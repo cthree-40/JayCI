@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "ioutil.h"
 
 /** fortran subroutines **/
@@ -25,6 +26,8 @@ extern void _readmoints_(double *moints1, double *moints2,
 extern void _readnamelist_(long long int  nmlist,
 			   unsigned char *nmlstr,
                            long long int *err);
+
+extern void _readmocoef_(double *c, long long int clen);
 /*************************/
 
 /* check_for_file
@@ -43,6 +46,7 @@ int check_for_file(char *filename, char *fileoperation)
                 iexists = 1;
                 printf("Error: %s\n", error_message);
         }
+        fclose(fptr);
         return iexists;
 }
 
@@ -72,6 +76,50 @@ int checkinputfiles()
 
      return err;
      
+}
+
+/* find_str_count_in_file: find occurances of string in file.
+ * -------------------------------------------------------------------
+ * Input:
+ *  string = string to search for
+ *  stream = file stream
+ */
+int find_str_count_in_file(char *string, FILE *fptr)
+{
+        int result = 0; /* Count */
+        char tmp[MAX_LINE_SIZE];
+        while (fgets(tmp, MAX_LINE_SIZE, fptr) != NULL) {
+                if ((strstr(tmp, string)) != NULL) {
+                        result++;
+                }
+        }
+        if (result == 0) {
+                result = -1;
+        }
+        return result;
+}
+
+/* find_str_line: find and return position in FILE *stream where string
+ * first occurs.
+ * -------------------------------------------------------------------
+ * Input:
+ *  string = string to search for
+ *  stream = file stream
+ */
+FILE *find_str_line(char *string, FILE *fptr)
+{
+        char tmp[MAX_LINE_SIZE];
+        fpos_t ptr;
+
+        fgetpos(fptr, &ptr);
+        while (fgets(tmp, MAX_LINE_SIZE, fptr) != NULL) {
+                if ((strstr(tmp, string)) != NULL) {
+                        fsetpos(fptr, &ptr);
+                        return fptr;
+                }
+                fgetpos(fptr, &ptr);
+        }
+        return fptr;
 }
 
 /* geninput: generate input for jayci.x 
@@ -385,7 +433,22 @@ int readinputjayci(int *ci_aelec, int *ci_belec, int *ci_orbs, int *nastr,
 
     return err;
     
-}    
+}
+
+/* readmocoeffs: subroutine to read molecular coefficient file.
+ * -------------------------------------------------------------------
+ * Calls fortran subroutine readmocoef()
+ *
+ *
+ */
+void readmocoeffs(double *c, int clen)
+{
+        long long int maxlen;
+        maxlen = (long long int) clen;
+        readmocoef_(c, &maxlen);
+        return;
+}
+
 /* readmointegrals: Subroutine to read 1 and 2 electron integrals.
  * -------------------------------------------------------------------
  * Calls fortran subroutine readmoints()
@@ -424,4 +487,26 @@ void readmointegrals(double *moints1, double *moints2, int itype,
      *nuc_rep =  energy[0];
      *fcenergy = energy[1];
      return;
+}
+
+/*
+ * substring: gets substring from string and returns pointer to said
+ * substring.
+ */
+char *substring(char *string, int position, int length)
+{
+        char *pointer;
+        int c;
+
+        pointer = malloc(length+1);
+        if (pointer == NULL) {
+                printf("Unable to allocate memory.\n");
+                exit(1);
+        }
+        for (c = 0 ; c < length ; c++) {
+                *(pointer+c) = *(string+position);
+                string++;
+        }
+        *(pointer+c) = '\0';
+        return pointer;
 }

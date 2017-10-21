@@ -106,6 +106,20 @@ double dot_product(double *u, double *v, int d)
 }
 
 /*
+ * gauss_fcn: gaussian function. exp(-1*alpha*x^2)
+ */
+double gauss_fcn(double alpha, double x)
+{
+        double result = 0.0;
+        double negone = -1.0;
+        double coeff = 0.0;
+        coeff = negone * alpha * pow(x, 2);
+        result = exp(coeff);
+        return result;
+}
+
+
+/*
  * matmul_dgemm: matrix multiply two arrays with fortran routine DGEMM
  */
 int matmul_dgemm(double *mata, int row_a, int col_a, double *matb, int row_b,

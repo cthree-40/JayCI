@@ -12,6 +12,7 @@
 #include "ioutil.h"
 #include "read_wavefunction.h"
 #include "dysoncomp.h"
+#include "buildao.h"
 #include "execute_dycicalc.h"
 
 /*
@@ -48,8 +49,11 @@ int execute_dycicalc(char *wvfcn_file0, char *wvfcn_file1,
         double *cival1 = NULL; /* N electron eigenvalues */
         int ninto1= 0; /* N electron wavefunction internal orbitals */
 
-        int i = 0;
+        double *mocoeff = NULL; /* Molecular orbital coefficients */
+        int moclen = 1046529; /* Molecular orbital coefficient list size */
         
+        int i = 0;
+
         /* Check input values. Allocate wavefunctions and civector structures. */
         if (nstates0 != 1) {
                 error_message("nstates0 != 1", "execute_dycicalc");
@@ -116,6 +120,13 @@ int execute_dycicalc(char *wvfcn_file0, char *wvfcn_file1,
                                                   orbitals, dysonorb[i]);
                 }
         }
-        
+
+        /* Read in molecular coefficients */
+        mocoeff = (double *) malloc(moclen * sizeof(double));
+        readmocoeffs(mocoeff, moclen);
+
+        /* Build atomic orbitals */
+        error = ao_buildao();
+
         return error;
 }

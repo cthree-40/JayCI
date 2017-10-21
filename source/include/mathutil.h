@@ -8,6 +8,7 @@
  * compute_vector_norm: compute norm of a vector
  * diagmat_dsyevr:      diagonalizes a square matrix using dsyevr
  * dot_product:         computes dot product of two vectors.
+ * gauss_fcn:           gaussian function evaluated at x.
  * matmul_dgemm:        matrix multiplication with dgemm.  
  * orthonormalize_vector: orthonormalize a vector to a space.
  */
@@ -42,6 +43,14 @@ double dot_product(
         double            *vector_v, 
         int    dimension_of_vectors 
         );
+
+
+/*
+ * gauss_fcn: gaussian function. exp(-1*alpha*x^2)
+ */
+double gauss_fcn(
+        double alpha,
+        double x);
 
 /*
  * matmul_dgemm: matrix multiply two arrays via DGEMM.

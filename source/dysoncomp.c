@@ -108,7 +108,7 @@ void compute_dyson_orbital_beq(struct det *dlist0, double *civec0, int ndets0,
                         orbindx = comparedets_dyson_beq(dlist0[i],dlist1[j]);
                         if (orbindx == 0) continue;
 #ifdef DEBUGGING
-                        printf(" -----------------------------------\n");
+                        printf(" ----------- POST EVAL -------------\n");
                         printf(" Matrix element = < %d | %d >\n", (i+1), (j+1));
                         llint2bin(dlist0[i].astr.byte1, str1);
                         llint2bin(dlist1[j].astr.byte1, str2);
