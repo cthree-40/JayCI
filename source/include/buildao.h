@@ -6,14 +6,29 @@
 /* Pi^3 (From mathematica) */
 #define M_PI_3 31.0062766802998201
 
+/*
+ * ao_basisfunc: an atomic orbital basis function
+ */
+struct ao_basisfunc {
+        int type; /* s=1,px=2,py=3,pz=4,d2-=5,d1-=6,d0=7,
+                   * d1+=8,d2+=9,f3-=10,f2-=11,f1-=12,... */
+        int lval;
+        int mval;
+        int ugaus;      /* Uncontracted gaussians */
+        double *ccoef;  /* Contraction coefficients */
+        int atom;       /* Center index */
+        double *geom;   /* Center geometry */
+        double gscale;  /* Gaussian scaling */
+};
+
 
 /*
  * ao_basis: atomic orbital basis information.
  */
 struct ao_basis {
-        int ugaus; /* uncontracted gaussians */
-        int cgaus; /* contracted gaussians */
-        double *alpha; /* alpha values */
+        int ugaus;      /* uncontracted gaussians */
+        int cgaus;      /* contracted gaussians */
+        double *alpha;  /* alpha values */
         double **ccoef; /* contraction coefficients. Stored: M[cgaus][ugaus] */      
 };
         
@@ -43,10 +58,28 @@ int ao_buildao();
 int ao_check_for_daltaoin();
 
 /*
+ * ao_check_for_soinfodat: Check for soinfo.dat file.
+ */
+int ao_check_for_soinfodat();
+
+/*
+ * ao_get_orbitalnum: get orbital number of soinfo.dat file.
+ */
+int ao_get_orbitalnum(
+        FILE *soinfo,
+        int *norbs);
+
+/*
  * ao_open_daltonfile: open dalton file returing file stream.
  */
 FILE *ao_open_daltonfile(
         FILE *daltin); /* Dalton input file stream */
+
+/*
+ * ao_open_soinfodat: open soinfo.dat file, returning file stream.
+ */
+FILE *ao_open_soinfodat(
+        FILE *soinfo);
 
 /*
  * ao_read_daltontitle: read first three lines of daltaoin file.
@@ -72,7 +105,6 @@ int ao_read_dalton_atombasis1(
 int ao_read_dalton_atombasis2(
         FILE *daltin,
         struct ao_atomdata *adata);
-
 
 /*
  * ao_print_dalton_basisinfo1: print first line of values read from daltaoin.

@@ -88,6 +88,8 @@ int find_str_count_in_file(char *string, FILE *fptr)
 {
         int result = 0; /* Count */
         char tmp[MAX_LINE_SIZE];
+
+        rewind(fptr);
         while (fgets(tmp, MAX_LINE_SIZE, fptr) != NULL) {
                 if ((strstr(tmp, string)) != NULL) {
                         result++;
@@ -111,6 +113,7 @@ FILE *find_str_line(char *string, FILE *fptr)
         char tmp[MAX_LINE_SIZE];
         fpos_t ptr;
 
+        rewind(fptr);
         fgetpos(fptr, &ptr);
         while (fgets(tmp, MAX_LINE_SIZE, fptr) != NULL) {
                 if ((strstr(tmp, string)) != NULL) {

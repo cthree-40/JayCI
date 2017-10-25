@@ -57,7 +57,7 @@ int run_dycicalc()
          * file. Perform dyson orbital calulcation between */
         // Ensure orbital number is the same for both wavefunctions.
         if (norbs1 != norbs0) {
-                error_flag("norbs1 != norbs0", "run_dycicalc");
+                error_message("norbs1 != norbs0", "run_dycicalc");
                 error = 1;
                 return error;
         }
