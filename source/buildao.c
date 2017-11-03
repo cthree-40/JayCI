@@ -8,6 +8,7 @@
 #include <math.h>
 #include "errorlib.h"
 #include "allocate_mem.h"
+#include "arrayutil.h"
 #include "ioutil.h"
 #include "mathutil.h"
 #include "buildao.h"
@@ -82,6 +83,9 @@ int ao_build_atomic_orbitalset(struct ao_atomdata *adata,
         int error = 0;        /* Error flag */
         FILE *soinfo  = NULL; /* soinfo.dat file pointer */
         double *gscal = NULL; /* Gaussian scalings */
+        int ngaus = 0;        /* Number of gaussians to scale */
+        char **ainfo = NULL;  /* Atom info array [natom][MAX_LINE_SIZE] */
+        int natoms = 0;       /* Number of atoms */
         int i = 0;
         
         /* Check for soinfo.dat file. Get number of atomic orbitals for
@@ -94,15 +98,27 @@ int ao_build_atomic_orbitalset(struct ao_atomdata *adata,
                 error++;
                 return error;
         }
-        error = ao_get_orbitalnum(soinfo, &norbs);
+        error = ao_get_orbitalnum(soinfo, norbs);
         if (error != 0) return error;
-        printf("Atomic orbital number: %d\n", norbs);
+        printf("Atomic orbital number: %d\n", *norbs);
         aobasis = (struct ao_basisfunc *)
-                malloc(norbs * sizeof(struct ao_basisfunc));
-        for (i = 0; i < norbs; i++) {
-                aobasis->geom = (double *) malloc(3 * sizeof(double));
+                malloc(*norbs * sizeof(struct ao_basisfunc));
+        for (i = 0; i < *norbs; i++) {
+                aobasis[i].geom = (double *) malloc(3 * sizeof(double));
         }
-        
+        /* Get gaussian scaling information */
+        error = ao_get_gscalings(soinfo, &gscal, &ngaus);
+        printf("Gaussian scalings:\n");
+        for (i = 0; i < ngaus; i++) {
+                printf(" %4d %16.10lf\n", (i + 1), gscal[i]);
+        }
+        /* Get atominfo. This will be used to assign basis functions */
+        error = ao_get_atominfo(soinfo, &ainfo, &natoms);
+        for (i = 0; i < natoms; i++) {
+                printf("%s", ainfo[i]);
+        }
+        error = ao_process_orbitaldata(adata, aobasis, soinfo, *norbs, gscal,
+                                       ngaus, ainfo, atypes);
         return error;
 }
 
@@ -127,6 +143,88 @@ int ao_check_for_soinfodat()
 }
 
 /*
+ * ao_get_atominfo: get atominfo character arrays from soinfo.dat file.
+ */
+int ao_get_atominfo(FILE *soinfo, char ***ainfo, int *natoms)
+{
+        int error = 0; /* Error flag */
+        char line[MAX_LINE_SIZE];
+        int i = 0;
+        
+        *natoms = find_str_count_in_file("ATOMINFO", soinfo);
+        error = allocate_mem_char(ainfo, MAX_LINE_SIZE, *natoms);
+        soinfo = find_str_line("ATOMINFO", soinfo);
+        for (i = 0; i < *natoms; i++) {
+                fgets((*ainfo)[i], MAX_LINE_SIZE, soinfo);
+        }
+        return error;
+}
+
+/*
+ * ao_get_lvalue_from_type: get lvalue from the orbital type.
+ * 0 = s(1), 1 = p(2,3,4), 2 = d(5,6,7,8,9), 3 = f(10,11,12,13,14,15,16),...
+ */
+int ao_get_lvalue_from_type(int oindex)
+{
+        int lvalue = 0; /* Block index */
+
+        switch (oindex) {
+        case 1: 
+                lvalue = 0; /* s orbital */
+                break;
+        case 2: case 3: case 4:
+                lvalue = 1; /* p orbital */
+                break;
+        case 5: case 6: case 7: case 8: case 9:
+                lvalue = 2; /* d orbital */
+                break;
+        case 10: case 11: case 12: case 13: case 14: case 15: case 16:
+                lvalue = 3; /* f orbital */
+                break;
+        default:
+                lvalue = -1; /* basis orbital not implemented */
+                error_message(">f orbitals not yet implemented.",
+                              "ao_get_block_index_from_type");
+                break;
+        }
+        
+        return lvalue;
+}
+
+/*
+ * ao_get_gscalings: get gaussian scalings from soinfo.dat file.
+ */
+int ao_get_gscalings(FILE *soinfo, double **gptr, int *ngaus)
+{
+        int error = 0;              /* Error flag */
+        char line[MAX_LINE_SIZE];   /* Scratch line */
+        char *lnptr;                /* Line pointer */
+        double *gscal;              /* Gaussian scalings */
+        int i = 0;
+
+        /* Get the total number of gaussians and read in each scaling. */
+        *ngaus = find_str_count_in_file("GTOSCALE", soinfo);
+        if (*ngaus <= 0) {
+                error_message("GTOSCALE not found in soinfo.dat",
+                              "ao_build_atomic_orbitalset");
+                error++;
+                return error;
+        }
+        gscal = (double *) malloc(sizeof(double) * (*ngaus));
+        
+        /* Find gaussian scalings in soinfo.dat file. These lines start
+         * with 'GTOSCALE'. The format is '(A10,16.10)' */
+        soinfo = find_str_line("GTOSCALE", soinfo);
+        for (i = 0; i < *ngaus; i++) {
+                fgets(line, MAX_LINE_SIZE, soinfo);
+                lnptr = substring(line, 10, 16);
+                sscanf(lnptr, "%lf", &gscal[i]);
+        }
+        *gptr = gscal; /* Set pointer to allocated array and return. */ 
+        return error;
+}
+
+/*
  * ao_get_orbitalnum: get orbital number of soinfo.dat file.
  */
 int ao_get_orbitalnum(FILE *soinfo, int *norbs)
@@ -142,6 +240,21 @@ int ao_get_orbitalnum(FILE *soinfo, int *norbs)
         return error;
 }
 
+/*
+ * ao_increment_norb_per_l: increment number of orbital per l value if
+ * px, d2-, etc.
+ */
+void ao_increment_norb_per_l(int *nopl, int oindex)
+{
+        switch (oindex) {
+        case 1: case 2: case 5: case 10: case 17:
+                (*nopl)++;
+                break;
+        default:
+                break;
+        }
+        return;
+}
 /*
  * ao_open_daltonfile: open dalton file returing file stream.
  */
@@ -203,6 +316,109 @@ void ao_print_dalton_basisinfo1(char *crt, int atypes, int molchg,
         printf("\nIntegral threshold = %8.2e\n", thrs);
 
         return;
+}
+
+/*
+ * ao_process_aorbital_dataline: process atomic orbital data line from
+ * soinfo.dat. This line describes the orbital type in the atomic orbital
+ * ordering.
+ */
+void ao_process_aorbital_dataline(char *line, int *anum, char *atom,
+                                  int *atype_anum, int *onum, char *ao_desc,
+                                  int *oindex, char *atom_desc)
+{
+        char *lnptr = NULL; /* Line pointer */
+
+        /* Format: (A8,I3,A1,I3,I2,A5,I3)
+         * "CAOINFO: [atom number][atom][atom number w/in type][num of orbital]
+         *           [orbital name desc.][orbital index] */
+        lnptr = substring(line, 8, 3);
+        sscanf(lnptr, "%d", anum);
+
+        /* Read in atom description as character array to compare with ATOMINFO
+         * arrays. This will help to switch appropriate geometry information */
+        lnptr = substring(line,11, 4);
+        sscanf(lnptr, "%s", atom_desc);
+        
+        lnptr = substring(line,11, 1);
+        sscanf(lnptr, "%s", atom);
+        lnptr = substring(line,12, 3);
+        sscanf(lnptr, "%d", atype_anum);
+        lnptr = substring(line,15, 2);
+        sscanf(lnptr, "%d", onum);
+        lnptr = substring(line,17, 5);
+        sscanf(lnptr, "%s", ao_desc);
+        lnptr = substring(line,22, 3);
+        sscanf(lnptr, "%d", oindex);
+
+        return;
+}
+
+/*
+ * ao_process_orbitaldata: process atomic orbital data, generating an array of
+ * atomic orbitals.
+ */
+int ao_process_orbitaldata(struct ao_atomdata *adata,
+                           struct ao_basisfunc *aobasis,
+                           FILE *soinfo, int norbs, double *gscal,
+                           int ngaus, char **ainfo, int atypes)
+{
+        int error = 0;            /* Error flag */
+        char line[MAX_LINE_SIZE]; /* Scratch line array */
+        char *lnptr = NULL;       /* Line pointer */
+        int anum = 0;             /* Atom number */
+        int old_anum = 0;         /* New atom check. */
+        char atom[2];             /* Atom name */
+        char atom_desc[5];        /* [Atom name][Atom number within type] */
+        int atype_anum = 0;       /* Atom number within type */
+        int onum = 0;             /* Orbital number */
+        char ao_desc[6];          /* Atomic orbital description */
+        int oindex = 0;           /* Orbital index s=1,px=2,py=3,etc. */
+        int ocnt = 0;             /* Orbital counter */
+        int atyp = 0;             /* Atom type. */
+        int block_index = 0;      /* AO Basis block index */
+        int lvalue = 0;           /* Orbital lvalue */
+        int norb_per_l[10];       /* Number of orbitals per l value */
+        int i = 0, j = 0;        
+
+        /* Locate 'CAOINFO' in soinfo.dat file. */
+        soinfo = find_str_line("CAOINFO", soinfo);
+
+        /* Read over each atomic orbital and enter its basis set data.
+         * Format: (A8,I3,A1,I3,I2,A5,I3)
+         * "CAOINFO: [atom number][atom][atom number w/in type][num of orbital]
+         *           [orbital name desc.][orbital index] */
+        old_anum = 1;
+        init_int_array_0(norb_per_l, 10);
+        for (i = 0; i < norbs; i++) {
+                fgets(line, MAX_LINE_SIZE, soinfo);
+                ao_process_aorbital_dataline(line, &anum, atom, &atype_anum,
+                                             &onum, ao_desc, &oindex, atom_desc);
+                /* Zero out the l value array for a new atom */
+                if (old_anum != anum) {
+                        init_int_array_0(norb_per_l, 10);
+                        old_anum = anum;
+                }
+                /* Find matching atom type */
+                for (atyp = 0; atyp <= atypes; atyp++) {
+                        if (strstr(atom,adata[atyp].name) != NULL) {
+                                break;
+                        }
+                }
+                if (atyp == atypes) return atyp;
+
+                cparray_1d1d(adata[atyp].geom[atype_anum - 1], 3,
+                             aobasis[i].geom, 3);
+                aobasis[i].type = oindex;
+                aobasis[i].atom = anum;
+                lvalue = ao_get_lvalue_from_type(aobasis[i].type);
+                if (lvalue < 0) return lvalue;
+                ao_increment_norb_per_l(&norb_per_l[lvalue], oindex);
+                printf("norb_per_l = %d %d %d %d\n",
+                       norb_per_l[0], norb_per_l[1], norb_per_l[2], norb_per_l[3]);
+                
+        }
+        return error;
 }
 
 /*
