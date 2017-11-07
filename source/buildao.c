@@ -241,6 +241,34 @@ int ao_get_orbitalnum(FILE *soinfo, int *norbs)
 }
 
 /*
+ * ao_get_block_and_gauss_number: get block number and contracted gaussian
+ * number from the current orbital.
+ */
+void ao_get_block_and_gauss_number(int *norbpl, struct ao_atomdata adata,
+                                   int lvalue, int *blockn, int *gaussn)
+{
+        int minblock = 0; /* Lowest block number for l value */
+        int count = 0;
+        int i = 0;
+        
+        /* Get lowest block for l value */
+        for (i = 0; i < adata.totblk; i++) {
+                if (lvalue == adata.lval[i]) break;
+        }
+        minblock = i;
+
+        /* Count gaussians through l-value blocks */
+        for (i = minblock; i < minblock + adata.naob[lvalue]; i++) {
+                count = count + adata.basis[i].cgaus;
+                if (count >= norbpl[lvalue]) break;
+        }
+        *blockn = i;
+        *gaussn = adata.basis[*blockn].cgaus - (count - norbpl[lvalue]);
+        *gaussn = *gaussn - 1;
+        return;
+}
+
+/*
  * ao_increment_norb_per_l: increment number of orbital per l value if
  * px, d2-, etc.
  */
@@ -379,6 +407,8 @@ int ao_process_orbitaldata(struct ao_atomdata *adata,
         int block_index = 0;      /* AO Basis block index */
         int lvalue = 0;           /* Orbital lvalue */
         int norb_per_l[10];       /* Number of orbitals per l value */
+        int blockn = 0;           /* Block number of new orbital */
+        int gaussn = 0;           /* Gaussian number of new orbital */
         int i = 0, j = 0;        
 
         /* Locate 'CAOINFO' in soinfo.dat file. */
@@ -415,8 +445,11 @@ int ao_process_orbitaldata(struct ao_atomdata *adata,
                 if (lvalue < 0) return lvalue;
                 ao_increment_norb_per_l(&norb_per_l[lvalue], oindex);
                 printf("norb_per_l = %d %d %d %d\n",
-                       norb_per_l[0], norb_per_l[1], norb_per_l[2], norb_per_l[3]);
-                
+                       norb_per_l[0], norb_per_l[1], norb_per_l[2],
+                       norb_per_l[3]);
+                ao_get_block_and_gauss_number(norb_per_l, adata[atyp],
+                                              lvalue, &blockn, &gaussn);
+                printf("Block = %d, Gauss = %d\n", blockn, gaussn);
         }
         return error;
 }

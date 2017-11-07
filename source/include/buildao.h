@@ -92,6 +92,18 @@ int ao_get_atominfo(
         int *natoms);
 
 /*
+ * ao_get_block_and_gauss_number: get block number and contracted gaussian
+ * number from the current orbital.
+ */
+void ao_get_block_and_gauss_number(
+        int *norbpl,
+        struct ao_atomdata adata,
+        int lvalue,
+        int *blockn,
+        int *gaussn);
+
+        
+/*
  * ao_get_lvalue_from_type: get lvalue from the orbital type.
  * 0 = s(1), 1 = p(2,3,4), 2 = d(5,6,7,8,9), 3 = f(10,11,12,13,14,15,16),...
  */
