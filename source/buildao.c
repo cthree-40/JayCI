@@ -119,6 +119,11 @@ int ao_build_atomic_orbitalset(struct ao_atomdata *adata,
         }
         error = ao_process_orbitaldata(adata, aobasis, soinfo, *norbs, gscal,
                                        ngaus, ainfo, atypes);
+        for (i = 0; i < *norbs; i++) {
+                printf(" --- Orbital #%3d ---\n", (i + 1));
+                ao_print_orbital_information(aobasis[i]);
+        }
+
         return error;
 }
 
@@ -140,6 +145,38 @@ int ao_check_for_soinfodat()
         int error = 0;
         error = check_for_file("soinfo.dat","r");
         return error;
+}
+
+/*
+ * ao_cp_alphavals_ccoefs: copy alpha values and contraction coefficients for
+ * ao block and contracted gaussian.
+ */
+void ao_cp_alphavals_ccoefs(int block, int gauss, struct ao_atomdata adata,
+                            struct ao_basisfunc *aobasis)
+{
+        /* Copy alpha values */
+        cparray_1d1d(adata.basis[block].alpha, adata.basis[block].ugaus,
+                     aobasis->alpha, aobasis->ugaus);
+        cparray_1d1d(adata.basis[block].ccoef[gauss], aobasis->ugaus,
+                     aobasis->ccoef, aobasis->ugaus);
+        return;
+}
+
+/*
+ * ao_cp_gaussian_scaling: copy gaussian scaling constant into new orbital.
+ */
+void ao_cp_gaussian_scaling(struct ao_basisfunc *bas, double *gscal,
+                            int *norb_per_l, int lval)
+{
+        int gaussn = 0;
+        int i = 0;
+
+        for (i = 0; i <= lval; i++) {
+                gaussn = gaussn + norb_per_l[i]; 
+        }
+        gaussn = gaussn - 1;
+        bas->gscale = gscal[gaussn];
+        return;
 }
 
 /*
@@ -347,6 +384,28 @@ void ao_print_dalton_basisinfo1(char *crt, int atypes, int molchg,
 }
 
 /*
+ * ao_print_orbital_information: print final atomic orbital information.
+ */
+void ao_print_orbital_information(struct ao_basisfunc aobasis)
+{
+        int i = 0;
+        printf(" Orbital type:           %10d\n", aobasis.type);
+        printf(" Orbital lval:           %10d\n", aobasis.lval);
+        printf(" Uncontracted gaussians: %10d\n", aobasis.ugaus);
+        printf(" Atomic center index:    %10d\n", aobasis.atom);
+        printf(" Geometry:\n");
+        printf(" %15.8lf %15.8lf %15.8lf\n",
+               aobasis.geom[0], aobasis.geom[1], aobasis.geom[3]);
+        printf(" Gaussian scaling:       %10.8lf\n", aobasis.gscale);
+        printf(" Alpha & contraction coeffs: \n");
+        for (i = 0; i < aobasis.ugaus; i++) {
+                printf(" %15.10lf %15.10lf\n", aobasis.alpha[i],
+                       aobasis.ccoef[i]);
+        }
+        return;
+}
+
+/*
  * ao_process_aorbital_dataline: process atomic orbital data line from
  * soinfo.dat. This line describes the orbital type in the atomic orbital
  * ordering.
@@ -436,21 +495,31 @@ int ao_process_orbitaldata(struct ao_atomdata *adata,
                         }
                 }
                 if (atyp == atypes) return atyp;
-
+                /* Copy geometry. Write orbital index and atom number. */
                 cparray_1d1d(adata[atyp].geom[atype_anum - 1], 3,
                              aobasis[i].geom, 3);
                 aobasis[i].type = oindex;
                 aobasis[i].atom = anum;
+                /* Get l value. Increment orbital type if necessary, and
+                 * get orbital block & gaussian information */
                 lvalue = ao_get_lvalue_from_type(aobasis[i].type);
                 if (lvalue < 0) return lvalue;
+                aobasis[i].lval = lvalue;
                 ao_increment_norb_per_l(&norb_per_l[lvalue], oindex);
-                printf("norb_per_l = %d %d %d %d\n",
-                       norb_per_l[0], norb_per_l[1], norb_per_l[2],
-                       norb_per_l[3]);
                 ao_get_block_and_gauss_number(norb_per_l, adata[atyp],
                                               lvalue, &blockn, &gaussn);
-                printf("Block = %d, Gauss = %d\n", blockn, gaussn);
+                aobasis[i].ugaus = adata[atyp].basis[blockn].ugaus;
+                aobasis[i].ccoef = (double *)
+                        malloc(sizeof(double) * aobasis[i].ugaus);
+                aobasis[i].alpha = (double *)
+                        malloc(sizeof(double) * aobasis[i].ugaus);
+                /* Copy alpha values */
+                ao_cp_alphavals_ccoefs(blockn, gaussn, adata[atyp], &aobasis[i]);
+                /* Copy gaussian scaling */
+                ao_cp_gaussian_scaling(&aobasis[i], gscal, norb_per_l, lvalue);
+                
         }
+
         return error;
 }
 

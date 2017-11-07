@@ -76,6 +76,26 @@ int ao_check_for_daltaoin();
 int ao_check_for_soinfodat();
 
 /*
+ * ao_cp_alphavals_ccoefs: copy alpha values and contraction coefficients for
+ * ao block and contracted gaussian.
+ */
+void ao_cp_alphavals_ccoefs(
+        int block,
+        int gauss,
+        struct ao_atomdata adata,
+        struct ao_basisfunc *aobasis);
+
+
+/*
+ * ao_cp_gaussian_scaling: copy gaussian scaling constant into new orbital.
+ */
+void ao_cp_gaussian_scaling(
+        struct ao_basisfunc *bas,
+        double *gscal,
+        int *norb_per_l,
+        int lval);
+
+/*
  * ao_get_gscalings: get gaussian scalings from soinfo.dat file.
  */
 int ao_get_gscalings(
@@ -178,6 +198,12 @@ void ao_print_dalton_basisinfo1(
  */
 void ao_print_dalton_atombasis1(
         struct ao_atomdata adata);
+
+/*
+ * ao_print_orbital_information: print final atomic orbital information.
+ */
+void ao_print_orbital_information(
+        struct ao_basisfunc aobasis);
 
 /*
  * ao_process_aorbital_dataline: process atomic orbital data line from
