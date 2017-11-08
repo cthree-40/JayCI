@@ -147,6 +147,12 @@ void ao_increment_norb_per_l(
         int oindex);
 
 /*
+ * ao_initialize_atomic_orbital_set: initialize atomic orbital array.
+ */
+struct ao_basisfunc *ao_initialize_atomic_orbital_set(
+        int norbs);
+
+/*
  * ao_open_daltonfile: open dalton file returing file stream.
  */
 FILE *ao_open_daltonfile(

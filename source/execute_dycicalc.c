@@ -40,17 +40,33 @@ int execute_dycicalc(char *wvfcn_file0, char *wvfcn_file1,
         struct det *detlist0 = NULL; /* N+1 electron wavefunction */
         double **civec0 = NULL; /* N+1 electron wavefunction CI vector(s) */
         double *cival0 = NULL; /* N+1 electron eigenvalues */
-        int ninto0= 0; /* N+1 electron wavefunction internal orbitals */
+        int ninto0 = 0; /* N+1 electron wavefunction internal orbitals */
+        int nfrzc0 = 0; /* Number of frozen core orbitals */
+        int ndocc0 = 0; /* Number of docc orbitals */
+        int nactv0 = 0; /* Number of active orbitals */
+        int nfrzv0 = 0; /* NUmber of frozen virtual orbitals */
+        int orbs0 = 0; /* Total number of orbitals */
+        int elec0 = 0; /* Total number of electrons */
+
+        int xlvl = 0; /* Excitation level (not used) */
         
         int naelec1= 0; /* N electron wavefunction alpha electrons */
         int nbelec1= 0; /* N electron wavefunction beta  electrons */
         struct det *detlist1 = NULL; /* N electron wavefunction */
         double **civec1 = NULL; /* N electron wavefunction CI vector(s) */
         double *cival1 = NULL; /* N electron eigenvalues */
-        int ninto1= 0; /* N electron wavefunction internal orbitals */
-
+        int ninto1 = 0; /* N electron wavefunction internal orbitals */
+        int nfrzc1 = 0; /* Number of frozen core orbitals */
+        int ndocc1 = 0; /* Number of docc orbitals */
+        int nactv1 = 0; /* Number of active orbitals */
+        int nfrzv1 = 0; /* NUmber of frozen virtual orbitals */
+        int orbs1 = 0; /* Total number of orbitals */
+        int elec1 = 0; /* Total number of electrons */
+        
         double *mocoeff = NULL; /* Molecular orbital coefficients */
         int moclen = 1046529; /* Molecular orbital coefficient list size */
+
+        struct ao_basisfunc *aobasis = NULL; /* Atomic orbital basis */
         
         int i = 0;
 
@@ -81,7 +97,9 @@ int execute_dycicalc(char *wvfcn_file0, char *wvfcn_file1,
         
         /* Read in N+1 electron wavefunction from file. */
         error = read_wavefunction(detlist0, ndets0, nstates0, civec0, cival0,
-                                  orbitals, nelecs0, ninto0, wvfcn_file0);
+                                  orbitals, nelecs0, ninto0, wvfcn_file0,
+                                  &orbs0, &elec0, &nfrzc0, &ndocc0, &nactv0,
+                                  &nfrzv0, &xlvl);
         if (error != 0) {
                 error_message("Error reading N+1 wavefunction",
                               "execute_dycicalc");
@@ -89,13 +107,23 @@ int execute_dycicalc(char *wvfcn_file0, char *wvfcn_file1,
         }
         /* Read in N electron wavefunction from file. */
         error = read_wavefunction(detlist1, ndets1, nstates1, civec1, cival1,
-                                  orbitals, nelecs1, ninto1, wvfcn_file1);
+                                  orbitals, nelecs1, ninto1, wvfcn_file1,
+                                  &orbs1, &elec1, &nfrzc1, &ndocc1, &nactv1,
+                                  &nfrzv1, &xlvl);
         if (error != 0) {
                 error_message("Error reading N wavefunction",
                               "execute_dycicalc");
                 return error;
         }
-
+        
+        /* Compare orbital bassis sets */
+        if (orbs1 != orbs0) {
+                error++;
+                printf("orbs1 = %d\norbs2 = %d\n", orbs1, orbs0);
+                error_message("MO Bases are different!", "execute_dycicalc");
+                return error;
+        }
+        
         /* Compute dyson orbital */
         ndysonorbs = nstates1;
         error = allocate_mem_double(&dysonorb, orbitals, ndysonorbs);
@@ -125,8 +153,19 @@ int execute_dycicalc(char *wvfcn_file0, char *wvfcn_file1,
         mocoeff = (double *) malloc(moclen * sizeof(double));
         readmocoeffs(mocoeff, moclen);
 
-        /* Build atomic orbitals */
-        error = ao_buildao();
-
+        /* Build atomic orbitals. Need full set:
+         * (orbitals + nfrzc + nfrzv) = orbs{0/1}*/
+        aobasis = ao_initialize_atomic_orbital_set((orbs0));
+        if (aobasis == NULL) {
+                error_message("Error initializing atomic orbital set!",
+                              "execute_dycicalc");
+                error++;
+                return error;
+        }
+        error = ao_buildao(aobasis);
+        for (i = 0; i < orbitals; i++) {
+                printf(" --- Orbital #%3d ---\n", (i + 1));
+                ao_print_orbital_information(aobasis[i]);
+        }
         return error;
 }

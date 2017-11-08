@@ -15,7 +15,14 @@ int read_wavefunction(
         int orbs,
         int elec,
         int ninto,
-        char *file_name
+        char *file_name,
+        int *orbitals,
+        int *electrons,
+        int *nfrzc,
+        int *ndocc,
+        int *nactv,
+        int *nfrzv,
+        int *xlvl
         );
 
 #endif

@@ -16,7 +16,7 @@
 /*
  * ao_buildao: build atomic orbitals
  */
-int ao_buildao()
+int ao_buildao(struct ao_basisfunc *aobasis)
 {
         int error = 0;
         int natoms = 0;       /* Number of atoms */
@@ -29,7 +29,7 @@ int ao_buildao()
         char id3[2];
         int norbs = 0; /* Numer of orbitals */
         struct ao_atomdata *adata = NULL; /* Atom basis data */
-        struct ao_basisfunc *aobasis = NULL; /* Atomic orbital basis */
+        //struct ao_basisfunc *aobasis = NULL; /* Atomic orbital basis */
         int i = 0;
         
         /* Check for daltaoin file. Open the file and read the first
@@ -66,7 +66,6 @@ int ao_buildao()
         /* Process the basis set information and construct the atomic
          * orbital basis. */
         error = ao_build_atomic_orbitalset(adata, aobasis, atypes, &norbs);
-        
         return error;
 }
 
@@ -101,11 +100,11 @@ int ao_build_atomic_orbitalset(struct ao_atomdata *adata,
         error = ao_get_orbitalnum(soinfo, norbs);
         if (error != 0) return error;
         printf("Atomic orbital number: %d\n", *norbs);
-        aobasis = (struct ao_basisfunc *)
-                malloc(*norbs * sizeof(struct ao_basisfunc));
-        for (i = 0; i < *norbs; i++) {
-                aobasis[i].geom = (double *) malloc(3 * sizeof(double));
-        }
+//        aobasis = (struct ao_basisfunc *)
+//                malloc(*norbs * sizeof(struct ao_basisfunc));
+//        for (i = 0; i < *norbs; i++) {
+//                aobasis[i].geom = (double *) malloc(3 * sizeof(double));
+//        }
         /* Get gaussian scaling information */
         error = ao_get_gscalings(soinfo, &gscal, &ngaus);
         printf("Gaussian scalings:\n");
@@ -320,6 +319,29 @@ void ao_increment_norb_per_l(int *nopl, int oindex)
         }
         return;
 }
+
+/*
+ * ao_initialize_atomic_orbital_set: initialize atomic orbital array.
+ */
+struct ao_basisfunc *ao_initialize_atomic_orbital_set(int norbs)
+{
+        struct ao_basisfunc *ptr; /* Return value */
+        int error = 0; /* Error flag */
+        int i = 0;
+        
+        ptr = (struct ao_basisfunc *)
+                malloc(sizeof(struct ao_basisfunc) * norbs);
+        if (ptr == NULL) {
+                error_message("Error allocating atomic orbital array!",
+                              "ao_initialize_atomic_orbital_set");
+                return ptr;
+        }
+        for (i = 0; i < norbs; i++) {
+                ptr[i].geom = (double *) malloc(3 * sizeof(double));
+        }
+        return ptr;
+}
+
 /*
  * ao_open_daltonfile: open dalton file returing file stream.
  */

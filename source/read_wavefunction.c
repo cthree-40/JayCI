@@ -12,8 +12,9 @@
  * read_wavefunction: read a wavefunction.
  */
 int read_wavefunction(struct det *detlist, int ndets, int nroots,
-                      double **civec, double *cival, int orbs, int elec,
-                      int ninto, char *file_name)
+                      double **civec, double *cival, int ci_orbs, int ci_elec,
+                      int ninto, char *file_name, int *orbitals, int *electrons,
+                      int *nfrzc, int *ndocc, int *nactv, int *nfrzv, int *xlvl)
 {
         int error = 0;
         int fl_ndets, fl_nroots, fl_orbs, fl_elec; /* File values */
@@ -31,21 +32,24 @@ int read_wavefunction(struct det *detlist, int ndets, int nroots,
                 error_message(emsg, "read_wavefunction");
                 return error;
         }
-        /* Read first line */
+        /* Read first lines */
+        fscanf(fptr, "%d %d\n", electrons, orbitals);
+        fscanf(fptr, "%d %d %d %d\n", nfrzc, ndocc, nactv, nfrzv);
+        fscanf(fptr, "%d\n", xlvl);
         fscanf(fptr, "%d %d %d %d\n\n", &fl_elec, &fl_orbs, &fl_ninto,
                &fl_ndets);
-        if (fl_elec != elec || fl_orbs != orbs || fl_ndets != ndets) {
-                if (fl_elec != elec) {
-                        printf("fl_elec != elec\n");
+        if (fl_elec != ci_elec || fl_orbs != ci_orbs || fl_ndets != ndets) {
+                if (fl_elec != ci_elec) {
+                        printf("fl_elec != ci_elec\n");
                 }
-                if (fl_orbs != orbs) {
-                        printf("fl_orbs != orbs\n");
+                if (fl_orbs != ci_orbs) {
+                        printf("fl_orbs != ci_orbs\n");
                 }
                 if (fl_ndets != ndets) {
                         printf("fl_ndets != ndets\n");
                 }
-                fprintf(stderr, "fl_elec,   elec = %9d, %9d\n", fl_elec, elec);
-                fprintf(stderr, "fl_orbs,   orbs = %9d, %9d\n", fl_orbs, orbs);
+                fprintf(stderr, "fl_elec,   elec = %9d, %9d\n", fl_elec,ci_elec);
+                fprintf(stderr, "fl_orbs,   orbs = %9d, %9d\n", fl_orbs,ci_orbs);
                 fprintf(stderr, "fl_ndets, ndets = %9d, %9d\n", fl_ndets, ndets);
                 error = -1;
                 error_flag(error, "read_wavefunction");
