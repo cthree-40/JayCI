@@ -184,12 +184,15 @@ DYCIOBJS := 	errorlib.o \
 		bitutil.o \
 		binary.o \
 		binarystr.o \
+		dlamch_fcn.o \
+		mathutil.o \
 		moindex.o \
 		readmoints.o \
 		readnamelist.o \
 		readmocoef.o \
 		ioutil.o \
 		buildao.o \
+		atomic_orbitals.o \
 		read_wavefunction.o \
 		write_wavefunction.o \
 		progheader.o \

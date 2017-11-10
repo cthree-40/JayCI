@@ -24,6 +24,22 @@
 extern double _dlamch_fcn_();
 
 /*
+ * compute_3d_distance: compute eucliden distance of two points.
+ */
+double compute_3d_distance(double *v, double *u)
+{
+        double dist = 0.0;
+        double dvec[3];
+        int i;
+        init_dbl_array_0(dvec, 3);
+        for (i = 0; i < 3; i++) {
+                dvec[i] = v[i] - u[i];
+        }
+        dist = compute_vector_norm(dvec, 3);
+        return dist;
+}
+
+/*
  * compute_vector_norm: compute euclidean norm of vector.
  */
 double compute_vector_norm(double *v, int d)
@@ -112,7 +128,7 @@ double gauss_fcn(double alpha, double x)
 {
         double result = 0.0;
         double negone = -1.0;
-        double coeff = 0.0;
+        double coeff;
         coeff = negone * alpha * pow(x, 2);
         result = exp(coeff);
         return result;
