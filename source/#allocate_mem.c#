@@ -50,12 +50,14 @@ int allocate_mem_double(double ***array, int n, int m)
  * allocate_mem_int: allocate a 2d integer array
  * Array = M[n x m]
  */
-int allocate_mem_int(int ***array, int n, int m)
+int ***allocate_mem_int(int ***array, int n, int m)
 {
         int i = 0;
-        *array = (int **) malloc(sizeof(int *) * m);
+        int ***ptr;
+        
+        *array = (int **) malloc(sizeof(int) * m);
         for (i = 0; i < m; i++) {
-                if (((*array)[i] = (int *) malloc(sizeof(int) * n)) == NULL)
+                if (((*array)[i] = (int *) malloc(sizeof(int) * m)) == NULL)
                 {
                         error_flag(i, "allocate_mem_int");
                         return i;

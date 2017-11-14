@@ -33,7 +33,6 @@ void str_adr2str(int index, int *scr, int elec, int orbs, int *str)
 	scr[i] = i + 1;
     }
     str_strfind2(scr, 1, elec, orbs, index, str);
-
     return;
 
 }    
@@ -64,7 +63,7 @@ int str_adrfind(int *str, int elec, int orbs)
      return address;
 }
 /* str_strfind1: 
- *   Compute orbital occupation string from preceeding string 
+ *   Compute orbital occupation string from preceding string 
  * -------------------------------------------------------------------
  * [citation]
  *
@@ -117,7 +116,7 @@ void str_strfind2(int *str1, int indx1, int elec, int orbs, int indx2,
     int i, j;
 
     for (i = 0; i < elec; i++) {
-	str2[i] = str1[i];
+            str2[i] = str1[i];
     }
     for (i = 0; i < indx2 - indx1; i++) {
 	str_strfind1(str1, elec, orbs, str2);

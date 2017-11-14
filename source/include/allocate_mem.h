@@ -24,6 +24,15 @@ int allocate_mem_double(
     int n, /* rows */
     int m  /* columns */
     );
+/*
+ * allocate_mem_int: allocate a 2d integer array
+ * Array = M[n x m]
+ */
+int allocate_mem_int(
+        int ***array,
+        int n,
+        int m
+        );
 
 /*
  * deallocate_mem: deallocate 2d array

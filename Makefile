@@ -69,12 +69,21 @@ ifneq ($(filter cori edison,$(NERSC_HOST)),)
 	AR := ar rv
 	RANL := ranlib
 else
-	CC := gcc -fopenmp -I $(IDIR)
-	MPICC := mpicc -fopenmp -I $(MPIIDIR)
-	FC := gfortran
-	MPIFC := mpif90
-	AR := ar rv
-	RANL := ranlib
+	ifneq ($(findstring intel,$(COMPILERS)),)
+		CC := icc -fopenmp -I${MKLROOT}/include -I $(IDIR) 
+		MPICC := mpicc -fopenmp -I${MKLROOT}/include -I $(MPIIDIR)
+		FC := ifort
+		MPIFC := mpif90
+		AR := ar rv
+		RANL := ranlib
+	else
+		CC := gcc -fopenmp -I $(IDIR)
+		MPICC := mpicc -fopenmp -I $(MPIIDIR)
+		FC := gfortran
+		MPIFC := mpif90
+		AR := ar rv
+		RANL := ranlib
+	endif
 endif
 
 # Compiler options 
@@ -90,12 +99,12 @@ ifeq ($(findstring gfortran,$(FC)),)
 	FFLAGS := -i8 -auto -assume byterecl -O3
 	CFLAGS := -Wall -std=c11 -march=native -funroll-all-loops \
 		  -fomit-frame-pointer -fstrict-aliasing -O3
-	VTUNE := -g -dynamic
+	VTUNE := -g
 else
 # gnu compilers
-	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O0
+	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
 	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
-	          -fomit-frame-pointer -fstrict-aliasing -O0
+	          -fomit-frame-pointer -fstrict-aliasing -O3
 endif
 
 # Debugging flags
@@ -137,7 +146,7 @@ OBJS := 	timestamp.o \
 		ioutil.o \
 		abecalc.o \
 		citruncate.o \
-		binarystr.o \
+                binarystr.o \
 		dlamch_fcn.o \
 		mathutil.o \
 		cimapping.o \

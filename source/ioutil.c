@@ -45,6 +45,7 @@ int check_for_file(char *filename, char *fileoperation)
                        filename, fileoperation);
                 iexists = 1;
                 printf("Error: %s\n", error_message);
+                return iexists;
         }
         fclose(fptr);
         return iexists;
@@ -66,13 +67,13 @@ int checkinputfiles()
      int err = 0;
 
      err = check_for_file("jayci.in","r");
-     if (err != 0) return err;
+     if (err != 0) return 1;
      err = check_for_file("input.jayci","r");
-     if (err != 0) return err;
+     if (err != 0) return 2;
      err = check_for_file("moints","r");
-     if (err != 0) return err;
+     if (err != 0) return 3;
      err = check_for_file("det.list","r");
-     if (err != 0) return err;
+     if (err != 0) return 4;
 
      return err;
      

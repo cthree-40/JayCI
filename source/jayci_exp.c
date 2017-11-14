@@ -87,7 +87,8 @@ int main()
 
      /* compute alpha/beta electron numbers */
      abecalc(elec, &aelec, &belec);
-
+     printf("Alpha electrons = %3d\nBeta electrons  = %3d\n",
+            aelec, belec);
      /* truncate ci-space, generating expansion */
      err = citrunc(aelec, belec, orbs, nfrzc, ndocc, nactv, nfrzv, xlevel,
 		   &astr_len, &bstr_len, &dtrm_len);
