@@ -14,6 +14,15 @@ int citrunc(int aelec,
 	    int *bstr_len,
 	    int *dtrm_len);
 
+int str_enfactv(int *str,
+		int elec,
+		int ndocc,
+	        int nactv);
+
+int str_enfdocc(int *str,
+		int elec,
+		int ndocc,
+		int nactv);
 
 #endif
 

@@ -10,11 +10,20 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include "iminmax.h"
 #include "combinatorial.h"
+
+/* Size of binomial coefficient array */
+#define MAX_N 301
+#define MAX_K  31
+
+int binom_data[MAX_N][MAX_K];
+int binom_init;
 
 /* subfunctions
  * ------------
  * int binomial_coef(int m, int n);
+ * int binomial_coef2(int m, int n);
  * int fact_product(int m, int n);
  * int minimum(int m, int n);
  */
@@ -41,6 +50,20 @@ int binomial_coef(int n, int k)
      return result;
 }
 
+/*
+ * binomial_coef2: return binomial coefficient of n and k
+ */
+int binomial_coef2(int n, int k)
+{
+        int result;
+        if (binom_init == 0) {
+                initialize_binom_coef();
+                binom_init++;
+        }
+        result = binom_data[n][k];
+        return result;
+};
+
 int fact_product(int m, int n)
 /* fact_product
  * ------------
@@ -62,6 +85,25 @@ int fact_product(int m, int n)
      }
      
   return result;
+}
+
+/*
+ * initialize_binom_coef: initialize the binomial coefficient array.
+ */
+void initialize_binom_coef()
+{
+        int i, j;
+        for (i = 0; i <= MAX_N; i++) {
+                for (j = 0; j <= int_min(i, MAX_K); j++) {
+                        if (j == 0 || j == i) {
+                                binom_data[i][j] = 1;
+                        } else {
+                                binom_data[i][j] = binom_data[i - 1][j - 1] +
+                                        binom_data[i - 1][j];
+                        }
+                }
+        }
+        return;
 }
 
 int minimum(int m, int n)

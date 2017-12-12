@@ -4,8 +4,25 @@
 #define citruncate_2_h
 
 struct eostring {
+        int doccx;
+        int actvx;
         int index;
         int *string;
+};
+
+struct determinant {
+        int pstring;
+        int qstring;
+        struct determinant *next;
+};
+
+/*
+ * struct xstrmap: starting string index and ending string index in
+ * struct eostring list of valid strings for excitation.
+ */
+struct xstrmap {
+        int start;
+        int finish;
 };
 
 /*
@@ -15,6 +32,11 @@ struct eostring *allocate_strings_array(
         int nstr,
         int nelecs
         );
+
+/*
+ * allocate_xmap: allocate 2d excitation map.
+ */
+struct xstrmap **allocate_xmap(int xlvl);
 
 /*
  * check_ci_input_values: check the validity of truncation values before
@@ -37,18 +59,44 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
                        int ndocc, int nactv, int docc_elec, int actv_elec,
                        int virt_elec, int *docc, int *actv, int *virt,
                        int *doccscr, int *actvscr, int *virtscr);
+/*
+ * compute_eostrings_sr: compute electron occupation strings for all string
+ * combinations of DOCC, and VIRT electrons.
+ */
+void compute_eostrings_sr(struct eostring *strlist, int *pos, int ci_orbs,
+                          int ndocc, int docc_elec, int virt_elec, int *docc,
+                          int *virt, int *doccscr, int *virtscr);
 
 /*
  * compute_stringnum: compute number of valid strings in expansion.
  */
 int compute_stringnum(int orbs, int elecs, int ndocc, int nactv, int xlvl);
 
+/*
+ * generate_determinant_list: generate full *valid* determinant list.
+ */
+int generate_determinant_list(struct eostring *pstrings, int plen,
+                              struct eostring *qstrings, int qlen,
+                              int orbs, int aelec, int belec,
+                              int ndocc, int nactv, int xlvl,
+                              struct xstrmap **pxmap,
+                              struct xstrmap **qxmap);
+
 
 /*
  * generate_string_list: generate full *valid* alph/beta string lists.
  */
 void generate_string_list(struct eostring *strlist, int nstr, int orbs,
-                          int elecs, int ndocc, int nactv, int xlvl);
+                          int elecs, int ndocc, int nactv, int xlvl,
+                          struct xstrmap **xmap);
+
+/*
+ * generate_string_list_sr: generate full *valid* alph/beta string lists for
+ * single reference CI.
+ */
+void generate_string_list_sr(struct eostring *strlist, int nstr, int orbs,
+                             int elecs, int ndocc, int nactv, int xlvl,
+                             struct xstrmap **xmap);
 
 /*
  * generate_actv_strings: generate ACTV orbital strings array.

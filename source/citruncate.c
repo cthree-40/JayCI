@@ -1,10 +1,8 @@
-// File: citruncate_2.c
+// File: citruncate.c
 /*
- * Truncate the CI expansion.
+ * Truncate a Full CI expansion.
  */
-
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include "ioutil.h"
 #include "iminmax.h"
@@ -14,47 +12,27 @@
 #include "allocate_mem.h"
 #include "combinatorial.h"
 #include "straddress.h"
-#include "citruncate_2.h"
+#include "citruncate.h"
+
+/*--------------------------------------------------------------------------*/
+/* -- MAIN DRIVER --                                                        */
+/*--------------------------------------------------------------------------*/
 
 /*
- * allocate_strings_array: allocate the strings array.
- */
-struct eostring *allocate_strings_array(int nstr, int nelecs)
-{
-        struct eostring *ptr = NULL;
-        int i;
-        ptr = (struct eostring *) malloc(sizeof(struct eostring) * nstr);
-        for (i = 0; i < nstr; i++) {
-                ptr[i].string = (int *) malloc(sizeof(int) * nelecs);
-                ptr[i].index = 0;
-        }
-        return ptr;
-}
-
-/*
- * check_ci_input_values: check the validity of truncation values before
- * execution.
- */
-int check_ci_input_values(int cia, int cib, int cio, int nd)
-{
-        int err = 0;
-        if (nd > cib || nd > cia) {
-                error_message("Unoccupied DOCC orbitals!",
-                              "check_ci_input_values");
-                err++;
-                return err;
-        }
-        if (cio == 0) {
-                error_message("No virtual orbitals!",
-                              "check_ci_input_values");
-                err++;
-                return err;
-        }
-        return err;
-}
-
-/*
- * citrunc2: truncate the ci expansion.
+ * citrunc: truncate the CI expansion.
+ * Input:
+ *  aelec = alpha electrons
+ *  belec = beta  electrons
+ *  orbs  = molecular orbitals
+ *  nfrzc = number of frozen core orbitals
+ *  ndocc = number of doubly-occupied reference orbitals
+ *  nactv = number of active reference orbitals
+ *  nfrzv = number of frozen virtual orbitals
+ *  xlvl  = excitation level (DOCC->ACTV & (DOCC + ACTV)->VIRT)
+ * Output:
+ *  astr_len = alpha string number
+ *  bstr_len = beta  string number
+ *  dstr_len = determinant number
  */
 int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
 	    int nactv, int nfrzv, int xlvl, int *astr_len,
@@ -66,28 +44,27 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
         int ci_aelec;  /* CI alpha electrons (frozen core removed) */
         int ci_belec;  /* CI beta  electrons (frozen core removed) */
 
-        char detlstfl[FLNMSIZE]; /* Determinant list file */
-        char strlstfl[FLNMSIZE]; /* String listS file */
-        FILE *dtflptr = NULL;    /* Determinant list file pointer */
-        FILE *stflptr = NULL;    /* STring listS file pointer */
+        struct eostring *pstrings;  /* Alpha electron strings */
+        struct eostring *qstrings;  /* Beta  electron strings */
 
-        struct eostring *pstrings; /* Alpha electron strings */
-        struct eostring *qstrings; /* Beta  electron strings */
+        int pegrps;            /* Alpha electron groupings */
+        int qegrps;            /* Beta  electron groupings */
+        struct eospace *peosp = NULL; /* Alpha electron space array */
+        struct eospace *qeosp = NULL; /* Beta  electron space array */
         
-        /* Compute electron and orbital numbers in truncated CI space. Then
-         * compute the number of valid alpha/beta strings. Allocate valid string
-         * arrays */
+        /* Compute electron and orbital number in CI expansion space.
+         * Compute alpha and beta string numbers */
         ci_aelec = aelec - nfrzc;
         ci_belec = belec - nfrzc;
         ci_orbs  = orbs - nfrzc - nfrzv;
-        error = check_ci_input_values(ci_aelec, ci_belec, ci_orbs, ndocc);
-        if (error != 0) return error;
-        fprintf(stdout, " CI Expansion: %d electrons in %d orbitals\n",
+        fprintf(stdout, " CI Expansion: %d elctrons in %d orbitals\n",
                 (ci_aelec + ci_belec), ci_orbs);
         *astr_len = compute_stringnum(ci_orbs, ci_aelec, ndocc, nactv, xlvl);
         *bstr_len = compute_stringnum(ci_orbs, ci_belec, ndocc, nactv, xlvl);
         printf(" Total number of alpha strings = %d\n", *astr_len);
         printf(" Total number of beta  strings = %d\n", *bstr_len);
+
+        /* Allocate the electron string arrays. */
         pstrings = allocate_strings_array(*astr_len, ci_aelec);
         qstrings = allocate_strings_array(*bstr_len, ci_belec);
         if (pstrings == NULL || qstrings == NULL) {
@@ -97,13 +74,114 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
                 return error;
         }
 
-        /* Generate string lists */
+        /* Allocate eospace arrays */
+        peosp = allocate_eospace_array(ci_aelec, ci_orbs, ndocc, nactv, xlvl,
+                                       &pegrps);
+        qeosp = allocate_eospace_array(ci_belec, ci_orbs, ndocc, nactv, xlvl,
+                                       &qegrps);
+        if (peosp == NULL || qeosp == NULL) {
+                error_message("Failed to allocate electron grouping arrays",
+                              "citrunc");
+                error = 200;
+                return error;
+        }
+
+        /* Generate alpha/beta string lists */
         generate_string_list(pstrings, *astr_len, ci_orbs, ci_aelec, ndocc,
-                             nactv, xlvl);
-        generate_string_list(qstrings, *bstr_len, ci_orbs, ci_aelec, ndocc,
-                             nactv, xlvl);
-        error = 100;
+                             nactv, xlvl, peosp, pegrps);
+        generate_string_list(qstrings, *bstr_len, ci_orbs, ci_belec, ndocc,
+                             nactv, xlvl, qeosp, qegrps);
+        
+        /* Generate determinant list */
+        generate_determinant_list(pstrings, *astr_len, ci_aelec, qstrings,
+                                  *bstr_len, ci_belec, peosp, pegrps, qeosp,
+                                  qegrps, ndocc, nactv, xlvl, dtrm_len);
+        
         return error;
+}
+
+/* -------------------------------------------------------------------------- */
+/* -- SUBROUTINES --                                                          */
+/* -------------------------------------------------------------------------- */
+
+/*
+ * allocate_eospace_array: allocate the electron number space array.
+ */
+struct eospace *allocate_eospace_array(int nelec, int norbs, int ndocc,
+                                       int nactv, int xlvl, int *ngrp)
+{
+        struct eospace *ptr = NULL;
+        int min_docc_elecs = 0;
+        int max_docc_elecs = 0;
+        int min_actv_elecs = 0;
+        int max_actv_elecs = 0;
+        int cnt = 0;                 /* Counter */
+        int i, j, k;
+
+        min_docc_elecs = ndocc - int_min(ndocc, xlvl);
+        max_docc_elecs = ndocc;
+        min_actv_elecs = (nelec - ndocc) - int_min((nelec - ndocc), xlvl);
+        max_actv_elecs = int_min(((nelec - ndocc) + xlvl), nactv);
+
+        /* Loop over DOCC, ACTV, and VIRT occupations. */
+        *ngrp = 0;
+        for (i = max_docc_elecs; i >= min_docc_elecs; i--) {
+                for (j = max_actv_elecs; j >= min_actv_elecs; j--) {
+                        for (k = 0; k <= xlvl; k++) {
+                                if ((i + j + k) != nelec) continue;
+                                (*ngrp)++;
+                        }
+                }
+        }
+        printf(" %d electron groupings\n", *ngrp);
+
+        /* Allocate groupings list */
+        ptr = (struct eospace *) malloc(sizeof(struct eospace) * (*ngrp));
+
+        /* Loop over DOCC, ACTV, and VIRT occupations. */
+        cnt = 0;
+        for (i = max_docc_elecs; i >= min_docc_elecs; i--) {
+                for (j = max_actv_elecs; j >= min_actv_elecs; j--) {
+                        for (k = 0; k <= xlvl; k++) {
+                                if ((i + j + k) != nelec) continue;
+                                ptr[cnt].docc = i;
+                                ptr[cnt].actv = j;
+                                ptr[cnt].virt = k;
+                                cnt++;
+                        }
+                }
+        }
+        return ptr;
+}
+
+/*
+ * allocate_strings_array: allocate the strings array.
+ */
+struct eostring *allocate_strings_array(int nstr, int nelecs)
+{
+        struct eostring *ptr = NULL;
+        int i;
+        ptr = (struct eostring *) malloc(sizeof(struct eostring) * nstr);
+        for (i = 0; i < nstr; i++) {
+                ptr[i].string = (int *) malloc(sizeof(int) * nelecs);
+                init_int_array_0(ptr[i].string, nelecs);
+                ptr[i].index = 0;
+        }
+        return ptr;
+}
+
+/*
+ * allocate_xmap: allocate 2d excitation map.
+ */
+struct xstrmap **allocate_xmap(int xlvl)
+{
+        struct xstrmap **ptr = NULL;
+        int i;
+        ptr = (struct xstrmap **) malloc(sizeof(struct xstrmap) * (xlvl + 1));
+        for (i = 0; i <= xlvl; i++) {
+                ptr[i] = (struct xstrmap *) malloc(sizeof(struct xstrmap) * (xlvl + 1));
+        }
+        return ptr;
 }
 
 /*
@@ -115,35 +193,98 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
                        int virt_elec, int *docc, int *actv, int *virt,
                        int *doccscr, int *actvscr, int *virtscr)
 {
-        int i, j, k;
+        int i, j, k, l;
         int virt_orbs;
-        int *ptr;
+        int ci_elecs;
+        int ptr = 0;
+        int typ = 0; /* 0: normal, 1: No DOCC, 2: No CAS, 3: No Virt,
+                      * 4: No DOCC+CAS, 5: No DOCC+VIRT, 6: No CAS+VIRT */
+        int elecs[3]; /* Number of electrons in DOCC, ACTV, VIRT */
+        int orbs[3];  /* Number of orbitals in DOCC, ACTV, VIRT */
+        int nstr[3];  /* Number of strings in DOCC, ACTV, VIRT */
+        int nspcs = 0;  /* DOCC or ACTV or VIRT */
         int vstr, astr, dstr; /* VIRT, ACTV, DOCC string number */
+
         virt_orbs = ci_orbs - ndocc - nactv;
-        vstr = binomial_coef(virt_orbs, virt_elec);
-        astr = binomial_coef(nactv, actv_elec);
-        dstr = binomial_coef(ndocc, docc_elec);
-        *pos = 0;
-        /* Loop over DOCC strings */
-        for (i = 1; i <= dstr; i++) {
-                str_adr2str(i, doccscr, docc_elec, ndocc,
-                            &(strlist[*pos].string[0]));
-                /* Loop over ACTV strings */
-                for (j = 1; j <= astr; j++) {
-                        str_adr2str(j, actvscr, actv_elec, nactv,
-                                    &(strlist[*pos].string[docc_elec]));
-                        if (vstr == 0) (*pos)++;
-                        /* Loop over VIRT strings */
-                        for (k = 1; k <= vstr; k++) {
-                                str_adr2str(k, virtscr, virt_elec, virt_orbs,
-                                            &(strlist[*pos].string[(docc_elec + actv_elec)]));
-                                (*pos)++;
+        vstr = binomial_coef2(virt_orbs, virt_elec);
+        if (virt_elec == 0) vstr = 0;
+        astr = binomial_coef2(nactv, actv_elec);
+        if (actv_elec == 0) astr = 0;
+        dstr = binomial_coef2(ndocc, docc_elec);
+        if (docc_elec == 0) dstr = 0;
+
+        setup_eostrings_compute(elecs, orbs, nstr, &nspcs, docc_elec, actv_elec,
+                                virt_elec, dstr, vstr, astr, ndocc, nactv,
+                                virt_orbs);
+
+        ptr = *pos; /* Set counter to start of list */
+        ci_elecs = elecs[0] + elecs[1] + elecs[2];
+        
+        /* Loop over first spaces's strings */
+        for (i = 1; i <= nstr[0]; i++) {
+                strlist[ptr].doccx = ndocc - docc_elec;
+                strlist[ptr].actvx = virt_elec;
+
+                str_adr2str(i, doccscr, elecs[0], orbs[0], docc);
+                for (j = 0; j < elecs[0]; j++) {
+                        strlist[ptr].string[j] = docc[j];
+                }
+                if (nspcs == 1) {
+                        /* Next string */
+                        strlist[ptr].index = str_adrfind(strlist[ptr].string,
+                                                         ci_elecs, ci_orbs);
+                        ptr++;
+                        continue;
+                }
+                /* Loop over second space's strings */
+                for (j = 1; j <= nstr[1]; j++) {
+                        str_adr2str(j, actvscr, elecs[1], orbs[1], actv);
+                        for (k = 0; k < elecs[0]; k++) {
+                                strlist[ptr].string[k] = docc[k];
+                        }
+                        for (k = elecs[0]; k < elecs[0] + elecs[1]; k++) {
+                                strlist[ptr].string[k] =
+                                        actv[k - elecs[0]] + orbs[0];
+                        }
+                        if (nspcs == 2) {
+                                /* Next string */
+                                strlist[ptr].index = str_adrfind(
+                                        strlist[ptr].string,
+                                        ci_elecs, ci_orbs);
+
+                                ptr++;
+                                continue;
+                        }
+                        /* Loop over third space's strings */
+                        for (k = 1; k <= nstr[2]; k++) {
+                                str_adr2str(k, virtscr, elecs[2], orbs[2], virt);
+                                for (l = 0; l < elecs[0]; l++) {
+                                        strlist[ptr].string[l] = docc[l];
+                                }
+                                for (l = elecs[0];
+                                     l < elecs[0] + elecs[1]; l++) {
+                                        strlist[ptr].string[l] =
+                                                actv[l - elecs[0]] + orbs[0];
+                                }
+                                for (l = elecs[0] + elecs[1];
+                                     l < elecs[0] + elecs[1] + elecs[2]; l++) {
+                                        strlist[ptr].string[l] =
+                                                virt[l - elecs[1]] +
+                                                (orbs[0] + orbs[1]);
+                                }
+                                /* Next string */
+                                strlist[ptr].index = str_adrfind(
+                                        strlist[ptr].string,
+                                        ci_elecs, ci_orbs);
+
+                                ptr++;
                         }
                 }
         }
-        
+        *pos = ptr;
         return;
 }
+
 
 /*
  * compute_stringnum: compute number of valid strings in expansion.
@@ -180,156 +321,176 @@ int compute_stringnum(int orbs, int elecs, int ndocc, int nactv, int xlvl)
 }
 
 /*
- * generate_string_list: generate full *valid* alph/beta string lists.
+ * generate_determinant_list: generate determinant list.
+ */
+void generate_determinant_list(struct eostring *pstrlist, int npstr, int aelec,
+                               struct eostring *qstrlist, int nqstr, int belec,
+                               struct eospace *peosp, int pegrps,
+                               struct eospace *qeosp, int qegrps,
+                               int ndocc, int nactv, int xlvl, int *dtrm_len)
+{
+        int dcnt = 0; /* Determinant count */
+        int doccmin = 0; /* Minimum occupation for DOCC orbitals */
+        int virtmax = 0; /* Maximum occupation ofr VIRT orbitals */
+        FILE *fptr = NULL;
+        int i, j;
+
+        /* Set max/min occupation numbers of alpha + beta strings */
+        doccmin = 2 * (ndocc - int_min(ndocc, xlvl));
+        virtmax = xlvl;
+
+        /* Open determinant file */
+        fptr = fopen("det.list","w");
+        
+        /* Loop over p string groups */
+        for (i = 0; i < pegrps; i++) {
+                /* Loop over q string groups */
+                for (j = 0; j < qegrps; j++) {
+                        if ((peosp[i].docc + qeosp[j].docc) < doccmin) continue;
+                        if ((peosp[i].virt + qeosp[j].virt) > virtmax) continue;
+
+                        write_determinant_strpairs(fptr, peosp[i].start,
+                                                   peosp[i].nstr, qeosp[j].start,
+                                                   qeosp[j].nstr, &dcnt,
+                                                   pstrlist, qstrlist);
+                }
+        }
+        *dtrm_len = dcnt;
+        return;
+}
+
+/*
+ * generate_string_list: generate full *valid* alpha/beta string lists.
  */
 void generate_string_list(struct eostring *strlist, int nstr, int orbs,
-                          int elecs, int ndocc, int nactv, int xlvl)
+                          int elecs, int ndocc, int nactv, int xlvl,
+                          struct eospace *eosp, int egrps)
 {
-        int min_docc_elecs = 0;
-        int max_docc_elecs = 0;
-        int max_actv_elecs = 0;
-        int min_actv_elecs = 0;
+
+        int count = 0; /* String counter */
         int *docc = NULL, *doccscr = NULL;
         int *actv = NULL, *actvscr = NULL;
         int *virt = NULL, *virtscr = NULL;
-        int count = 0;
-        int i, j, k;
-        min_docc_elecs = ndocc - int_min(ndocc, xlvl);
-        max_docc_elecs = ndocc;
-        min_actv_elecs = (elecs - ndocc) - int_min((elecs - ndocc), xlvl);
-        max_actv_elecs = int_min(((elecs - ndocc) + xlvl), nactv);
-        docc = (int *) malloc(sizeof(int) * ndocc);
-        doccscr = (int *) malloc(sizeof(int) * ndocc);
-        actv = (int *) malloc(sizeof(int) * nactv);
-        actvscr = (int *) malloc(sizeof(int) * nactv);
+        int max_space_size = 20;
+        int i;
+        docc = (int *) malloc(sizeof(int) * max_space_size);
+        doccscr = (int *) malloc(sizeof(int) * max_space_size);
+        actv = (int *) malloc(sizeof(int) * max_space_size);
+        actvscr = (int *) malloc(sizeof(int) * max_space_size);
         virt = (int *) malloc(sizeof(int) * xlvl);
         virtscr = (int *) malloc(sizeof(int) * xlvl);
-        /* Loop over DOCC occupations */
-        for (i = min_docc_elecs; i <= max_docc_elecs; i++) {
-                /* Loop over ACTV occupations */
-                for (j = min_actv_elecs; j <= max_actv_elecs; j++) {
-                        /* Loop over VIRT occupations */
-                        for (k = 0; k <= xlvl; k++) {
-                                if ((i + j + k ) == elecs) continue;
-                                // COMPUTE STRINGS
-                                compute_eostrings(strlist, &count, orbs, ndocc,
-                                                  nactv, i, j, k, docc, actv,
-                                                  virt, doccscr,actvscr,virtscr);
-                        }
-                }
+
+        /* Loop over electron groupings */
+        for (i = 0; i < egrps; i++) {
+                eosp[i].nstr  = count;
+                eosp[i].start = count;
+                compute_eostrings(strlist, &count, orbs, ndocc, nactv,
+                                  eosp[i].docc, eosp[i].actv, eosp[i].virt,
+                                  docc, actv, virt, doccscr, actvscr, virtscr);
+                eosp[i].nstr = count - eosp[i].nstr;
         }
-        /* Set index */
-        for (i = 0; i < nstr; i++) {
-                strlist[i].index = str_adrfind(strlist[i].string, elecs, orbs);
+        printf("Count = %d\n", count);
+        for (i = 0; i < egrps; i++) {
+                printf("Strings = %d\n", eosp[i].nstr);
         }
         return;
 }
+
+/*
+ * setup_eostrings_compute: set up a electron, orbital, strings arrays for
+ * compuation of the electron occupation strings.
+ */
+void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
+                             int docc_elec, int actv_elec, int virt_elec,
+                             int dstr, int vstr, int astr, int ndocc,
+                             int nactv, int vorbs)
+{
+        int typ = 0;
         
-/*
- * generate_actv_strings: generate ACTV orbital strings array.
- */
-int generate_actv_strings(int **qactv_array, int nstr, int nactv, int elecs,
-                          int ndocc, int xlvl)
-{
-        int error = 0;
-        int maxelecs;
-        int minelecs;
-        int *scr = NULL;
-        int cnt = 0;
-        int i, j;
-        minelecs = (elecs - ndocc) - int_min((elecs - ndocc), xlvl);
-        maxelecs = int_min(((elecs - ndocc) + xlvl), nactv);
-        scr = (int *) malloc(sizeof(int) * maxelecs);
-        for (i = minelecs; i <= maxelecs; i++) {
-                for (j = 1; j <= binomial_coef(nactv, i); j++) {
-                        str_adr2str(j, scr, i, nactv, qactv_array[cnt]);
-                        cnt++;
-                }
+        if ((vstr * astr * dstr) == 0) {
+                if (dstr == 0) typ = 1;
+                if (astr == 0) typ = 2;
+                if (vstr == 0) typ = 3;
+                if (dstr == 0 && astr == 0) typ = 4;
+                if (dstr == 0 && vstr == 0) typ = 5;
+                if (astr == 0 && vstr == 0) typ = 6;
+                if (dstr == 0 && astr == 0 && vstr == 0) return;
         }
-        free(scr);
-        return error;
-}
-
-/*
- * generate_docc_strings: generate DOCC orbital strings array.
- */
-int generate_docc_strings(int **qdocc_array, int nstr, int orbs, int elec,
-                          int xlvl)
-{
-        int error = 0; /* Error flag */
-        int maxholes = 0;
-        int *scr = NULL;
-        int cnt = 0;
-        int i, j;
-        maxholes = int_min(orbs, xlvl);
-        scr = (int *) malloc(sizeof(int) * elec);
-        for (i = 0; i <= maxholes; i++) {
-                for (j = 1; j <= binomial_coef(orbs, (elec - i)); j++) {
-                        str_adr2str(j, scr, (elec - i), orbs, qdocc_array[cnt]);
-                        cnt++;
-                }
+        printf(" DOCC: %d   CAS: %d    VIRT: %d\n", docc_elec, actv_elec, virt_elec);
+        switch (typ) {
+        case 0:
+//                printf("Normal\n");
+                *nspcs = 3;
+                elecs[0] = docc_elec;
+                elecs[1] = actv_elec;
+                elecs[2] = virt_elec;
+                orbs[0] = ndocc;
+                orbs[1] = nactv;
+                orbs[2] = vorbs;
+                nstr[0] = dstr;
+                nstr[1] = astr;
+                nstr[2] = vstr;
+                break;
+        case 1:
+//                printf("No DOCC\n");
+                *nspcs = 2;
+                elecs[0] = actv_elec;
+                elecs[1] = virt_elec;
+                orbs[0] = nactv;
+                orbs[1] = vorbs;
+                nstr[0] = astr;
+                nstr[1] = vstr;
+                break;
+        case 2:
+//                printf("No CAS\n");
+                *nspcs = 2;
+                elecs[0] = docc_elec;
+                elecs[1] = virt_elec;
+                orbs[0] = ndocc;
+                orbs[1] = vorbs;
+                nstr[0] = dstr;
+                nstr[1] = vstr;
+                break;
+        case 3:
+//                printf("No VIRT\n");
+                *nspcs = 2;
+                elecs[0] = docc_elec;
+                elecs[1] = actv_elec;
+                orbs[0] = ndocc;
+                orbs[1] = nactv;
+                nstr[0] = dstr;
+                nstr[1] = astr;
+                break;
+        case 4:
+//                printf("No DOCC & No CAS\n");
+                *nspcs = 1;
+                elecs[0] = virt_elec;
+                orbs[0] = vorbs;
+                nstr[0] = vstr;
+                break;
+        case 5:
+//                printf("No DOCC & No VIRT\n");
+                *nspcs = 1;
+                elecs[0] = actv_elec;
+                orbs[0] = nactv;
+                nstr[0] = astr;
+                break;
+        case 6:
+//                printf("No CAS & No VIRT\n");
+                *nspcs = 1;
+                elecs[0] = docc_elec;
+                orbs[0] = ndocc;
+                nstr[0] = dstr;
+                break;
+        default:
+                error_message("case != {0..6}", "compute_eostrings");
+                break;
         }
-        free(scr);
-        return error;
-}
-
-/*
- * generate_virt_strings: generate VIRT orbital strings array.
- */
-int generate_virt_strings(int **virt_array, int nstr, int orbs, int elec,
-                          int ndocc, int nactv, int xlvl)
-{
-        int error = 0;
-        int max_elecs = 0;
-        int virt_orbs = 0;
-        int *scr = NULL;
-        int cnt = 0;
-        int i, j;
-        max_elecs = xlvl;
-        virt_orbs = orbs - ndocc - nactv;
-        scr = (int *) malloc(sizeof(int) * xlvl);
-        for (i = 0; i <= xlvl; i++) {
-                for (j = 1; j <= binomial_coef(virt_orbs, i); j++) {
-                        str_adr2str(j, scr, i, virt_orbs, virt_array[cnt]);
-                        cnt++;
-                }
-        }
-        free(scr);
-        return error;
-}
-
-/*
- * max_actv_space_strings: return the maximum number of ACTV space strings.
- */
-int max_actv_space_strings(int orbs, int elecs, int ndocc, int xlvl)
-{
-        int val = 0;
-        int minelecs;
-        int maxelecs;
-        int i;
-        minelecs = (elecs - ndocc) - int_min((elecs - ndocc), xlvl);
-        maxelecs = int_min(((elecs - ndocc) + xlvl), orbs);
-        for (i = minelecs; i <= maxelecs; i++) {
-                val = val + binomial_coef(orbs, i);
-        }
-        return val;
-}
         
-
-/*
- * max_docc_space_strings: return the maximum number of DOCC space strings.
- */
-int max_docc_space_strings(int orbs, int elecs, int xlvl)
-{
-        int val = 0;
-        int maxholes;
-        int i;
-        maxholes = int_min(orbs, xlvl);
-        for (i = 0; i <= maxholes; i++) {
-                val = val + binomial_coef(orbs, (elecs - i));
-        }
-        return val;
+        return;
 }
+
+
 
 /*
  * string_number: generate number of possible *valid* strings given the number
@@ -340,7 +501,29 @@ int string_number(int nde, int nae, int nve, int ndocc, int nactv, int orbs,
 {
         int total = 0;
         if ((nde + nae + nve) != elecs) return total;
-        total = binomial_coef(ndocc, nde) * binomial_coef(nactv, nae) *
-                binomial_coef((orbs - (ndocc + nactv)), nve);
+        total = binomial_coef2(ndocc, nde) * binomial_coef2(nactv, nae) *
+                binomial_coef2((orbs - (ndocc + nactv)), nve);
         return total;
+}
+
+/*
+ * write_determinant_strpairs: write determinant alpha/beta string pairs for
+ * valid determinants to file.
+ */
+void write_determinant_strpairs(FILE *fptr, int pstart, int pnstr, int qstart,
+                                int qnstr, int *cnt,
+                                struct eostring *pstr, struct eostring *qstr)
+{
+        FILE *ptr; /* New file pointer */
+        int i, j;
+        ptr = fptr;
+        for (i = pstart; i < (pstart + pnstr); i++) {
+                for (j = qstart; j < (qstart + qnstr); j++) {
+                        fprintf(ptr, " %14d %14d\n",
+                                pstr[i].index, qstr[j].index);
+                        (*cnt)++;
+                }
+        }
+        fptr = ptr;
+        return;
 }

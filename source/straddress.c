@@ -28,7 +28,7 @@
 void str_adr2str(int index, int *scr, int elec, int orbs, int *str)
 {
     int i;
-
+    if (index == 0) return;
     for (i = 0; i < elec; i++) {
 	scr[i] = i + 1;
     }
@@ -53,12 +53,12 @@ int str_adrfind(int *str, int elec, int orbs)
      for (i = 2; i <= elec; i++) {
 	  for (j = (str[i - 2] + 1); j <= (str[i - 1] - 1); j++ ) {
 	       address = address +
-		    binomial_coef((orbs - j),(elec - i));
+		    binomial_coef2((orbs - j),(elec - i));
 	  }
      }
      for (i = 1; i < str[0]; i++) {
 	  address = address +
-	       binomial_coef((orbs - j),(elec - 1));
+	       binomial_coef2((orbs - j),(elec - 1));
      }
      return address;
 }
