@@ -39,7 +39,7 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
 	    int *bstr_len, int *dtrm_len)
 {
         int error = 0; /* Error flag */
-
+        int i;
         int ci_orbs;   /* CI orbitals (frozen core/virt removed) */
         int ci_aelec;  /* CI alpha electrons (frozen core removed) */
         int ci_belec;  /* CI beta  electrons (frozen core removed) */
@@ -91,6 +91,10 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
                              nactv, xlvl, peosp, pegrps);
         generate_string_list(qstrings, *bstr_len, ci_orbs, ci_belec, ndocc,
                              nactv, xlvl, qeosp, qegrps);
+
+        for (i = 0; i < pegrps; i++) {
+                printf("%d %d %d\n", peosp[i].docc, peosp[i].actv, peosp[i].virt);
+        }
         
         /* Generate determinant list */
         generate_determinant_list(pstrings, *astr_len, ci_aelec, qstrings,
@@ -219,6 +223,8 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
 
         ptr = *pos; /* Set counter to start of list */
         ci_elecs = elecs[0] + elecs[1] + elecs[2];
+        printf("%d %d %d\n", elecs[0], elecs[1], elecs[2]);
+        printf("ci_elecs = %d, ci_orbs = %d\n", ci_elecs, ci_orbs);
         
         /* Loop over first spaces's strings */
         for (i = 1; i <= nstr[0]; i++) {
@@ -233,6 +239,10 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
                         /* Next string */
                         strlist[ptr].index = str_adrfind(strlist[ptr].string,
                                                          ci_elecs, ci_orbs);
+                        printf("string = %d %d %d %d, %d\n",
+                               strlist[ptr].string[0], strlist[ptr].string[1],
+                               strlist[ptr].string[2], strlist[ptr].string[3],
+                               strlist[ptr].index);
                         ptr++;
                         continue;
                 }
@@ -251,6 +261,11 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
                                 strlist[ptr].index = str_adrfind(
                                         strlist[ptr].string,
                                         ci_elecs, ci_orbs);
+                                printf("string = %d %d %d %d, %d\n",
+                                       strlist[ptr].string[0], strlist[ptr].string[1],
+                                       strlist[ptr].string[2], strlist[ptr].string[3],
+                                       strlist[ptr].index);
+                                
 
                                 ptr++;
                                 continue;
@@ -349,6 +364,12 @@ void generate_determinant_list(struct eostring *pstrlist, int npstr, int aelec,
                         if ((peosp[i].docc + qeosp[j].docc) < doccmin) continue;
                         if ((peosp[i].virt + qeosp[j].virt) > virtmax) continue;
 
+                        printf("Valid pair:\n");
+                        printf(" DOCC: %d %d  CAS: %d %d  VIRT: %d %d\n",
+                               peosp[i].docc, qeosp[j].docc,
+                               peosp[i].actv, qeosp[j].actv,
+                               peosp[i].virt, qeosp[j].virt);
+                        printf("\n");
                         write_determinant_strpairs(fptr, peosp[i].start,
                                                    peosp[i].nstr, qeosp[j].start,
                                                    qeosp[j].nstr, &dcnt,
@@ -384,9 +405,11 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
         for (i = 0; i < egrps; i++) {
                 eosp[i].nstr  = count;
                 eosp[i].start = count;
+                printf("%d %d %d\n", eosp[i].docc, eosp[i].actv, eosp[i].virt);
                 compute_eostrings(strlist, &count, orbs, ndocc, nactv,
                                   eosp[i].docc, eosp[i].actv, eosp[i].virt,
                                   docc, actv, virt, doccscr, actvscr, virtscr);
+                printf("%d %d %d\n", eosp[i].docc, eosp[i].actv, eosp[i].virt);
                 eosp[i].nstr = count - eosp[i].nstr;
         }
         printf("Count = %d\n", count);
@@ -406,6 +429,10 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                              int nactv, int vorbs)
 {
         int typ = 0;
+
+        init_int_array_0(elecs, 3);
+        init_int_array_0(orbs, 3);
+        init_int_array_0(nstr, 3);
         
         if ((vstr * astr * dstr) == 0) {
                 if (dstr == 0) typ = 1;

@@ -50,18 +50,25 @@ int str_adrfind(int *str, int elec, int orbs)
      int i, j;
 
      address = 1;
+     printf("STRING: ");
+     printf(" (%d) (%d) ", elec, orbs);
+     for (i = 0; i < elec; i++) {
+             printf(" %d ", str[i]);
+     }
      for (i = 2; i <= elec; i++) {
 	  for (j = (str[i - 2] + 1); j <= (str[i - 1] - 1); j++ ) {
 	       address = address +
 		    binomial_coef2((orbs - j),(elec - i));
 	  }
      }
-     for (i = 1; i < str[0]; i++) {
+     for (i = 1; i <= str[0] - 1; i++) {
 	  address = address +
-	       binomial_coef2((orbs - j),(elec - 1));
+	       binomial_coef2((orbs - i),(elec - 1));
      }
+     printf("  ADDRESS: %d\n", address); 
      return address;
 }
+
 /* str_strfind1: 
  *   Compute orbital occupation string from preceding string 
  * -------------------------------------------------------------------

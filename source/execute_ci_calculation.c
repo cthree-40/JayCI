@@ -70,7 +70,9 @@ int execute_ci_calculation(int aelec, int belec, int orbs, int nastr, int nbstr,
 	prev_time = clock();
 	if (plvl > 0) fprintf(stdout, " Generating binary determinant list.\n");
 	detlist = (struct det *) malloc(ndets * sizeof(struct det));
-	init_detlist(detlist, ndets);
+        printf("Needs %lu bytes\n", (ndets * sizeof(struct det)));
+        if (detlist == NULL) return 10;
+        init_detlist(detlist, ndets);
 	error = genbinarydetlist(detlist, aelec, belec, orbs, ndocc, nactv,
 				 ndets);
 	if (error != 0) {
