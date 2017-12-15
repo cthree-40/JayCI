@@ -92,10 +92,6 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
         generate_string_list(qstrings, *bstr_len, ci_orbs, ci_belec, ndocc,
                              nactv, xlvl, qeosp, qegrps);
 
-        for (i = 0; i < pegrps; i++) {
-                printf("%d %d %d\n", peosp[i].docc, peosp[i].actv, peosp[i].virt);
-        }
-        
         /* Generate determinant list */
         generate_determinant_list(pstrings, *astr_len, ci_aelec, qstrings,
                                   *bstr_len, ci_belec, peosp, pegrps, qeosp,
@@ -137,7 +133,6 @@ struct eospace *allocate_eospace_array(int nelec, int norbs, int ndocc,
                         }
                 }
         }
-        printf(" %d electron groupings\n", *ngrp);
 
         /* Allocate groupings list */
         ptr = (struct eospace *) malloc(sizeof(struct eospace) * (*ngrp));
@@ -223,8 +218,6 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
 
         ptr = *pos; /* Set counter to start of list */
         ci_elecs = elecs[0] + elecs[1] + elecs[2];
-        printf("%d %d %d\n", elecs[0], elecs[1], elecs[2]);
-        printf("ci_elecs = %d, ci_orbs = %d\n", ci_elecs, ci_orbs);
         
         /* Loop over first spaces's strings */
         for (i = 1; i <= nstr[0]; i++) {
@@ -239,10 +232,6 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
                         /* Next string */
                         strlist[ptr].index = str_adrfind(strlist[ptr].string,
                                                          ci_elecs, ci_orbs);
-                        printf("string = %d %d %d %d, %d\n",
-                               strlist[ptr].string[0], strlist[ptr].string[1],
-                               strlist[ptr].string[2], strlist[ptr].string[3],
-                               strlist[ptr].index);
                         ptr++;
                         continue;
                 }
@@ -261,12 +250,6 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
                                 strlist[ptr].index = str_adrfind(
                                         strlist[ptr].string,
                                         ci_elecs, ci_orbs);
-                                printf("string = %d %d %d %d, %d\n",
-                                       strlist[ptr].string[0], strlist[ptr].string[1],
-                                       strlist[ptr].string[2], strlist[ptr].string[3],
-                                       strlist[ptr].index);
-                                
-
                                 ptr++;
                                 continue;
                         }
@@ -364,12 +347,6 @@ void generate_determinant_list(struct eostring *pstrlist, int npstr, int aelec,
                         if ((peosp[i].docc + qeosp[j].docc) < doccmin) continue;
                         if ((peosp[i].virt + qeosp[j].virt) > virtmax) continue;
 
-                        printf("Valid pair:\n");
-                        printf(" DOCC: %d %d  CAS: %d %d  VIRT: %d %d\n",
-                               peosp[i].docc, qeosp[j].docc,
-                               peosp[i].actv, qeosp[j].actv,
-                               peosp[i].virt, qeosp[j].virt);
-                        printf("\n");
                         write_determinant_strpairs(fptr, peosp[i].start,
                                                    peosp[i].nstr, qeosp[j].start,
                                                    qeosp[j].nstr, &dcnt,
@@ -405,16 +382,10 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
         for (i = 0; i < egrps; i++) {
                 eosp[i].nstr  = count;
                 eosp[i].start = count;
-                printf("%d %d %d\n", eosp[i].docc, eosp[i].actv, eosp[i].virt);
                 compute_eostrings(strlist, &count, orbs, ndocc, nactv,
                                   eosp[i].docc, eosp[i].actv, eosp[i].virt,
                                   docc, actv, virt, doccscr, actvscr, virtscr);
-                printf("%d %d %d\n", eosp[i].docc, eosp[i].actv, eosp[i].virt);
                 eosp[i].nstr = count - eosp[i].nstr;
-        }
-        printf("Count = %d\n", count);
-        for (i = 0; i < egrps; i++) {
-                printf("Strings = %d\n", eosp[i].nstr);
         }
         return;
 }
@@ -443,10 +414,8 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 if (astr == 0 && vstr == 0) typ = 6;
                 if (dstr == 0 && astr == 0 && vstr == 0) return;
         }
-        printf(" DOCC: %d   CAS: %d    VIRT: %d\n", docc_elec, actv_elec, virt_elec);
         switch (typ) {
         case 0:
-//                printf("Normal\n");
                 *nspcs = 3;
                 elecs[0] = docc_elec;
                 elecs[1] = actv_elec;
@@ -459,7 +428,6 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 nstr[2] = vstr;
                 break;
         case 1:
-//                printf("No DOCC\n");
                 *nspcs = 2;
                 elecs[0] = actv_elec;
                 elecs[1] = virt_elec;
@@ -469,7 +437,6 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 nstr[1] = vstr;
                 break;
         case 2:
-//                printf("No CAS\n");
                 *nspcs = 2;
                 elecs[0] = docc_elec;
                 elecs[1] = virt_elec;
@@ -479,7 +446,6 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 nstr[1] = vstr;
                 break;
         case 3:
-//                printf("No VIRT\n");
                 *nspcs = 2;
                 elecs[0] = docc_elec;
                 elecs[1] = actv_elec;
@@ -489,21 +455,18 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 nstr[1] = astr;
                 break;
         case 4:
-//                printf("No DOCC & No CAS\n");
                 *nspcs = 1;
                 elecs[0] = virt_elec;
                 orbs[0] = vorbs;
                 nstr[0] = vstr;
                 break;
         case 5:
-//                printf("No DOCC & No VIRT\n");
                 *nspcs = 1;
                 elecs[0] = actv_elec;
                 orbs[0] = nactv;
                 nstr[0] = astr;
                 break;
         case 6:
-//                printf("No CAS & No VIRT\n");
                 *nspcs = 1;
                 elecs[0] = docc_elec;
                 orbs[0] = ndocc;

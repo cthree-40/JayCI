@@ -71,7 +71,11 @@ int execute_ci_calculation(int aelec, int belec, int orbs, int nastr, int nbstr,
 	if (plvl > 0) fprintf(stdout, " Generating binary determinant list.\n");
 	detlist = (struct det *) malloc(ndets * sizeof(struct det));
         printf("Needs %lu bytes\n", (ndets * sizeof(struct det)));
-        if (detlist == NULL) return 10;
+        if (detlist == NULL) {
+                error_message("Cannot allocate detlist.",
+                              "execute_ci_calculation");
+                return 10;
+        }
         init_detlist(detlist, ndets);
 	error = genbinarydetlist(detlist, aelec, belec, orbs, ndocc, nactv,
 				 ndets);
