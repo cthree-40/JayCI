@@ -1,0 +1,20 @@
+&general
+electrons=16
+orbitals=88
+nfrozen=2
+ndocc=3
+nactive=6
+xlevel=2
+printlvl=1
+printwvf=1
+nfrzvirt=0
+/
+&dalginfo
+maxiter=100
+krymax = 8
+krymin = 2
+restol = 1d-5
+nroots = 2
+prediagr = 1
+refdim = 1000
+/

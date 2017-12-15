@@ -62,8 +62,8 @@ COLIBDIR:= $(SDIR)/colib
 CORI:=cori
 EDISON:=edison
 ifneq ($(filter cori edison,$(NERSC_HOST)),)
-	CC := cc -fopenmp -I $(IDIR) 
-	MPICC := cc -fopenmp -I $(MPIIDIR)
+	CC := cc -qopenmp -I $(IDIR) 
+	MPICC := cc -qopenmp -I $(MPIIDIR)
 	FC := ftn
 	MPIFC := ftn
 	AR := ar rv
