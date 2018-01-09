@@ -25,4 +25,26 @@ int execute_ci_calculation(
         int pwvf  /* print wavefunction */
         );
 
+/*
+ * execute_ci_calculation_inpdlist: perform CI calculation using davidson
+ * algorithm. This routine is 'given' the determinant list on input.
+ */
+int execute_ci_calculation_inpdlist(
+        int aelec,
+        int belec,
+        int orbs,
+        int nastr,
+        int nbstr,
+        int ndets,
+        int ndocc,
+        int nactv,
+        double *moints1,
+        double *moints2,
+        double nucrep,
+        double frzcore,
+        struct det *detlist,
+        int plvl,
+        int pwvf);
+
+
 #endif

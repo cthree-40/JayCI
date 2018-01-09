@@ -9,6 +9,7 @@
 #include "arrayutil.h"
 #include "straddress.h"
 #include "binarystr.h"
+#include "citruncate.h"
 #include "genbindet.h"
 
 /* genbinarydetlist: generate list of determinants in binary format
@@ -33,6 +34,9 @@ int genbinarydetlist(struct det *dlist, int aelec, int belec, int orbs,
     int error = 0;
     FILE *dlistfl = NULL;
 
+    
+
+    
     aistr = (int *) malloc(aelec * sizeof(int));
     init_int_array_0(aistr, aelec);
     bistr = (int *) malloc(belec * sizeof(int));

@@ -12,6 +12,7 @@
 #include "allocate_mem.h"
 #include "combinatorial.h"
 #include "straddress.h"
+#include "binarystr.h"
 #include "citruncate.h"
 
 /*--------------------------------------------------------------------------*/
@@ -100,6 +101,100 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
         return error;
 }
 
+/*
+ * citrunc_rtnlist: truncate the CI expansion, and return determinat list.
+ * Input:
+ *  aelec = alpha electrons
+ *  belec = beta  electrons
+ *  orbs  = molecular orbitals
+ *  nfrzc = number of frozen core orbitals
+ *  ndocc = number of doubly-occupied reference orbitals
+ *  nactv = number of active reference orbitals
+ *  nfrzv = number of frozen virtual orbitals
+ *  xlvl  = excitation level (DOCC->ACTV & (DOCC + ACTV)->VIRT)
+ * Output:
+ *  astr_len = alpha string number
+ *  bstr_len = beta  string number
+ *  dtrm_len = determinant number
+ *  ci_orbs  = ci orbitals
+ *  ci_aelec = ci alpha electrons
+ *  ci_belec = ci beta electrons
+ */
+struct det *citrunc_rtnlist(int aelec, int belec, int orbs, int nfrzc, int ndocc,
+                            int nactv, int nfrzv, int xlvl, int *astr_len,
+                            int *bstr_len, int *dtrm_len, int *ci_orbs,
+                            int *ci_aelec, int *ci_belec)
+{
+        int error = 0; /* Error flag */
+        int i;
+
+        struct eostring *pstrings;  /* Alpha electron strings */
+        struct eostring *qstrings;  /* Beta  electron strings */
+
+        int pegrps;            /* Alpha electron groupings */
+        int qegrps;            /* Beta  electron groupings */
+        struct eospace *peosp = NULL; /* Alpha electron space array */
+        struct eospace *qeosp = NULL; /* Beta  electron space array */
+
+        struct det *dtlist = NULL; /* Determinant list */
+        
+        /* Compute electron and orbital number in CI expansion space.
+         * Compute alpha and beta string numbers */
+        *ci_aelec = aelec - nfrzc;
+        *ci_belec = belec - nfrzc;
+        *ci_orbs  = orbs - nfrzc - nfrzv;
+        fprintf(stdout, " CI Expansion: %d elctrons in %d orbitals\n",
+                (*ci_aelec + *ci_belec), *ci_orbs);
+        *astr_len = compute_stringnum(*ci_orbs, *ci_aelec, ndocc, nactv, xlvl);
+        *bstr_len = compute_stringnum(*ci_orbs, *ci_belec, ndocc, nactv, xlvl);
+        printf(" Total number of alpha strings = %d\n", *astr_len);
+        printf(" Total number of beta  strings = %d\n", *bstr_len);
+
+        /* Allocate the electron string arrays. */
+        pstrings = allocate_strings_array(*astr_len, *ci_aelec);
+        qstrings = allocate_strings_array(*bstr_len, *ci_belec);
+        if (pstrings == NULL || qstrings == NULL) {
+                error_message("Failed allocating electron string arrays",
+                              "citrunc");
+                return dtlist;
+        }
+
+        /* Allocate eospace arrays */
+        peosp = allocate_eospace_array(*ci_aelec, *ci_orbs, ndocc, nactv, xlvl,
+                                       &pegrps);
+        qeosp = allocate_eospace_array(*ci_belec, *ci_orbs, ndocc, nactv, xlvl,
+                                       &qegrps);
+        if (peosp == NULL || qeosp == NULL) {
+                error_message("Failed to allocate electron grouping arrays",
+                              "citrunc");
+                return dtlist;
+        }
+
+        /* Generate alpha/beta string lists */
+        generate_string_list(pstrings, *astr_len, *ci_orbs, *ci_aelec, ndocc,
+                             nactv, xlvl, peosp, pegrps);
+        generate_string_list(qstrings, *bstr_len, *ci_orbs, *ci_belec, ndocc,
+                             nactv, xlvl, qeosp, qegrps);
+
+        /* Generate determinant list */
+        *dtrm_len = compute_detnum(peosp, pegrps, qeosp, qegrps, ndocc, nactv,
+                                   xlvl);
+        dtlist = (struct det *) malloc(sizeof(struct det) * (*dtrm_len));
+        if (dtlist == NULL) {
+                error_message("Failed to allocate determinant list.",
+                              "citrun");
+                return dtlist;
+        }
+        init_detlist(dtlist, *dtrm_len);
+        generate_determinant_list_rtnlist(pstrings, *astr_len, *ci_aelec,
+                                          qstrings, *bstr_len, *ci_belec,
+                                          peosp, pegrps, qeosp, qegrps,
+                                          ndocc, nactv, xlvl, *dtrm_len,
+                                          dtlist);
+        
+        return dtlist;
+}
+
 /* -------------------------------------------------------------------------- */
 /* -- SUBROUTINES --                                                          */
 /* -------------------------------------------------------------------------- */
@@ -182,6 +277,35 @@ struct xstrmap **allocate_xmap(int xlvl)
         }
         return ptr;
 }
+
+/*
+ * compute_detnum: compute the number of determinants in expansion.
+ */
+int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
+                   int qegrps, int ndocc, int nactv, int xlvl)
+{
+        int dcnt = 0;    /* Determinant count. */
+        int doccmin = 0; /* Minimum determinant DOCC occupations. */
+        int i, j;
+
+        /* Set min DOCC occupation numbers of alpha + beta strings. The
+         * excitation level is the maximum occupation for VIRT orbitals. */
+        doccmin = 2 * (ndocc - int_min(ndocc, xlvl));
+
+        /* Loop over p (alpha) string groups. */
+        for (i = 0; i < pegrps; i++) {
+                /* Loop over q (beta) string groups. */
+                for (j = 0; j < qegrps; j++) {
+                        if ((peosp[i].docc + qeosp[j].docc) < doccmin) continue;
+                        if ((peosp[i].virt + qeosp[j].virt) > xlvl) continue;
+                        
+                        dcnt = dcnt + peosp[i].nstr * qeosp[j].nstr;
+                }
+        }
+        printf(" Number of determinants = %d\n", dcnt);
+        return dcnt;
+}
+
 
 /*
  * compute_eostrings: compute electron occupation strings for all string
@@ -283,7 +407,6 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
         return;
 }
 
-
 /*
  * compute_stringnum: compute number of valid strings in expansion.
  */
@@ -354,6 +477,53 @@ void generate_determinant_list(struct eostring *pstrlist, int npstr, int aelec,
                 }
         }
         *dtrm_len = dcnt;
+        return;
+}
+
+/*
+ * generate_determinant_list_rtnlist: generate determinant list, returning
+ * the list.
+ */
+void generate_determinant_list_rtnlist(struct eostring *pstrlist, int npstr,
+                                       int aelec, struct eostring *qstrlist,
+                                       int nqstr, int belec,
+                                       struct eospace *peosp, int pegrps,
+                                       struct eospace *qeosp, int qegrps,
+                                       int ndocc, int nactv, int xlvl,
+                                       int dtrm_len, struct det *dtlist)
+{
+        int dcnt = 0;     /* Determinant count */
+        int doccmin = 0;  /* Minimum occupation for DOCC orbitals */
+        int virtmax = 0;  /* Maximum occupation ofr VIRT orbitals */
+        int cflag = 0;    /* CAS flag */
+        int i, j;
+
+        /* Set max/min occupation numbers of alpha + beta strings */
+        doccmin = 2 * (ndocc - int_min(ndocc, xlvl));
+        virtmax = xlvl;
+
+        /* Loop over p string groups */
+        for (i = 0; i < pegrps; i++) {
+                /* Loop over q string groups */
+                for (j = 0; j < qegrps; j++) {
+                        if ((peosp[i].docc + qeosp[j].docc) < doccmin) continue;
+                        if ((peosp[i].virt + qeosp[j].virt) > virtmax) continue;
+                        if ((peosp[i].virt + qeosp[j].virt) == 0) {
+                                cflag = 1;
+                        } else {
+                                cflag = 0;
+                        }
+
+                        write_determinant_strpairs_dtlist(peosp[i].start,
+                                                          peosp[i].nstr,
+                                                          qeosp[j].start,
+                                                          qeosp[j].nstr,
+                                                          pstrlist, qstrlist,
+                                                          aelec, belec, ndocc,
+                                                          nactv, dtlist, &dcnt,
+                                                          cflag);
+                }
+        }
         return;
 }
 
@@ -515,5 +685,48 @@ void write_determinant_strpairs(FILE *fptr, int pstart, int pnstr, int qstart,
                 }
         }
         fptr = ptr;
+        return;
+}
+
+/*
+ * write_determinant_strpairs_dtlist: write determinant alpha/beta string
+ * pairs for valid determinants to dtlist.
+ */
+void write_determinant_strpairs_dtlist(int pstart, int pnstr, int qstart,
+                                       int qnstr, struct eostring *pstr,
+                                       struct eostring *qstr, int aelec,
+                                       int belec, int ndocc, int nactv,
+                                       struct det *dlist, int *dptr,
+                                       int cflag)
+{
+        
+        int i, j;
+        if (cflag == 1) {
+                for (i = pstart; i < (pstart + pnstr); i++) {
+                        for (j = qstart; j < (qstart + qnstr); j++) {
+                                dlist[*dptr].astr = str2occstr(pstr[i].string,
+                                                               aelec,
+                                                               ndocc, nactv);
+                                dlist[*dptr].bstr = str2occstr(qstr[j].string,
+                                                               belec,
+                                                               ndocc, nactv);
+                                dlist[*dptr].cas = 1;
+                                (*dptr)++;
+                        }
+                }
+        } else {
+                for (i = pstart; i < (pstart + pnstr); i++) {
+                        for (j = qstart; j < (qstart + qnstr); j++) {
+                                dlist[*dptr].astr = str2occstr(pstr[i].string,
+                                                               aelec,
+                                                               ndocc, nactv);
+                                dlist[*dptr].bstr = str2occstr(qstr[j].string,
+                                                               belec,
+                                                               ndocc, nactv);
+                                dlist[*dptr].cas = 0;
+                                (*dptr)++;
+                        }
+                }
+        }
         return;
 }
