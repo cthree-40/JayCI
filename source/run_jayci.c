@@ -77,6 +77,7 @@ int run_jayci()
         detlist = citrunc_rtnlist(aelec, belec, orbitals, nfrzc, ndocc, nactv,
                                   nfrzv, xlvl, &astr_len, &bstr_len, &dstr_len,
                                   &ci_orbs, &ci_aelec, &ci_belec);
+
 	m1len = index1e(orbitals, orbitals);
 	m2len = index2e(orbitals, orbitals, orbitals, orbitals);
 	strncpy(moflname, "moints", FLNMSIZE);

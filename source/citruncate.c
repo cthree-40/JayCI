@@ -254,12 +254,17 @@ struct eospace *allocate_eospace_array(int nelec, int norbs, int ndocc,
 struct eostring *allocate_strings_array(int nstr, int nelecs)
 {
         struct eostring *ptr = NULL;
-        int i;
+        int i, j;
         ptr = (struct eostring *) malloc(sizeof(struct eostring) * nstr);
         for (i = 0; i < nstr; i++) {
                 ptr[i].string = (int *) malloc(sizeof(int) * nelecs);
-                init_int_array_0(ptr[i].string, nelecs);
+                //init_int_array_0(ptr[i].string, nelecs);
+                for (j = 0; j < nelecs; j++) {
+                        ptr[i].string[j] = 0;
+                }
                 ptr[i].index = 0;
+                ptr[i].doccx = 0;
+                ptr[i].actvx = 0;
         }
         return ptr;
 }
@@ -325,6 +330,7 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
         int elecs[3]; /* Number of electrons in DOCC, ACTV, VIRT */
         int orbs[3];  /* Number of orbitals in DOCC, ACTV, VIRT */
         int nstr[3];  /* Number of strings in DOCC, ACTV, VIRT */
+        int pegs[3];  /* Orbital index "pegs" for each space. */
         int nspcs = 0;  /* DOCC or ACTV or VIRT */
         int vstr, astr, dstr; /* VIRT, ACTV, DOCC string number */
 
@@ -336,13 +342,13 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
         dstr = binomial_coef2(ndocc, docc_elec);
         if (docc_elec == 0) dstr = 0;
 
-        setup_eostrings_compute(elecs, orbs, nstr, &nspcs, docc_elec, actv_elec,
-                                virt_elec, dstr, vstr, astr, ndocc, nactv,
-                                virt_orbs);
+        setup_eostrings_compute(elecs, orbs, nstr, pegs, &nspcs, docc_elec,
+                                actv_elec, virt_elec, dstr, vstr, astr, ndocc,
+                                nactv, virt_orbs);
 
         ptr = *pos; /* Set counter to start of list */
         ci_elecs = elecs[0] + elecs[1] + elecs[2];
-        
+
         /* Loop over first spaces's strings */
         for (i = 1; i <= nstr[0]; i++) {
                 strlist[ptr].doccx = ndocc - docc_elec;
@@ -350,7 +356,7 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
 
                 str_adr2str(i, doccscr, elecs[0], orbs[0], docc);
                 for (j = 0; j < elecs[0]; j++) {
-                        strlist[ptr].string[j] = docc[j];
+                        strlist[ptr].string[j] = docc[j] + pegs[0];
                 }
                 if (nspcs == 1) {
                         /* Next string */
@@ -363,11 +369,11 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
                 for (j = 1; j <= nstr[1]; j++) {
                         str_adr2str(j, actvscr, elecs[1], orbs[1], actv);
                         for (k = 0; k < elecs[0]; k++) {
-                                strlist[ptr].string[k] = docc[k];
+                                strlist[ptr].string[k] = docc[k] + pegs[0];
                         }
                         for (k = elecs[0]; k < elecs[0] + elecs[1]; k++) {
                                 strlist[ptr].string[k] =
-                                        actv[k - elecs[0]] + orbs[0];
+                                        actv[k - elecs[0]] + pegs[1];
                         }
                         if (nspcs == 2) {
                                 /* Next string */
@@ -381,18 +387,17 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
                         for (k = 1; k <= nstr[2]; k++) {
                                 str_adr2str(k, virtscr, elecs[2], orbs[2], virt);
                                 for (l = 0; l < elecs[0]; l++) {
-                                        strlist[ptr].string[l] = docc[l];
+                                        strlist[ptr].string[l] = docc[l] + pegs[0];
                                 }
                                 for (l = elecs[0];
                                      l < elecs[0] + elecs[1]; l++) {
                                         strlist[ptr].string[l] =
-                                                actv[l - elecs[0]] + orbs[0];
+                                                actv[l - elecs[0]] + pegs[1];
                                 }
                                 for (l = elecs[0] + elecs[1];
                                      l < elecs[0] + elecs[1] + elecs[2]; l++) {
                                         strlist[ptr].string[l] =
-                                                virt[l - elecs[1]] +
-                                                (orbs[0] + orbs[1]);
+                                                virt[l - elecs[0] - elecs[1]] + pegs[2];
                                 }
                                 /* Next string */
                                 strlist[ptr].index = str_adrfind(
@@ -543,10 +548,16 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
         int i;
         docc = (int *) malloc(sizeof(int) * max_space_size);
         doccscr = (int *) malloc(sizeof(int) * max_space_size);
+        init_int_array_0(docc, max_space_size);
+        init_int_array_0(doccscr, max_space_size);
         actv = (int *) malloc(sizeof(int) * max_space_size);
         actvscr = (int *) malloc(sizeof(int) * max_space_size);
-        virt = (int *) malloc(sizeof(int) * xlvl);
-        virtscr = (int *) malloc(sizeof(int) * xlvl);
+        init_int_array_0(actv, max_space_size);
+        init_int_array_0(actvscr, max_space_size);
+        virt = (int *) malloc(sizeof(int) * max_space_size);
+        virtscr = (int *) malloc(sizeof(int) * max_space_size);
+        init_int_array_0(virt, max_space_size);
+        init_int_array_0(virtscr, max_space_size);
 
         /* Loop over electron groupings */
         for (i = 0; i < egrps; i++) {
@@ -564,16 +575,17 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
  * setup_eostrings_compute: set up a electron, orbital, strings arrays for
  * compuation of the electron occupation strings.
  */
-void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
-                             int docc_elec, int actv_elec, int virt_elec,
-                             int dstr, int vstr, int astr, int ndocc,
-                             int nactv, int vorbs)
+void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *pegs,
+                             int *nspcs, int docc_elec, int actv_elec,
+                             int virt_elec, int dstr, int vstr, int astr,
+                             int ndocc, int nactv, int vorbs)
 {
         int typ = 0;
 
         init_int_array_0(elecs, 3);
         init_int_array_0(orbs, 3);
         init_int_array_0(nstr, 3);
+        init_int_array_0(pegs, 3);
         
         if ((vstr * astr * dstr) == 0) {
                 if (dstr == 0) typ = 1;
@@ -585,7 +597,7 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 if (dstr == 0 && astr == 0 && vstr == 0) return;
         }
         switch (typ) {
-        case 0:
+        case 0: // DOCC,ACTV,VIRT
                 *nspcs = 3;
                 elecs[0] = docc_elec;
                 elecs[1] = actv_elec;
@@ -596,8 +608,11 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 nstr[0] = dstr;
                 nstr[1] = astr;
                 nstr[2] = vstr;
+                pegs[0] = 0;
+                pegs[1] = ndocc;
+                pegs[2] = ndocc + nactv;
                 break;
-        case 1:
+        case 1: // ACTV, VIRT
                 *nspcs = 2;
                 elecs[0] = actv_elec;
                 elecs[1] = virt_elec;
@@ -605,8 +620,10 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 orbs[1] = vorbs;
                 nstr[0] = astr;
                 nstr[1] = vstr;
+                pegs[0] = ndocc;
+                pegs[1] = ndocc + nactv;
                 break;
-        case 2:
+        case 2: // DOCC, VIRT
                 *nspcs = 2;
                 elecs[0] = docc_elec;
                 elecs[1] = virt_elec;
@@ -614,8 +631,10 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 orbs[1] = vorbs;
                 nstr[0] = dstr;
                 nstr[1] = vstr;
+                pegs[0] = 0;
+                pegs[1] = ndocc + nactv;
                 break;
-        case 3:
+        case 3: // DOCC, ACTV
                 *nspcs = 2;
                 elecs[0] = docc_elec;
                 elecs[1] = actv_elec;
@@ -623,24 +642,29 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
                 orbs[1] = nactv;
                 nstr[0] = dstr;
                 nstr[1] = astr;
+                pegs[0] = 0;
+                pegs[1] = ndocc;
                 break;
-        case 4:
+        case 4: // VIRT
                 *nspcs = 1;
                 elecs[0] = virt_elec;
                 orbs[0] = vorbs;
                 nstr[0] = vstr;
+                pegs[0] = ndocc + nactv;
                 break;
-        case 5:
+        case 5: // ACTV
                 *nspcs = 1;
                 elecs[0] = actv_elec;
                 orbs[0] = nactv;
                 nstr[0] = astr;
+                pegs[0] = ndocc;
                 break;
-        case 6:
+        case 6: // DOCC
                 *nspcs = 1;
                 elecs[0] = docc_elec;
                 orbs[0] = ndocc;
                 nstr[0] = dstr;
+                pegs[0] = 0;
                 break;
         default:
                 error_message("case != {0..6}", "compute_eostrings");
@@ -701,6 +725,8 @@ void write_determinant_strpairs_dtlist(int pstart, int pnstr, int qstart,
 {
         
         int i, j;
+        int array[4];
+        
         if (cflag == 1) {
                 for (i = pstart; i < (pstart + pnstr); i++) {
                         for (j = qstart; j < (qstart + qnstr); j++) {

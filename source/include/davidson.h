@@ -56,7 +56,7 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	   int aelec, int belec, double *hdgls, int ninto, double totfrze,
 	   int maxiter, int krymin, int krymax, int nroots, double restol,
 	   struct rowmap *hmap, double **civec, double *cival, int predr,
-	   int plvl, int norbs);
+	   int plvl, int norbs, int refdim);
 
 /*
  * generate_newvector: build correction vector.

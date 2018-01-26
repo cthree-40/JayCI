@@ -102,7 +102,11 @@ void compute_hdgls(struct det *dlist, int ndets, double *moints1,
 		   int ninto)
 {
 	int i;
+        char str1[65];
+        char str2[65];
 	for (i = 0; i < ndets; i++) {
+                printf("<%d|%d>:\n", (i + 1), (i + 1));
+                
 		hdgls[i] = 0.0 + hmatels(dlist[i], dlist[i], moints1, moints2,
 					 aelec, belec, ninto);
 	}
@@ -131,6 +135,7 @@ void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
 		csec = hmap[i].sec;
 		while (csec != NULL) {
 			for (j = (csec->first + i); j <= (csec->last + i); j++) {
+                                printf("<%d|%d>:\n", (i + 1), (j + 1));
                                 valij = hmatels(dlist[i], dlist[j], moints1,
 						moints2, aelec, belec, ninto);
 #pragma omp atomic update
@@ -184,6 +189,7 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 	
 	/* test if determinants are CAS-flagged. */ 
 	if (deti.cas + detj.cas < 2) {
+                printf("NCAS\n");
 		detdiff = comparedets_ncas(
 			deti, detj, &numaxc, &numbxc, &numaxv, &numbxv,
 			&numaxcv, &numbxcv, &axi, &axf, &bxi, &bxf, nactv);
@@ -193,6 +199,7 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 			numbxcv, numaxv, numbxv, axi, axf, bxi, bxf,
 			aelec, belec, moints1, moints2, nactv);
 	} else {
+                printf("CAS\n");
 		detdiff = comparedets_cas(
 			deti, detj, &numaxc, &numbxc, &axi, &axf, &bxi, &bxf,
 			nactv);

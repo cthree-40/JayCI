@@ -23,7 +23,7 @@
  */
 int initguess_sbd(struct det *dlist, int ndets, double *moints1,
 		  double *moints2, int aelec, int belec, int ninto,
-		  int krymin, double **vscr)
+		  int krymin, int rdim, double **vscr)
 {
     int error = 0; /* error flag */
     double *hmat = NULL; /* Hamiltonian subblock */
@@ -34,7 +34,7 @@ int initguess_sbd(struct det *dlist, int ndets, double *moints1,
     int hp = 0, hp2 = 0;
 
     /* Get reference space size */
-    sbsize = int_min(1000, ndets);
+    sbsize = int_min(rdim, ndets);
 
     /* Allocate arrays */
     hmat = (double *) malloc(sbsize * sbsize * sizeof(double));
@@ -43,7 +43,7 @@ int initguess_sbd(struct det *dlist, int ndets, double *moints1,
     init_dbl_array_0(hmat, (sbsize * sbsize));
     init_dbl_array_0(hevec,(sbsize * sbsize));
     init_dbl_array_0(heval, sbsize);
-    
+
     /* build subblock of Hamiltonian */
     hp = 0;
     for (i = 0; i < sbsize; i++) {

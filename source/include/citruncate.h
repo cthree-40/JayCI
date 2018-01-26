@@ -125,7 +125,8 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
  * setup_eostrings_compute: set up a electron, orbital, strings arrays for
  * compuation of the electron occupation strings.
  */
-void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *nspcs,
+void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *pegs,
+                             int *nspcs,
                              int docc_elec, int actv_elec, int virt_elec,
                              int dstr, int vstr, int astr, int ndocc,
                              int nactv, int vorbs);

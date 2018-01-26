@@ -48,6 +48,8 @@ int drefblock(struct det *detlist,  double *moints1, double *moints2,
 	evals = (double *) malloc(refdim * sizeof(double));
 	init_dbl_array_0(hmat, (refdim * refdim));
 	init_dbl_array_0(evals,(refdim));
+        printf("aelec = %d\n", aelec);
+        printf("belec = %d\n", belec);
 	for (i = 0; i < refdim; i++) {
 		printf("Computing %d\n", i);
 		for (j = i; j < refdim; j++) {

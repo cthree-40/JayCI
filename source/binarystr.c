@@ -59,7 +59,8 @@ int comparedets_cas(struct det deti, struct det detj,
 	samej = nsamebytes(detj.astr.byte1, diffs, nactv, axf);
 	*numax = int_min(samei, samej);
 	numx = numx + *numax;
-
+        if (numx > 2) return numx;
+        
 	/* compare beta strings */
 	*numbx = ndiffbytes(deti.bstr.byte1, detj.bstr.byte1, 
 			    nactv, &diffs);

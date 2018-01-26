@@ -119,7 +119,7 @@ int execute_ci_calculation(int aelec, int belec, int orbs, int nastr, int nbstr,
 	/* Davidson algorithm */
 	error = dvdalg(detlist, ndets, moints1, moints2, aelec, belec, hdgls,
 		       ninto, totfrze, maxiter, krymin, krymax, nroots, restol,
-		       hmap, civec, cival, prediag_routine, plvl, orbs);
+		       hmap, civec, cival, prediag_routine, plvl, orbs, refdim);
 
         /* Print final eigenvalues */
         for (i = 0; i < nroots; i++) {
@@ -227,7 +227,7 @@ int execute_ci_calculation_inpdlist(int aelec, int belec, int orbs, int nastr,
 	/* Davidson algorithm */
 	error = dvdalg(detlist, ndets, moints1, moints2, aelec, belec, hdgls,
 		       ninto, totfrze, maxiter, krymin, krymax, nroots, restol,
-		       hmap, civec, cival, prediag_routine, plvl, orbs);
+		       hmap, civec, cival, prediag_routine, plvl, orbs, refdim);
 
         /* Print final eigenvalues */
         for (i = 0; i < nroots; i++) {

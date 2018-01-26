@@ -19,6 +19,7 @@ int initguess_sbd(
     int ninto, /* internal orbitals */
     int krymin, /* minimum dimension of krylov space; also,
 		 * output vector number */
+    int rdim, /* Reference space size */
     double **vscr /* output vectors */
     );
 

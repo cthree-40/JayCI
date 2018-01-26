@@ -86,12 +86,13 @@ int diag_subspacehmat(double **hmat, double **hevec, double *heval, int dim,
  * predr = prediagonalization routine
  * plvl = print level
  * norbs = total number of CI orbitals
+ * refdim = reference space size of prediag routine
  */
 int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	   int aelec, int belec, double *hdgls, int ninto, double totfrze,
 	   int maxiter, int krymin, int krymax, int nroots, double restol,
 	   struct rowmap *hmap, double **civec, double *cival, int predr,
-	   int plvl, int norbs)
+	   int plvl, int norbs, int refdim)
 {
 	int error = 0; /* error flag */
 	int cflag = 0; /* convergence flag */
@@ -153,7 +154,7 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	 * of the Hamiltonian. */
         if (predr == 1) {
                 error = initguess_sbd(dlist, ndets, moints1, moints2, aelec,
-                                      belec, ninto, krymin, vscr);
+                                      belec, ninto, krymin, refdim, vscr);
         } else if (predr == 2) {
                 error = initguess_roldv(vscr,krymin,norbs,aelec,belec,ndets);
         } else {
