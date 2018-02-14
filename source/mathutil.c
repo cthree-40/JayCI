@@ -199,3 +199,16 @@ void orthonormalize_vector(double **bvecs, int nbv, int vlen, double *nvec)
 	}
 	return;
 }
+
+/*
+ * vector_difference: compute the difference between two vectors of length n.
+ */
+void vector_difference(double *v1, double *v2, int n, double *v3)
+{
+        int i;
+        init_dbl_array_0(v3, n);
+        for (i = 0; i < n; i++) {
+                v3[i] = v1[i] - v2[i];
+        }
+        return;
+}

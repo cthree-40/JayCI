@@ -213,6 +213,12 @@ DYCIOBJS := 	errorlib.o \
 		execute_dycicalc.o \
 	    	run_dycicalc.o
 
+# Objects for AO evaluation test
+AOTESTOBJS	:=	errorlib.o \
+			mathutil.o \
+			buildao.o \
+			atomic_orbitals.o
+
 # Objects for colib library 
 COLIBO:=blaswrapper.o colib1.o colib2.o colib3.o colib4.o colib5.o colib6.o \
 	colib7.o colib8.o colib9.o colib10.o
@@ -226,11 +232,13 @@ JEXPO := $(OBJS) jayci_exp.o
 JYCIO := $(OBJS) jayci.o
 MPIJYCIO := $(MPIOBJS) pjayci.o
 DYCIO := $(DYCIOBJS) dycicalc.o
+AOTESTO := $(DYCIOBJS) test_aorbitals.o
 
 JEXPOBJS := $(addprefix $(SDIR)/,$(JEXPO))
 JYCIOBJS := $(addprefix $(SDIR)/,$(JYCIO))
 PJYCIOBJS:= $(addprefix $(MPISDIR)/,$(MPIJYCIO))
 DYCIOBJS := $(addprefix $(SDIR)/,$(DYCIO))
+AOTESTOBJS:= $(addprefix $(SDIR)/,$(AOTESTO))
 TESTOBJS := $(addprefix $(SDIR)/,$(TESTO))
 COLIBOBJS:= $(addprefix $(COLIBDIR)/,$(COLIBO))
 COLIBSRCF:= $(addprefix $(COLIBDIR)/,$(COLIBF))
@@ -243,6 +251,7 @@ PJCIEXE:= $(BDIR)/pjayci-$(PJAYCIVER)-$(OS)-$(ARC)
 JXPEXE := $(BDIR)/jayci_exp-$(JAYCIVER)-$(OS)-$(ARC)
 DYCIEXE:= $(BDIR)/dycicalc-$(DYCICALCVER)-$(OS)-$(ARC)
 TESTEXE:= $(TDIR)/test.x
+ATESTEXE:= $(BDIR)/testao.x
 COLIBX := $(LDIR)/colib-$(JAYCIVER)-$(OS)-$(ARC).a
 CDS := cd $(SDIR)
 CDPS:= cd $(MPISDIR)
@@ -286,6 +295,15 @@ test: $(TESTOBJS) | $(TDIR)
 	$(CDS); $(CC) -o $(TESTEXE) $(TESTOBJS) $(MATHLIBS) $(COLIBLIB)
 	@echo "------------------------------------------------------"
 	@echo " Finished build."
+	@echo ""
+
+testao: $(AOTESTOBJS) | $(BDIR)
+	@echo ""
+	@echo "------------------------------------------------------"
+	@echo "  TEST AO Program "
+	$(CDS); $(CC) -o $(ATESTEXE) $(AOTESTOBJS) $(MATHLIBS) $(COLIBLIB)
+	@echo "------------------------------------------------------"
+	@echo " Finished"
 	@echo ""
 
 jayci_exp: $(JEXPOBJS) | $(BDIR)

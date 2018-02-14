@@ -16,6 +16,11 @@
 #define mathutil_h
 
 /*
+ * compute_3d_distance: compute eucliden distance of two points.
+ */
+double compute_3d_distance(double *v, double *u);
+
+/*
  * compute_vector_norm: compute euclidean norm of vector.
  */
 double compute_vector_norm(
@@ -73,9 +78,17 @@ int matmul_dgemm(
  */
 void orthonormalize_vector(
     double **bvecs, /* basis vectors */
-    int nbv, /* number of basis vectors */
-    int vlen, /* length of each vector */
-    double *nvec /* new vector; vector to be normalized */
+    int nbv,        /* number of basis vectors */
+    int vlen,       /* length of each vector */
+    double *nvec    /* new vector; vector to be normalized */
     );
 
+/*
+ * vector_difference: compute the difference between two vectors of length n.
+ */
+void vector_difference(
+        double *v1,
+        double *v2,
+        int n,
+        double *v3);
 #endif
