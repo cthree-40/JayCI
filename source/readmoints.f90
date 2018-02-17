@@ -19,7 +19,7 @@
 !  en(2) =  fcenergy = frozen core energy (array, size = 10)
 !--------------------------------------------------------------------
 subroutine readmoints (moints1, moints2, type1n, orbitals, &
-  m1len, m2len, en)
+  m1len, m2len, en) 
   implicit none
   
   ! **input

@@ -72,9 +72,10 @@ ifneq ($(filter cori edison,$(NERSC_HOST)),)
 	RANL := ranlib
 else
 	ifneq ($(findstring intel,$(COMPILERS)),)
-		CC := icc -fopenmp -I${MKLROOT}/include -I $(IDIR) 
-		MPICC := mpicc -fopenmp -I${MKLROOT}/include -I $(MPIIDIR)
-		FC := ifort
+		CC := icc -qopenmp -I${MKLROOT}/include -I $(IDIR) 
+		MPICC := mpicc -qopenmp -I${MKLROOT}/include -I $(MPIIDIR)
+		#FC := ifort -I${MKLROOT}/include
+		FC := gfortran
 		MPIFC := mpif90
 		AR := ar rv
 		RANL := ranlib
@@ -206,11 +207,13 @@ DYCIOBJS := 	errorlib.o \
 		atomic_orbitals.o \
 		read_wavefunction.o \
 		write_wavefunction.o \
+		citruncate.o \
 		progheader.o \
 		cimapping.o \
 		action_util.o \
 		dysoncomp.o \
-		execute_dycicalc.o \
+		run_dycicalc.o
+#		execute_dycicalc.o \
 	    	run_dycicalc.o
 
 # Objects for AO evaluation test

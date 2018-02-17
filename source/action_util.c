@@ -148,6 +148,40 @@ void compute_hv(struct det *dlist, int ndets, double *moints1, double *moints2,
 	return;
 }
 
+/*
+ * compute_hv_nomap: perform Hv=c. No cimap.
+ */
+void compute_hv_nomap(struct det *dlist, int ndets, double *moints1, double *moints2,
+                      int aelec, int belec, double *restrict v, double *restrict c,
+                      int ninto)
+{
+	int i, j;
+	double valij;
+
+	/* OMP Section */
+#pragma omp parallel                                              \
+	shared(ndets,c,v,moints1,moints2,dlist,ninto,aelec,belec) \
+	private(i,j,valij)
+	{
+#pragma omp for schedule(runtime)
+        for (i = 0; i < ndets; i++) {
+                valij = hmatels(dlist[i], dlist[i], moints1,
+                                moints2, aelec, belec, ninto);
+                c[i] = c[i] + valij * v[i];
+                for (j = i + 1; j < ndets; j++) {
+                        valij = hmatels(dlist[i], dlist[j], moints1,
+                                        moints2, aelec, belec, ninto);
+#pragma omp atomic update
+                        c[i] = c[i] + valij * v[j];
+#pragma omp atomic update
+                        c[j] = c[j] + valij * v[i];
+                }
+        }
+        }/* End of OMP Section */
+        return;
+}
+
+
 /* 
  * hmatels: compute matrix element <i|H|j>
  * ---------------------------------------

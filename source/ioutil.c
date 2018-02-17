@@ -305,52 +305,6 @@ void readdaiinput(int *maxiter,  int *krymin, int *krymax, int *nroots,
     return;
 }
 
-/* read_dysonorb_input: read dyson orbital input namelist file.
- * -------------------------------------------------------------------
- * Calls readnamelist which returns a character array
- * nmlstr[0] = wvfcn_file0: n+1 electron wavefunction
- * nmlstr[1] = wvfcn_file1: n   electron wavefunction
- * nmlstr[2] = nstates0: n+1 electron wavefunction states to read
- * nmlstr[3] = nstates1: n   electron wavefunction states to read
- * nmlstr[4] = nelecs0 : n+1 electrons
- * nmlstr[5] = nelecs1 : n   electrons
- * nmlstr[6] = norbs0  : n+1 orbitals
- * nmlstr[7] = norbs1  : n   orbitals
- * nmlstr[8] = ndets0  : n+1 determinants
- * nmlstr[9] = ndets1  : n   determinants
- * nmlstr[10]= ninto0  : n+1 electron internal orbitals
- * nmlstr[11]= ninto1  : n   electron internal orbitals
- */
-void read_dysonorb_input(char *wvfcn_file0, char *wvfcn_file1, int *nstates0,
-                         int *nstates1, int *nelecs0, int *nelecs1, int *norbs0,
-                         int *norbs1, int *ndets0, int *ndets1, int *ninto0,
-                         int *ninto1, int *err)
-{
-        /* dynml = 3, Read in dyson orbital namelist. */
-        long long int dynml = 3; 
-        char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};
-
-        *err = 0;
-        readnamelist_(&dynml, nmlstr, &err);
-        if (err != 0) return;
-
-        /* stream input into proper values */
-        sscanf(nmlstr[0], "%s", wvfcn_file0);
-        sscanf(nmlstr[1], "%s", wvfcn_file1);
-        sscanf(nmlstr[2], "%d", nstates0);
-        sscanf(nmlstr[3], "%d", nstates1);
-        sscanf(nmlstr[4], "%d", nelecs0);
-        sscanf(nmlstr[5], "%d", nelecs1);
-        sscanf(nmlstr[6], "%d", norbs0);
-        sscanf(nmlstr[7], "%d", norbs1);
-        sscanf(nmlstr[8], "%d", ndets0);
-        sscanf(nmlstr[9], "%d", ndets1);
-        sscanf(nmlstr[10], "%d", ninto0);
-        sscanf(nmlstr[11], "%d", ninto1);
-
-        return;
-}
-
 /* readgeninput: read general wavefunction input.
  * -------------------------------------------------------------------
  * Calls readnamelist which returns a character array
@@ -492,6 +446,117 @@ void readmointegrals(double *moints1, double *moints2, int itype,
      *fcenergy = energy[1];
      return;
 }
+
+/* readwf0input: read wavefunction input for anion (0)
+ * -------------------------------------------------------------------
+ * Calls readnamelist which returns a character array
+ *  nmlstr[0] = elec
+ *  nmlstr[1] = orbs
+ *  nmlist[2] = nfrozen
+ *  nmlist[3] = ndocc
+ *  nmlist[4] = nactive
+ *  nmlist[5] = xlevel
+ *  nmlist[6] = nfrzvirt
+ *  nmlist[7] = nstates
+ *
+ * Output:
+ *  elec = number of electrons in system (alpha + beta)
+ *  orbs = number of orbitals in system (including forzen core)
+ *  nfrozen = number of frozen core orbitals
+ *  ndocc = number of doubly-occupied orbitals
+ *  nactive = number of active orbitals
+ *  xlevel = excitaion level (Default is 2)
+ *  nfrzvirt = number of frozen virtual orbitals
+ *  nstates = number of states
+ *  err = error handling: n = missing variable n */
+void readwf0input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt,
+                  int *nstates,  int *err)
+{
+     /* local scalars
+      * dywf0nml = namelist to read in */
+     long long int dywf0nml=3;
+     
+     /* local arrays
+      * nmlstr = namelist character arrays */
+     char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};
+     
+
+     *err = 0;
+
+     /* read namelist 1 */
+     readnamelist_(&dywf0nml, nmlstr, &err);
+     if (err != 0) return;
+
+     /* stream the input into the proper variables */
+     sscanf(nmlstr[0], "%d", elec);
+     sscanf(nmlstr[1], "%d", orbs);
+     sscanf(nmlstr[2], "%d", nfrozen);
+     sscanf(nmlstr[3], "%d", ndocc);
+     sscanf(nmlstr[4], "%d", nactive);
+     sscanf(nmlstr[5], "%d", xlevel);
+     sscanf(nmlstr[6], "%d", nfrzvirt);
+     sscanf(nmlstr[7], "%d", nstates);
+
+     return;
+     
+}
+
+/* readwf1input: read wavefunction input for neutral (1)
+ * -------------------------------------------------------------------
+ * Calls readnamelist which returns a character array
+ *  nmlstr[0] = elec
+ *  nmlstr[1] = orbs
+ *  nmlist[2] = nfrozen
+ *  nmlist[3] = ndocc
+ *  nmlist[4] = nactive
+ *  nmlist[5] = xlevel
+ *  nmlist[6] = nfrzvirt
+ *  nmlist[7] = nstates
+ *
+ * Output:
+ *  elec = number of electrons in system (alpha + beta)
+ *  orbs = number of orbitals in system (including forzen core)
+ *  nfrozen = number of frozen core orbitals
+ *  ndocc = number of doubly-occupied orbitals
+ *  nactive = number of active orbitals
+ *  xlevel = excitaion level (Default is 2)
+ *  nfrzvirt = number of frozen virtual orbitals
+ *  nstates = number of states to read
+ *  err = error handling: n = missing variable n */
+void readwf1input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt,
+                  int *nstates,  int *err)
+{
+     /* local scalars
+      * dywf0nml = namelist to read in */
+     long long int dywf1nml=4;
+     
+     /* local arrays
+      * nmlstr = namelist character arrays */
+     char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};
+     
+
+     *err = 0;
+
+     /* read namelist 1 */
+     readnamelist_(&dywf1nml, nmlstr, &err);
+     if (err != 0) return;
+
+     /* stream the input into the proper variables */
+     sscanf(nmlstr[0], "%d", elec);
+     sscanf(nmlstr[1], "%d", orbs);
+     sscanf(nmlstr[2], "%d", nfrozen);
+     sscanf(nmlstr[3], "%d", ndocc);
+     sscanf(nmlstr[4], "%d", nactive);
+     sscanf(nmlstr[5], "%d", xlevel);
+     sscanf(nmlstr[6], "%d", nfrzvirt);
+     sscanf(nmlstr[7], "%d", nstates);
+
+     return;
+     
+}
+
 
 /*
  * substring: gets substring from string and returns pointer to said

@@ -327,6 +327,19 @@ void compute_hv(
 	int ninto,         /* internal orbitals */
 	struct rowmap *hmap /* rowmap for H matrix */
 	);
+/*
+ * compute_hv_nomap: perform Hv=c. No cimap.
+ */
+void compute_hv_nomap(
+        struct det *dlist,
+        int ndets,
+        double *moints1,
+        double *moints2,
+        int aelec,
+        int belec,
+        double *restrict v,
+        double *restrict c,
+        int ninto);
 
 double hmatels(
 	struct det deti,

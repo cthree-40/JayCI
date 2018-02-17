@@ -46,4 +46,6 @@ int generate_cimap(
     struct rowmap *hmap /* linked list of nonzero elements of H */
     );
 
+int get_detdiffs(struct det d1, struct det d2, int nactv);
+
 #endif

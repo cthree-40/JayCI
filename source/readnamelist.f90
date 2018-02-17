@@ -18,7 +18,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
   integer, intent(out) :: err
   
   ! .. namelists ..
-  integer :: gen_nml = 1, dai_nml = 2, dys_nml = 3
+  integer :: gen_nml = 1, dai_nml = 2, dys_wf0 = 3, dys_wf1 = 4
   
   ! .. &general arguments ..
   integer :: electrons, orbitals
@@ -39,8 +39,10 @@ subroutine readnamelist(nmlist, nmlstr, err)
           nfrzvirt, xlevel, printlvl, printwvf
   namelist /dalginfo/ maxiter, krymin, krymax, nroots, prediagr, &
           restol, refdim
-  namelist /dysonorb/ wvfcn_file0, wvfcn_file1, nstates0, nstates1, &
-          nelecs0, nelecs1, norbs0, norbs1, ndets0, ndets1, ninto0, ninto1
+  namelist /wavefcn0/ electrons, orbitals, nfrozen, ndocc, nactive, &
+          nfrzvirt, xlevel
+  namelist /wavefcn1/ electrons, orbitals, nfrozen, ndocc, nactive, &
+          nfrzvirt, xlevel
 
   ! initialize error flag
   err = 0
@@ -97,39 +99,55 @@ subroutine readnamelist(nmlist, nmlstr, err)
           
           close(10)
           return
-  else if (nmlist .eq. dys_nml) then
-          wvfcn_file0 = "civfl.0"
-          wvfcn_file1 = "civfl.1"
-          nstates0 = 1
-          nstates1 = 1
-          nelecs0 = 0
-          nelecs1 = 0
-          norbs0 = 0
-          norbs1 = 0
-          ndets0 = 0
-          ndets1 = 0
+  else if (nmlist .eq. dys_wf0) then
+          electrons = 0
+          orbitals  = 0
+          nfrozen   = 0
+          ndocc     = 0
+          nfrzvirt  = 0
+          xlevel    = 0
           open(file = "dycicalc.in", unit = 10, action = "read", status = "old", &
                   iostat = err)
           if (err .ne. 0) return
 
-          read(10, nml=dysonorb)
+          read(10, nml=wavefcn0)
 
-          write(nmlstr(1),"(A)") trim(adjustl(wvfcn_file0))
-          write(nmlstr(2),"(A)") trim(adjustl(wvfcn_file1))
-          write(nmlstr(3), 9) nstates0
-          write(nmlstr(4), 9) nstates1
-          write(nmlstr(5), 9) nelecs0
-          write(nmlstr(6), 9) nelecs1
-          write(nmlstr(7), 9) norbs0
-          write(nmlstr(8), 9) norbs1
-          write(nmlstr(9), 9) ndets0
-          write(nmlstr(10),9) ndets1
-          write(nmlstr(11),9) ninto0
-          write(nmlstr(12),9) ninto1
-          
+          ! write values to namelist array
+          write(nmlstr(1),9) electrons
+          write(nmlstr(2),9) orbitals
+          write(nmlstr(3),9) nfrozen
+          write(nmlstr(4),9) ndocc
+          write(nmlstr(5),9) nactive
+          write(nmlstr(6),9) xlevel
+          write(nmlstr(7),9) nfrzvirt
           
           close(10)
           return
+  else if (nmlist .eq. dys_wf1) then
+          electrons = 0
+          orbitals  = 0
+          nfrozen   = 0
+          ndocc     = 0
+          nfrzvirt  = 0
+          xlevel    = 0
+          open(file = "dycicalc.in", unit = 10, action = "read", status = "old", &
+                  iostat = err)
+          if (err .ne. 0) return
+
+          read(10, nml=wavefcn1)
+
+          ! write values to namelist array
+          write(nmlstr(1),9) electrons
+          write(nmlstr(2),9) orbitals
+          write(nmlstr(3),9) nfrozen
+          write(nmlstr(4),9) ndocc
+          write(nmlstr(5),9) nactive
+          write(nmlstr(6),9) xlevel
+          write(nmlstr(7),9) nfrzvirt
+          
+          close(10)
+          return
+
   else
           ! uknown namelist flag
           err = 99

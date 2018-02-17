@@ -92,42 +92,46 @@ int deallocate_cimap(struct rowmap *hmap, int ndets)
 int generate_cimap(struct det *dlist, int ndets, int nactv, struct rowmap *hmap)
 {
 	int i, j = 0;
-	int v;
+	int v = 0;
 	int ddiff;
 	int naxc, nbxc, naxv, nbxv, naxcv, nbxcv;
 	long long int axi, axf, bxi, bxf;
-	int row[ndets];
+	//int row[ndets];
+        int *row = NULL;
 
 	/* OMP Section */
-#pragma omp parallel \
+#pragma omp parallel                    \
 	shared(ndets, dlist, nactv, hmap) \
-	private(i, j, v, naxc, nbxc, naxv, nbxv, naxcv, nbxcv, \
-		axi, bxi, axf, bxf, row, ddiff)
+	private(i, j, v, row, ddiff)
 	{
-#pragma omp for schedule(guided)
+                row = (int *) malloc(ndets * sizeof(int));
+#pragma omp for schedule(dynamic)
 	/* Loop over each row in H. Flag nonzero matrix elements, creating
 	 * an array of elements 1 or 0. */
 	for (i = 0; i < ndets; i++) {
-		v = 0;
+                int tid = omp_get_thread_num();
+                v = 0;
 		for (j = i; j < ndets; j++) {
-			/* Check if determinants are CAS-flagged. */
-			if (dlist[i].cas + dlist[j].cas < 2) {
-				ddiff = comparedets_ncas(
-					dlist[i], dlist[j],
-					&naxc, &nbxc, &naxv, &nbxv, &naxcv,
-					&nbxcv, &axi, &axf, &bxi, &bxf, nactv);
-			} else {
-				ddiff = comparedets_cas(
-					dlist[i], dlist[j],
-					&naxc, &nbxc, &axi, &axf, &bxi, &bxf,
-					nactv);
-			}
-			if (ddiff > 2) {
+
+                        ddiff = get_detdiffs(dlist[i],dlist[j], nactv);
+			///* Check if determinants are CAS-flagged. */
+			//if (dlist[i].cas + dlist[j].cas < 2) {
+			//	ddiff = comparedets_ncas(
+			//		dlist[i], dlist[j],
+			//		&naxc, &nbxc, &naxv, &nbxv, &naxcv,
+			//		&nbxcv, &axi, &axf, &bxi, &bxf, nactv);
+			//} else {
+			//	ddiff = comparedets_cas(
+			//		dlist[i], dlist[j],
+			//		&naxc, &nbxc, &axi, &axf, &bxi, &bxf,
+			//		nactv);
+			//}
+                        if (ddiff > 2) {
 				row[v] = 0;
 			} else {
 				row[v] = 1;
 			}
-			v++;
+                        v = v + 1;
 		}
 		/* Convert row of 1,0,1,1,... into rowmap structure */
 		convertrow2map(row, v, &(hmap[i]));
@@ -135,3 +139,26 @@ int generate_cimap(struct det *dlist, int ndets, int nactv, struct rowmap *hmap)
 	} /* End of OMP Section */
 	return 0;
 }
+
+int get_detdiffs(struct det d1, struct det d2, int nactv)
+{
+        int ddiff = 0;
+	int naxc, nbxc, naxv, nbxv, naxcv, nbxcv;
+	long long int axi, axf, bxi, bxf;
+
+        /* Check if determinants are CAS-flagged. */
+        if (d1.cas + d2.cas < 2) {
+                ddiff = comparedets_ncas(
+                        d1, d2,
+                        &naxc, &nbxc, &naxv, &nbxv, &naxcv,
+                        &nbxcv, &axi, &axf, &bxi, &bxf, nactv);
+        } else {
+                ddiff = comparedets_cas(
+                        d1, d2,
+                        &naxc, &nbxc, &axi, &axf, &bxi, &bxf,
+                        nactv);
+        }
+        return ddiff;
+}
+
+        

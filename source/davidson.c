@@ -346,7 +346,7 @@ void perform_hv_initspace(struct det *dlist, int ndets, double *moints1,
 	/* Loop over vectors */
 	for (i = 0; i < nvec; i++) {
 		compute_hv(dlist, ndets, moints1, moints2, aelec, belec, vecs[i],
-			   hvecs[i], ninto, hmap);
+                           hvecs[i], ninto, hmap);
 	}
 	return;
 }

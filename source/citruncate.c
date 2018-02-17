@@ -58,7 +58,7 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
         ci_aelec = aelec - nfrzc;
         ci_belec = belec - nfrzc;
         ci_orbs  = orbs - nfrzc - nfrzv;
-        fprintf(stdout, " CI Expansion: %d elctrons in %d orbitals\n",
+        fprintf(stdout, " CI Expansion: %d electrons in %d orbitals\n",
                 (ci_aelec + ci_belec), ci_orbs);
         *astr_len = compute_stringnum(ci_orbs, ci_aelec, ndocc, nactv, xlvl);
         *bstr_len = compute_stringnum(ci_orbs, ci_belec, ndocc, nactv, xlvl);
@@ -143,7 +143,7 @@ struct det *citrunc_rtnlist(int aelec, int belec, int orbs, int nfrzc, int ndocc
         *ci_aelec = aelec - nfrzc;
         *ci_belec = belec - nfrzc;
         *ci_orbs  = orbs - nfrzc - nfrzv;
-        fprintf(stdout, " CI Expansion: %d elctrons in %d orbitals\n",
+        fprintf(stdout, " CI Expansion: %d electrons in %d orbitals\n",
                 (*ci_aelec + *ci_belec), *ci_orbs);
         *astr_len = compute_stringnum(*ci_orbs, *ci_aelec, ndocc, nactv, xlvl);
         *bstr_len = compute_stringnum(*ci_orbs, *ci_belec, ndocc, nactv, xlvl);

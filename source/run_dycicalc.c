@@ -1,80 +1,75 @@
-/* File: run_dycicalc.c
- *
+// File: run_dycicalc.c
+/*
  * run_dycicalc: Execute CI dyson orbital calculation.
  */
 #include <stdio.h>
 #include <stdlib.h>
 #include "errorlib.h"
 #include "ioutil.h"
-#include "execute_dycicalc.h"
+//#include "execute_dycicalc.h"
+#include "citruncate.h"
 #include "run_dycicalc.h"
 
 /*
  * run_dycicalc: Execute CI dyson orbital calculation.
+ * (N+1)electron wavefunction = 0
+ * (N)  electron wavefunction = 1
  */
-int run_dycicalc()
+int run_dycicalc ()
 {
-        char wvfcn_file0[FLNMSIZE]; /* N+1 electron wavefunction file */
-        char wvfcn_file1[FLNMSIZE]; /* N   electron wavefunction file */
-        int nstates0 = 0; /* N+1 electron wavefunction states */
-        int nelecs0  = 0; /* N+1 electron wavefunction electrons */
-        int ndets0   = 0; /* N+1 electron wavefunction determinants */
-        int norbs0   = 0; /* N+1 electron wavefunction orbitals */
-        int ninto0   = 0; /* N+1 electron internal orbitals */
-        int nstates1 = 0; /* N electron wavefunction states to read */
-        int nelecs1  = 0; /* N electron wavefunction electrons */
-        int ndets1   = 0; /* N electron wavefunction determinants */
-        int norbs1   = 0; /* N electron wavefunction orbitals */
-        int ninto1   = 0; /* N electron internal orbitals */
+        /* input wavefunction information */
+        int nstates0 = 0, nstates1 = 0; /* Number of states */
+        int nelecs0  = 0,  nelecs1 = 0; /* Number of electrons */
+        int naelec0  = 0,  naelec1 = 0; /* Number of alpha elctrons */
+        int nbelec0  = 0,  nbelec1 = 0; /* Number of beta  electrons */
+        int nfrzc0   = 0,   nfrzc1 = 0; /* Number of frozen core orbitals */
+        int ndocc0   = 0,   ndocc1 = 0; /* Number of DOCC orbitals */
+        int nactv0   = 0,   nactv1 = 0; /* Number of CAS  orbitals */
+        int nfrzv0   = 0,   nfrzv1 = 0; /* Number of frozen virtual orbitals */
+        int xlvl0    = 0,    xlvl1 = 0; /* CI excitation level */
+        int norbs0   = 0,   norbs1 = 0; /* Number of orbitals */
+        int ciorbs0  = 0,  ciorbs1 = 0; /* Number of CI orbitals */
+        int ciaelec0 = 0, ciaelec1 = 0; /* CI alpha/beta electrons */
+        int cibelec0 = 0, cibelec1 = 0; /* CI alpha/beta electrons */
+        
+        /* wavefunctions */
+        int ndets0 = 0;              /* Number of (anion)   determinants */
+        int ndets1 = 0;              /* Number of (neutral) determinants */
+        struct det *detlist0 = NULL; /* (Anion)   determinants */
+        struct det *detlist1 = NULL; /* (Neutral) determinants */
+        double **civec0 = NULL;      /* (Anion)   CI vectors */
+        double **civec1 = NULL;      /* (Neutral) CI vectors */
+        double *cival0  = NULL;      /* (Anion)   CI eigenvalues */
+        double *cival1  = NULL;      /* (Neutral  CI eigenvalues */
+        
+        int astrlen = 0, bstrlen = 0; /* Number of a/b strings (not used) */
+        
         int error = 0; /* Error flag */
 
-        /* Check for namelist input file. Read namelist input file. Verify
-         * that the wavefunction files are present in the work directory. */
-        error = check_for_input_files();
+        /* Read the &wavefcn0 and &wavefcn1 namelists. Build wavefunctions. */
+        readwf0input(&nelecs0, &norbs0, &nfrzc0, &ndocc0, &nactv0, &xlvl0,
+                     &nfrzv0,  &nstates0, &error);
         if (error != 0) {
-                error_flag(error, "run_dycicalc: missing input files!");
+                error_message("Error reading &wavefcn0!","run_dycicalc");
                 return error;
         }
-        read_dysonorb_input(wvfcn_file0, wvfcn_file1, &nstates0, &nstates1,
-                            &nelecs0, &nelecs1, &norbs0, &norbs1, &ndets0,
-                            &ndets1, &ninto0, &ninto1, &error);
+        readwf1input(&nelecs1, &norbs1, &nfrzc1, &ndocc1, &nactv1, &xlvl1,
+                     &nfrzv1,  &nstates1, &error);
         if (error != 0) {
-                error_flag(error, "run_dycicalc: error reading input!");
+                error_message("Error reading &wavefcn1!","run_dycicalc");
                 return error;
         }
-        error = check_for_file(wvfcn_file0, "r");
-        if (error != 0) {
-                error_flag(error, "run_dycicalc");
-                return error;
-        }
-        error = check_for_file(wvfcn_file1, "r");
-        if (error != 0) {
-                error_flag(error, "run_dycicalc");
-                return error;
-        }
+        abecalc(nelecs0, &naelec0, &nbelec0);
+        abecalc(nelecs1, &naelec1, &nbelec1);
+        printf("(N+1): a=%d  b=%d\n", naelec0, nbelec0);
+        printf("(N):   a=%d  b=%d\n", naelec1, nbelec1);
+        detlist0 = citrunc_rtnlist(naelec0, nbelec0, norbs0, nfrzc0, ndocc0,
+                                   nactv0, nfrzv0, xlvl0, &astrlen, &bstrlen,
+                                   &ndets0, &ciorbs0, &ciaelec0, &cibelec0);
+        detlist1 = citrunc_rtnlist(naelec1, nbelec1, norbs1, nfrzc1, ndocc1,
+                                   nactv1, nfrzv1, xlvl1, &astrlen, &bstrlen,
+                                   &ndets1, &ciorbs1, &ciaelec1, &cibelec1);
 
-        /* Both wavefunction files exist, and we have read the main input
-         * file. Perform dyson orbital calulcation between */
-        // Ensure orbital number is the same for both wavefunctions.
-        if (norbs1 != norbs0) {
-                error_message("norbs1 != norbs0", "run_dycicalc");
-                error = 1;
-                return error;
-        }
-        error = execute_dycicalc(wvfcn_file0, wvfcn_file1, nstates0, nstates1,
-                                 nelecs0, nelecs1, norbs1, ndets0,
-                                 ndets1);
+        return error;
+}
         
-        return error;
-}
-
-/* 
- * check_for_input_files: Check for the proper input and output files. 
- * Proper files: dycicalc.in.
- */
-int check_for_input_files()
-{
-        int error = 0;
-        error = check_for_file("dycicalc.in", "r");
-        return error;
-}

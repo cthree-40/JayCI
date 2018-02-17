@@ -79,21 +79,6 @@ void readdaiinput(int *maxiter,
 		  double *restol,
 		  int *err);
 
-void read_dysonorb_input(
-        char *wvfcn_file0,
-        char *wvfcn_file1,
-        int *nstates0,
-        int *nstates1,
-        int *nelecs0,
-        int *nelecs1,
-        int *norbs0,
-        int *norbs1,
-        int *ndets0,
-        int *ndets1,
-        int *ninto0,
-        int *ninto1,
-        int *err);
-
 void readgeninput(int *elec,
                   int *orbs,
 		  int *nfrozen,
@@ -111,6 +96,19 @@ int readinputjayci(int *ci_aelec,
 		   int *nastr,
 		   int *nbstr,
 		   int *ndets);
+/*
+ * readwf0input: read wavefunction input for anion (0)
+ */
+void readwf0input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt,
+                  int *nstates,  int *err);
+
+/*
+ * readwf1input: read wavefunction input for neutral (1)
+ */
+void readwf1input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt,
+                  int *nstates,  int *err);
 
 /* readmocoeffs: subroutine to read molecular coefficient file.
  * -------------------------------------------------------------------
