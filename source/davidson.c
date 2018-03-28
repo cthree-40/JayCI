@@ -154,7 +154,9 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 	 * of the Hamiltonian. */
         if (predr == 1) {
                 error = initguess_sbd(dlist, ndets, moints1, moints2, aelec,
-                                      belec, ninto, krymin, refdim, vscr);
+                                      belec, ninto, krymin, refdim, vscr,
+                                      totfrze);
+                //return -100;
         } else if (predr == 2) {
                 error = initguess_roldv(vscr,krymin,norbs,aelec,belec,ndets);
         } else {

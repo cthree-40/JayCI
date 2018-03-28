@@ -203,26 +203,28 @@ struct det *citrunc_rtnlist(int aelec, int belec, int orbs, int nfrzc, int ndocc
  * allocate_eospace_array: allocate the electron number space array.
  */
 struct eospace *allocate_eospace_array(int nelec, int norbs, int ndocc,
-                                       int nactv, int xlvl, int *ngrp)
+                                       int nactv, int xlvl,  int *ngrp)
 {
         struct eospace *ptr = NULL;
         int min_docc_elecs = 0;
         int max_docc_elecs = 0;
         int min_actv_elecs = 0;
         int max_actv_elecs = 0;
+        int vorbs = 0;
         int cnt = 0;                 /* Counter */
         int i, j, k;
 
+        vorbs = norbs - ndocc - nactv;
         min_docc_elecs = ndocc - int_min(ndocc, xlvl);
         max_docc_elecs = ndocc;
         min_actv_elecs = (nelec - ndocc) - int_min((nelec - ndocc), xlvl);
-        max_actv_elecs = int_min(((nelec - ndocc) + xlvl), nactv);
-
+        //max_actv_elecs = int_min(((nelec - ndocc) + xlvl), nactv);
+        max_actv_elecs = int_min(int_min(ndocc, xlvl) + (nelec - ndocc), nactv);
         /* Loop over DOCC, ACTV, and VIRT occupations. */
         *ngrp = 0;
         for (i = max_docc_elecs; i >= min_docc_elecs; i--) {
                 for (j = max_actv_elecs; j >= min_actv_elecs; j--) {
-                        for (k = 0; k <= xlvl; k++) {
+                        for (k = 0; k <= int_min(vorbs, xlvl); k++) {
                                 if ((i + j + k) != nelec) continue;
                                 (*ngrp)++;
                         }
@@ -236,7 +238,7 @@ struct eospace *allocate_eospace_array(int nelec, int norbs, int ndocc,
         cnt = 0;
         for (i = max_docc_elecs; i >= min_docc_elecs; i--) {
                 for (j = max_actv_elecs; j >= min_actv_elecs; j--) {
-                        for (k = 0; k <= xlvl; k++) {
+                        for (k = 0; k <= int_min(vorbs, xlvl); k++) {
                                 if ((i + j + k) != nelec) continue;
                                 ptr[cnt].docc = i;
                                 ptr[cnt].actv = j;
@@ -422,13 +424,16 @@ int compute_stringnum(int orbs, int elecs, int ndocc, int nactv, int xlvl)
         int max_docc_elecs = 0;
         int max_actv_elecs = 0;
         int min_actv_elecs = 0;
+        int vorbs = 0;
         int count = 0;
         int i, j, k;
 
+        vorbs = orbs - ndocc - nactv;
         min_docc_elecs = ndocc - int_min(ndocc, xlvl);
         max_docc_elecs = ndocc;
         min_actv_elecs = (elecs - ndocc) - int_min((elecs - ndocc), xlvl);
-        max_actv_elecs = int_min(((elecs - ndocc) + xlvl), nactv);
+        //max_actv_elecs = int_min(((elecs - ndocc) + xlvl), nactv);
+        max_actv_elecs = int_min(int_min(ndocc, xlvl) + (elecs - ndocc), nactv);
         printf("  Min DOCC elecs: %d, Min ACTV elecs: %d, Max ACTV elecs: %d\n",
                min_docc_elecs, min_actv_elecs, max_actv_elecs);
         /* Loop over holes in DOCC space */
@@ -436,7 +441,7 @@ int compute_stringnum(int orbs, int elecs, int ndocc, int nactv, int xlvl)
                 /* Loop over ACTV space */
                 for (j = min_actv_elecs; j <= max_actv_elecs; j++) {
                         /* Loop over virtual space */
-                        for (k = 0; k <= xlvl; k++) {
+                        for (k = 0; k <= int_min(vorbs, xlvl); k++) {
                                 num = num + string_number(i, j, k, ndocc, nactv,
                                                           orbs, elecs);
                         }

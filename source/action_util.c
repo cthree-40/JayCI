@@ -45,9 +45,15 @@ void cas_to_virt_replacements(int ncreps, int ncr, int nvr, long long int xi,
 	/* if there are 2 cas-> virtual replacements */
 	if (ncreps == 2) {
 		if (xi == 0) {
+                        reps[2] = vxi[0];
+                        reps[3] = vxi[1];
+                        nonzerobits(xf, ninto, &(reps[0]));
+                        
+                        /*
 			reps[0] = vxi[0];
 			reps[1] = vxi[1];
 			nonzerobits(xf, ninto, &(reps[2]));
+                        */
 		} else {
 			nonzerobits(xi, ninto, &(reps[0]));
 			reps[2] = vxj[0];
@@ -406,9 +412,10 @@ double eval1_10_cas(struct occstr ostr1, long long int xi, long long int xf,
 	
 	/* compute permuation index */
 	pindx = pindex_single_rep(eostr1, io, fo, ne1);
-	if (pindx == 0) {
+        if (pindx == 0) {
 	    pindx = pindex_single_rep(eostr2, io, fo, ne2);
 	}
+
 	/* compute 1-e contribution */
 	i1 = index1e(io, fo);
 	val = pindx * moints1[i1 - 1];
@@ -538,7 +545,8 @@ double evaluate_dets_ncas(int ndiff, struct det deti, struct det detj,
 			  double *moints1, double *moints2, int ninto)
 {
 	double value = 0.0;
-	/* check for inter-space interactions then number of differences */
+
+        /* check for inter-space interactions then number of differences */
 	if (numaxcv + numbxcv == 0) {
 		if (ndiff == 2) {
 			if (numaxv == 1) {
@@ -811,7 +819,7 @@ double eval1_ncas_c0cv1v0(long long int xi, long long int xf,
 	/* get replacement information */
 	cas_to_virt_replacements(1, 0, 0, xi, xf, str1i.virtx, str1j.virtx,
 				 ifo, ninto);
-	/* make orbital strings */
+        /* make orbital strings */
 	make_orbital_strings_virt(str1i, eostr1, ne1, ninto);
 	make_orbital_strings_virt(str2i, eostr2, ne2, ninto);
 	/* compute permutational index and 1-e contribution */
@@ -840,15 +848,15 @@ double eval1_ncas_c0cv0v1(struct occstr ostr1i, struct occstr ostr1j,
 
 	/* locate initial and final orbitals and construct 
 	 * eostr1 and eostr2 */
-	virtdiffs_single_rep(ostr1i.virtx, ostr1j.virtx, ifo);
+	pindx = virtdiffs_single_rep(ostr1i.virtx, ostr1j.virtx, ifo);
 	make_orbital_strings_virt(ostr1i, eostr1, ne1, ninto);
 	make_orbital_strings_virt(ostr2i, eostr2, ne2, ninto);
 
 	/* compute permuational index and 1-e contriubtion */
-	pindx = pindex_single_rep(eostr1, ifo[0], ifo[1], ne1);
-	if (pindx == 0) {
-		pindx = pindex_single_rep(eostr2, ifo[0], ifo[1], ne2);
-	}
+	//pindx = pindex_single_rep(eostr1, ifo[0], ifo[1], ne1);
+	//if (pindx == 0) {
+	//	pindx = pindex_single_rep(eostr2, ifo[0], ifo[1], ne2);
+	//}
 	i1 = index1e(ifo[0], ifo[1]);
 	val = pindx * moints1[i1 - 1];
 	val = val + single_rep_2e_contribution(
@@ -918,21 +926,34 @@ double eval2_ncas_c0cv2v0(long long int xi, long long int xf, int *vxi,
                           long long int str, int nvxi, int nvxj)
 {
 	double val = 0.0;
-	int i1,i2;         /* integral indexes */
-	int pindx = 1;     /* permutational index */
-	int ifo[4] = {0};  /* initial, final orbitals */
-	long long int t = 0x0;   /* pseudo-excitation byte */
-	/* use pseudo-excitation byte to find number of bytes between
+	int i1,i2;             /* integral indexes */
+	int pindx = 1;         /* permutational index */
+	int ifo[4] = {0};      /* initial, final orbitals */
+	long long int t = 0x0; /* pseudo-excitation byte */
+        long long int s = 0x0; /* scratch string to keep track of excitations*/
+        /* use pseudo-excitation byte to find number of bytes between
 	 * cas orbital in excitation and virtuals. */
 	cas_to_virt_replacements(2, 0, 0, xi, xf, vxi, vxf, ifo, ninto);  
-	for (i1 = 1; i1 >= 0; i1--) {
+
+        //printf("ifo = %d %d %d %d\n", ifo[0], ifo[1], ifo[2], ifo[3]);
+
+        s = str;
+        for (i1 = 1; i1 >= 0; i1--) {
 		t = ((long long int) 1) << (ifo[i1] - 1);
-		pindx = pindx * pindex_single_rep_cas2virt(str, t, ninto);
-	}
-	pindx = pindx * (-1);
-	i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
+		pindx = pindx * pindex_single_rep_cas2virt(s, t, ninto);
+                /* turn of bit being excited in s */
+                s = s & ~t;
+                //printf(" p' = %d\n", pindx);
+
+        }
+
+        // CLM
+	// pindx = pindx * (-1);
+//        printf("pindx = %d\n", pindx);
+
+        i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
 	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
-	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
+        val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	return val;
 }
 
@@ -949,7 +970,7 @@ double eval2_ncas_c1cv0v1(struct occstr ostr, long long int xi, long long int xf
 	int ifov[2] = {0}, io = 0, fo = 0; /* initial, final orbitals */
 	int estr[10] = {0}; /* electron orbital index string */
 	
-	virtdiffs_single_rep(vxi, vxj, ifov);
+	pindx = virtdiffs_single_rep(vxi, vxj, ifov);
 	nonzerobits(xi, ninto, &io);
 	nonzerobits(xf, ninto, &fo);
 	make_orbital_strings_virt(ostr, estr, ne, ninto);
@@ -972,11 +993,11 @@ double eval2_ncas_c00cv00v11(int *avirti, int *avirtj, int *bvirti, int *bvirtj,
 	int ifoa[2] = {0};
 	int ifob[2] = {0}; /* initial, final orbitals */
 	
-	virtdiffs_single_rep(avirti, avirtj, ifoa);
-	virtdiffs_single_rep(bvirti, bvirtj, ifob);
+	pindx = virtdiffs_single_rep(avirti, avirtj, ifoa);
+	pindx = pindx * virtdiffs_single_rep(bvirti, bvirtj, ifob);
 	
-	pindx = pindex_single_rep(avirti, ifoa[0], ifoa[1], nvrtxa);
-	pindx = pindx * pindex_single_rep(bvirti, ifob[0], ifob[1], nvrtxb);
+	//pindx = pindex_single_rep(avirti, ifoa[0], ifoa[1], nvrtxa);
+	//pindx = pindx * pindex_single_rep(bvirti, ifob[0], ifob[1], nvrtxb);
 	i1 = index2e(ifoa[0],ifoa[1],ifob[0],ifob[1]);
 	val = pindx * moints2[i1 - 1];
 	return val;
@@ -998,7 +1019,7 @@ double eval2_ncas_c00cv10v01(long long int xi, long long int xf,
 	int ifo2[2] = {0};    /* initial, final orbitals */
 	
 	cas_to_virt_replacements(1,0,0, xi, xf, vx1i, vx1j, ifo1, ninto);
-	virtdiffs_single_rep(vx2i, vx2j, ifo2);
+	pindx = virtdiffs_single_rep(vx2i, vx2j, ifo2);
 	if (xi != 0x00) {
 		pindx = pindex_single_rep_cas2virt(stri1, xi, ninto);
 		pindx = pindx * pindex_single_rep_virt(ifo1[2], vx1j);
@@ -1025,6 +1046,19 @@ double eval2_ncas_c00cv10v10(long long int xi, long long int xf,
 	int ifo[4] = {0};    /* initial, final orbital array       */
 	
 	cas_to_virt_replacements(1,0,1,xi,xf,stri.virtx,strj.virtx, ifo, ninto);
+
+        /*// DEBUGGING
+        char str1[65];
+        char str2[65];
+        llint2bin(xi, str1);
+        llint2bin(xf, str2);
+        printf(" xi     = %s\n", str1);
+        printf(" xf     = %s\n", str2);
+        printf(" ivirtx = %d %d\n", stri.virtx[0], stri.virtx[1]);
+        printf(" jvirtx = %d %d\n", strj.virtx[0], strj.virtx[1]);
+        printf(" ifo    = %d %d %d %d\n", ifo[0], ifo[1], ifo[2], ifo[3]);
+        //DEBUGGING*/
+        
         if (xi != 0x00) {
                 pindx = pindex_single_rep_cas2virt(stri.byte1, xi, ninto);
                 pindx = pindx * pindex_single_rep_virt(ifo[2], strj.virtx);
@@ -1097,16 +1131,50 @@ double eval2_ncas_c01cv10v00(struct occstr str1, struct occstr str2,
 	cas_to_virt_replacements(1,0,0, xi1, xf1, vx1i, vx1j, ifo1, ninto);
 	nonzerobits(xi2, ninto, &(ifo2[0]));
 	nonzerobits(xf2, ninto, &(ifo2[1]));
+/*
+        //DEBUGGING
+        char stra[65];
+        char strb[65];
+
+        llint2bin(str1.byte1, stra);
+        llint2bin(str2.byte1, strb);
+        printf(" str1.byte1     = %.*s\n", 64, stra);
+        printf(" str2.byte1     = %.*s\n", 64, strb);
+
+        llint2bin(xi1, stra);
+        llint2bin(xf1, strb);
+        printf(" xi1     = %.*s\n", 64, stra);
+        printf(" xf1     = %.*s\n", 64, strb);
+        llint2bin(xi2, stra);
+        llint2bin(xf2, strb);
+        printf(" xi2     = %.*s\n", 64, stra);
+        printf(" xf2     = %.*s\n", 64, strb);
+        printf(" ivirtx = %d %d\n", vx1i[0], vx1i[1]);
+        printf(" jvirtx = %d %d\n", vx1j[0], vx1j[1]);
+        printf(" ifo1    = %d %d %d %d\n", ifo1[0], ifo1[1], ifo1[2], ifo1[3]);
+        printf(" ifo2    = %d %d\n", ifo2[0], ifo2[1]);
+
+        //DEBUGGING
+        */
+        
 #ifndef BIGCAS
 	pindx = pindex_single_rep_cas(str2.byte1, xi2, xf2, ninto);
+//        printf("CAS: pindx = %d\n", pindx);
+        
         if (xi1 != 0x00) {
                 pindx = pindx * pindex_single_rep_cas2virt(
                                 str1.byte1, xi1, ninto);
         } else {
+//                printf("*Hello*\n");
                 pindx = pindx * pindex_single_rep_cas2virt(
                                 str1.byte1, xf1, ninto);
         }
 #endif
+        if (ifo1[0] == vx1i[1] || ifo1[0] == vx1j[1] ||
+            ifo1[2] == vx1i[1] || ifo1[2] == vx1j[1]) pindx = pindx * (-1);
+        
+//        printf("CAS2VIRT: pindx = %d\n", pindx);
+//        printf("(%d, %d, %d, %d)\n", ifo1[0], ifo1[2], ifo2[0], ifo2[1]);
         i1 = index2e(ifo1[0], ifo1[2], ifo2[0], ifo2[1]);
 	val = pindx * moints2[i1 - 1];
 	return val;
@@ -1163,8 +1231,8 @@ double eval2_ncas_c10cv00v01(struct occstr str1, struct occstr str2,
 	int io = 0, fo = 0;
         /* compute permutational index of cas excitation */
 	pindx = pindex_single_rep_cas(str1.byte1, xi1, xf1, ninto);
-	virtdiffs_single_rep(vx2i, vx2j, ifo);
-	pindx = pindx * pindex_single_rep_virt(ifo[0], str2.virtx);
+	pindx = pindx * virtdiffs_single_rep(vx2i, vx2j, ifo);
+	//pindx = pindx * pindex_single_rep_virt(ifo[0], str2.virtx);
 	/* compute integral */
 	nonzerobits(xi1, ninto, &io);
 	nonzerobits(xf1, ninto, &fo);
@@ -1179,14 +1247,19 @@ double eval2_ncas_c10cv00v01(struct occstr str1, struct occstr str2,
 void make_orbital_strings_virt(struct occstr ostr1i, int *eostr1, int nelec1,
 	int ninto)
 {
-	init_int_array_0(eostr1, nelec1);
+        int ecnt = 0; /* Electron count */
+        int i = 0, j = 0;
+        init_int_array_0(eostr1, nelec1);
 	nonzerobits(ostr1i.byte1, ninto, eostr1);
-	if (eostr1[nelec1 - 2] == 0) {
-		eostr1[nelec1 - 2] = ostr1i.virtx[0];
-		eostr1[nelec1 - 1] = ostr1i.virtx[1];
-	} else if (eostr1[nelec1 - 1] == 0) {
-		eostr1[nelec1 - 1] = ostr1i.virtx[0];
-	}
+        for (i = 0; i < nelec1; i++) {
+                if (eostr1[i] > 0) ecnt++;
+        }
+        j = 0;
+        for (i = ecnt; i < nelec1; i++) {
+                eostr1[i] = ostr1i.virtx[j];
+                j++;
+        }
+
 	return;
 }
 
@@ -1268,6 +1341,14 @@ int pindex_single_rep_cas2virt(long long int stri, long long int xi,
 	 * excitation.
 	 */
 	xf = ((long long int) 1) << ninto;
+        
+//        char str[65];
+//        char str2[65];
+//        llint2bin(stri, str);
+//        llint2bin(xi, str2);
+//        printf(" stri = %s\n", str);
+//        printf(" xi = %s\n", str2);
+    
 	pindx = pindex_single_rep_cas(stri, xi, xf, ninto);
 	return pindx;
 }
@@ -1288,6 +1369,17 @@ int pindex_single_rep_cas(long long int stri, long long int xi,
 	 * right aligned. Now, left shift $x and $stri until first nonzero 
 	 * value is left aligned.
 	 */
+        /*        //DEBUGGING
+        char tmp[65];
+        llint2bin(stri, tmp);
+        printf("psrc: stri = %.*s\n", 64, tmp);
+        llint2bin(xi, tmp);
+        printf("psrc:   xi = %.*s\n", 64, tmp);
+        llint2bin(xf, tmp);
+        printf("psrc:   xf = %.*s\n", 64, tmp);
+        *///DEBUGGING
+
+    
 	t = ((long long int) 1) << 63;
 	x = xi ^ xf;
 	for (i = 0; i < 64; i++) {
@@ -1310,7 +1402,16 @@ int pindex_single_rep_cas(long long int stri, long long int xi,
 			x = x << 1;
 		}
 	}
-	/* count nonzero bits, there will be less than $ninto nonzero bits */
+
+/*//        char tmp[65];
+        char tmp2[65];
+        llint2bin(stri, tmp);
+        llint2bin(x, tmp2);
+        printf("x    = %.*s\n", 64, tmp2);
+        printf("stri = %.*s\n", 64, tmp);
+*/
+ 
+/* count nonzero bits, there will be less than $ninto nonzero bits */
 	for (i = 0; i <= ninto; i++) {
 		if (stri & t) {
 			pindx = pindx * (-1);
@@ -1339,7 +1440,7 @@ int pindex_single_rep(int *str, int io, int fo, int lstr)
 	}
 	/* if io and fo are not found in string, return 0 */
 	if (pos < 0) return 0;    
-	
+
 	if (pos > lstr) {
 		error_flag(pos, "pindex_single_rep");
 		return 0;
@@ -1349,7 +1450,7 @@ int pindex_single_rep(int *str, int io, int fo, int lstr)
 		/* search down string but only if necessary */
 		if (fo > str[pos - 1]) return pindx;
 		i = pos - 1;
-		while (fo < str[i] && i > 0) {
+		while (fo < str[i] && i >= 0) {
 			pindx = pindx * (-1);
 			i--;
 		}
@@ -1369,7 +1470,7 @@ int pindex_single_rep(int *str, int io, int fo, int lstr)
 		}
 	} else if (fo < str[pos - 1]) {
 		i = pos - 1;
-		while (fo < str[i] && i > 0) {
+		while (fo < str[i] && i >= 0) {
 			pindx = pindx * (-1);
 			i--;
 		}
@@ -1383,18 +1484,20 @@ int pindex_single_rep(int *str, int io, int fo, int lstr)
 int pindex_single_rep_virt(int xorb, int *vorbs)
 {
         int pindx = 1;
-        /* Check the second virtual occupation. If this occupation is
-         * zero, then we drop out; else, we check where xorb is.
-         */
+        /* If there is only one virtual occupation, drop out. */
         if (vorbs[1] == 0) {
                 return pindx;
-        } else {
-                if (xorb == vorbs[0]) {
-                        return pindx;
-                } else {
-                        pindx = (-1) * pindx;
-                        return pindx;
-                }
+        }
+        
+
+        /* If xorb is the first virtual, no permutation is necessary */
+        if (xorb == vorbs[0]) {
+                return pindx;
+        }
+        /* If xorb is the second virtual, permuatation only necessary if */
+        if (xorb == vorbs[1]) {
+                pindx = (-1) * pindx;
+                return pindx;
         }
 	return pindx;
 }
@@ -1454,10 +1557,15 @@ void virtdiffs_single_cas_to_virt(int *vxi, int *vxj, int *repo)
  *  vxi = deti virtual orbitals
  *  vxj = detj virtual orbitals
  * Output:
- *  ifo = differences 
+ *  ifo = differences
+ * Return:
+ *  pindx = parity
+ *  *Note: ifo[0] = i rep
+ *         ifo[1] = j rep
  */
-void virtdiffs_single_rep(int *vxi, int *vxj, int *ifo)
+int virtdiffs_single_rep(int *vxi, int *vxj, int *ifo)
 {
+        int pindx = 1;
 	/* locate where differences are 
 	 * possible differences:
 	 * b c  b a  a a
@@ -1465,17 +1573,21 @@ void virtdiffs_single_rep(int *vxi, int *vxj, int *ifo)
 	if (vxi[0] == vxj[0]) {
 		ifo[0] = vxi[1];
 		ifo[1] = vxj[1];
+                pindx = 1;
 	} else {
 		if (vxi[0] == vxj[1]) {
 			ifo[0] = vxi[1];
 			ifo[1] = vxj[0];
+                        pindx = -1;
 		} else if (vxi[1] == vxj[0]) {
 			ifo[0] = vxi[0];
 			ifo[1] = vxj[1];
+                        pindx = -1;
 		} else {
 			ifo[0] = vxi[0];
 			ifo[1] = vxj[0];
+                        pindx = 1;
 		}
 	}
-	return;
+	return pindx;
 }

@@ -230,6 +230,49 @@ struct occstr str2occstr(int *istr, int elec, int ndocc, int nactv)
 }
 
 /*
+ * print_determinant: print a determinant
+ */
+void print_determinant(struct det d, int aelec, int belec)
+{
+        int stra[aelec];
+        int strb[belec];
+        int acnt = 0, bcnt = 0; /* Orbital occupation count */
+        int i, j;
+        
+        init_int_array_0(stra, aelec);
+        init_int_array_0(strb, belec);
+        nonzerobits(d.astr.byte1, 64, stra);
+        for (i = 0; i < aelec; i++) {
+                if (stra[i] > 0) acnt++;
+        }
+        nonzerobits(d.bstr.byte1, 64, strb);
+        for (i = 0; i < belec; i++) {
+                if (strb[i] > 0) bcnt++;
+        }
+
+        j = 0;
+        for (i = acnt; i < aelec; i++) {
+                stra[i] = d.astr.virtx[j];
+                j++;
+        }
+        j = 0;
+        for (i = bcnt; i < belec; i++) {
+                strb[i] = d.bstr.virtx[j];
+                j++;
+        }
+
+        printf("a: ");
+        for (i = 0; i < aelec; i++) {
+                printf("%d ", stra[i]);
+        }
+        printf(" b: ");
+        for (i = 0; i < belec; i++) {
+                printf("%d ", strb[i]);
+        }
+        printf("\n");
+}
+
+/*
  * init_detlist: initialize determinant list
  */
 void init_detlist(struct det *dlist, int ndets)

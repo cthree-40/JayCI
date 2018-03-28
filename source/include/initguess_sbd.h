@@ -11,16 +11,17 @@
  */
 int initguess_sbd(
     struct det *dlist, /* determinant lists */
-    int ndets, /* number of determinants */
-    double *moints1, /* 1-e integrals */
-    double *moints2, /* 2-e integrals */
-    int aelec, /* alpha electrons */
-    int belec, /* beta electrons */
-    int ninto, /* internal orbitals */
-    int krymin, /* minimum dimension of krylov space; also,
-		 * output vector number */
-    int rdim, /* Reference space size */
-    double **vscr /* output vectors */
-    );
+    int ndets,         /* number of determinants */
+    double *moints1,   /* 1-e integrals */
+    double *moints2,   /* 2-e integrals */
+    int aelec,         /* alpha electrons */
+    int belec,         /* beta electrons */
+    int ninto,         /* internal orbitals */
+    int krymin,        /* minimum dimension of krylov space; also,
+                        * output vector number */
+    int rdim,          /* Reference space size */
+    double **vscr,     /* output vectors */
+    double totfrze     /* Total frozen core energy */
+        );
 
 #endif

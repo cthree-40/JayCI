@@ -10,6 +10,7 @@
 #include "timestamp.h"
 #include "errorlib.h"
 #include "allocate_mem.h"
+#include "binary.h"
 #include "binarystr.h"
 #include "ioutil.h"
 #include "genbindet.h"
@@ -193,7 +194,14 @@ int execute_ci_calculation_inpdlist(int aelec, int belec, int orbs, int nastr,
 		error_flag(error, "execute_ci_calculation");
 		return error;
 	}
-	
+
+        //char as[65];
+        //char bs[65];
+        //print_determinant(detlist[2 - 1], aelec, belec);
+        //print_determinant(detlist[228 - 1], aelec, belec);
+        //print_determinant(detlist[254 - 1], aelec, belec);
+        //return (100000);
+        
 	/* Generate CI map of valid determinants. */
 	prev_time = clock();
 	if (plvl > 0) fprintf(stdout, " Generating cimap.\n");
@@ -215,7 +223,7 @@ int execute_ci_calculation_inpdlist(int aelec, int belec, int orbs, int nastr,
 		      ninto);
 	if (plvl > 0) fprintf(stdout, " Hartree Fock Energy = %15.8lf\n",
 			      (hdgls[0] + totfrze));
-	
+
 	/* Allocate civec(m,n) and cival(m).*/
 	error = allocate_mem_double(&civec, ndets, nroots);
 	if (error != 0) {

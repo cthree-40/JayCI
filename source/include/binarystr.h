@@ -59,6 +59,11 @@ int compute_virt_diffs(
 	struct occstr ostrj); /* occupation string of determinant j */
 
 /*
+ * print_determinant: print a determinant
+ */
+void print_determinant(struct det d, int aelec, int belec);
+
+/*
  * init_detlist: initialize determinant list
  */
 void init_detlist(

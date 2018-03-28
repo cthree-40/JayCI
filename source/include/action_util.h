@@ -433,7 +433,7 @@ void virtdiffs_single_cas_to_virt(
 	int *vxj, 
 	int *repo);
 
-void virtdiffs_single_rep(
+int virtdiffs_single_rep(
 	int *vxi, 
 	int *vxj, 
 	int *ifo);

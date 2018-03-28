@@ -60,7 +60,7 @@ struct det *citrunc_rtnlist(int aelec, int belec, int orbs, int nfrzc, int ndocc
  * allocate_eospace_array: allocate the electron number space array.
  */
 struct eospace *allocate_eospace_array(int nelec, int norbs, int ndocc,
-                                       int nactv, int xlvl, int *ngrps);
+                                       int nactv, int xlvl,  int *ngrps);
 
 /*
  * allocate_strings_array: allocate the strings array.

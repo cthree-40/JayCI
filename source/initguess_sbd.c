@@ -23,7 +23,7 @@
  */
 int initguess_sbd(struct det *dlist, int ndets, double *moints1,
 		  double *moints2, int aelec, int belec, int ninto,
-		  int krymin, int rdim, double **vscr)
+		  int krymin, int rdim, double **vscr, double totfrze)
 {
     int error = 0; /* error flag */
     double *hmat = NULL; /* Hamiltonian subblock */
@@ -44,10 +44,39 @@ int initguess_sbd(struct det *dlist, int ndets, double *moints1,
     init_dbl_array_0(hevec,(sbsize * sbsize));
     init_dbl_array_0(heval, sbsize);
 
+
+    /*double tmp = 0;
+    FILE *fptr;
+    char fname[80];
+    for (j = 0; j < 1000; j++) {
+            sprintf(fname, "column%d.txt", (j + 1));
+            fptr = fopen(fname, "w");
+            for (i = 0; i < sbsize; i++) {
+                    tmp = hmatels(dlist[i], dlist[j], moints1, moints2,
+                                  aelec, belec, ninto);
+                    fprintf(fptr, "%15.8lf", tmp);
+                    fprintf(fptr, "\n");
+            }
+            fclose(fptr);
+    }
+    tmp = hmatels(dlist[2 - 1], dlist[228 - 1], moints1, moints2,
+                  aelec, belec, ninto);
+    printf("<2|H|228> = %15.8lf\n", tmp);
+    //tmp = hmatels(dlist[254 - 1], dlist[26 - 1], moints1, moints2,
+    //              aelec, belec, ninto);
+    //printf("<254|H|26> = %15.8lf\n", tmp);
+    
+    //return (300);
+    */
+
+    
     /* build subblock of Hamiltonian */
     hp = 0;
     for (i = 0; i < sbsize; i++) {
-	for (j = i; j < sbsize; j++) {
+            hp = (i * sbsize) + i;
+            hmat[hp] = 0.0 + hmatels(dlist[i], dlist[i], moints1, moints2,
+                                     aelec, belec, ninto);
+	for (j = i + 1; j < sbsize; j++) {
 	    hp = (i * sbsize) + j;
 	    hmat[hp] = 0.0 + hmatels(dlist[i], dlist[j], moints1, moints2,
 				     aelec, belec, ninto);
@@ -63,8 +92,9 @@ int initguess_sbd(struct det *dlist, int ndets, double *moints1,
 	error_flag(error, "initguess_sbd");
 	return error;
     }
-    fprintf(stdout, " Lowest eigenvalue in subblock = %15.8lf\n", heval[0]);
-    
+    fprintf(stdout, " Lowest eigenvalue in subblock = %15.8lf\n",
+            (heval[0] + totfrze));
+    //return 1000;
     /* set values for initial guess */
     for (i = 0; i < krymin; i++) {
 	for (j = 0; j < sbsize; j++) {
