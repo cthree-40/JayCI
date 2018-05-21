@@ -126,6 +126,7 @@ ifneq ($(filter cori edison,$(NERSC_HOST)),)
 	MATHLIBS := 
 else
 	MATHLIBS := -L/usr/lib64 -llapack -lblas -lm -lgfortran -lgomp
+	GALIBS   := -L/usr/local/lib -lga -larmci
 endif
 
 COLIBLIB := $(LDIR)/colib.a
@@ -168,23 +169,23 @@ OBJS := 	timestamp.o \
 # Objects for mpi_jayci
 MPIOBJS :=	timestamp.o \
 	   	errorlib.o \
-	   	iminmax.o \
-		combinatorial.o \
-	   	arrayutil.o \
-	   	progheader.o \
-		bitutil.o \
-	   	binary.o \
-	   	straddress.o \
-		moindex.o \
+		arrayutil.o \
+		allocate_mem.o \
 		readmoints.o \
-	   	readnamelist.o \
+		readnamelist.o \
 		readmocoef.o \
 		ioutil.o \
-	   	binarystr.o \
-	   	genbindet.o \
-	   	cimapping.o \
-		action_util.o \
-	   	execute_pci_calculation.o
+		mpi_utilities.o \
+		abecalc.o \
+		combinatorial.o \
+		moindex.o \
+		straddress.o \
+		iminmax.o \
+		bitutil.o \
+		binary.o \
+		binarystr.o \
+		citruncate.o \
+		execute_pjayci.o
 
 DYCIOBJS := 	errorlib.o \
 		arrayutil.o \
@@ -361,7 +362,7 @@ pjayci: $(PJYCIOBJS) | $(BDIR)
 	@echo " C Compiler options:	$(CFLAGS)"
 	@echo " F90 Compiler options:	$(FFLAGS)"
 	@echo "------------------------------------------------------"
-	$(CDPS); $(MPICC) -o $(PJCIEXE) $(PJYCIOBJS) $(MATHLIBS) $(COLIBLIB) $(DEBUG) $(CFLAGS)
+	$(CDPS); $(MPICC) -o $(PJCIEXE) $(PJYCIOBJS) $(MATHLIBS) $(COLIBLIB) $(GALIBS) $(DEBUG) $(CFLAGS)
 	@echo "------------------------------------------------------"
 	@echo " Creating symbolic link to new binary"
 	ln -sf $(PJCIEXE) $(BDIR)/pjayci
@@ -440,6 +441,10 @@ $(MPISDIR)/readnamelist.o:$(MPISDIR)/readnamelist.f90
 
 $(MPISDIR)/readmoints.o:$(MPISDIR)/readmoints.f90
 	$(MPIFC) -c -o $(MPISDIR)/readmoints.o $(MPISDIR)/readmoints.f90 $(DEBUG) $(FDEBUG) $(FFLAGS)
+	@echo ""
+
+$(MPISDIR)/readmocoef.o:$(MPISDIR)/readmocoef.f90
+	$(MPIFC) -c -o $(MPISDIR)/readmocoef.o $(MPISDIR)/readmocoef.f90 $(DEBUG) $(FDEBUG) $(FFLAGS)
 	@echo ""
 
 $(MPISDIR)/ioutil.o:$(MPISDIR)/ioutil.c

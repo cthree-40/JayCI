@@ -5,7 +5,6 @@
 /* occstr: determinant alpha/beta string occupation information */
 struct occstr {
 	long long int byte1; /* occupation for DOCC+CAS orbitals 1 -> 64  */
-        long long int byte2; /* occupation for DOCC+CAS orbitals 65 -> 128*/
 	int virtx[2];        /* virtual orbital occupations               */
 	int nvrtx;           /* number of virtual orbitals                */
 };
@@ -62,6 +61,12 @@ int compute_virt_diffs(
  * print_determinant: print a determinant
  */
 void print_determinant(struct det d, int aelec, int belec);
+
+/*
+ * print_occstring: print occupation string
+ *  byte1, virtx, nvrtx
+ */
+void print_occstring(struct occstr ostr, int nelec, int ndocc, int nactv);
 
 /*
  * init_detlist: initialize determinant list
