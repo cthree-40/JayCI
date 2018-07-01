@@ -52,16 +52,18 @@ struct xstrmap {
  *  pegrps   = alpha electron groupings
  *  qeosp    = beta electron space array
  *  qegrps   = beta electron groupings
- * Output:
  *  astr_len = alpha string number
  *  bstr_len = beta  string number
- *  dstr_len = determinant number
+ *  dtrm_len = determinant number
+ *  pq_spaces = (p,q) space pairings
+ *  num_pq    = number of (p,q) pairings
  */
 int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
 	    int nactv, int nfrzv, int xlvl, struct occstr *astrings,
             int astr_len, struct occstr *bstrings, int bstr_len,
             struct eospace *peosp, int pegrps,
-            struct eospace *qeosp, int qegrps, int *dtrm_len);
+            struct eospace *qeosp, int qegrps, int *dtrm_len,
+            int **pq_spaces, int *num_pq);
 
 /*
  * allocate_eospace_array: allocate the electron number space array.
@@ -98,7 +100,8 @@ void compute_ci_elecs_and_orbitals(int aelec, int belec, int orbitals, int nfrzc
  * compute_detnum: compute the number of determinants in expansion.
  */
 int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
-                   int qegrps, int ndocc, int nactv, int xlvl);
+                   int qegrps, int ndocc, int nactv, int xlvl,
+                   int **pq_spaces, int *num_pq);
 
 /*
  * compute_eostrings_sr: compute electron occupation strings for all string

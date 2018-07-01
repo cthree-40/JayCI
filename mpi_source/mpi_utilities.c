@@ -37,6 +37,30 @@ void mpi_error_check_msg (int error, char *fcn_name, char *message)
 }
 
 /*
+ * mpi_split_work_array_1d: get first and last elements for partitioning
+ * a 1d array amongst work processes.
+ * Input:
+ *  len  = length of vector (total)
+ * Output:
+ *  chunk = chunk size
+ *  lo    = first element
+ *  hi    = last  element
+ */
+void mpi_split_work_array_1d (int len, int *chunk, int *lo, int *hi)
+{
+        *chunk = 0;
+        *chunk = len / mpi_num_procs;
+        *lo = mpi_proc_rank * (*chunk);
+        *hi = (mpi_proc_rank + 1) * (*chunk) - 1;
+        if ((*chunk * mpi_num_procs) != len) {
+                if (mpi_proc_rank == (mpi_num_procs - 1)) {
+                        *hi = len - 1; // Last element of array
+                }
+        }
+        return;
+}
+
+/*
  * set_mpi_process_number_and_rank: set global variables $mpi_num_procs
  * and $mpi_proc_rank.
  */

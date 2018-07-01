@@ -185,7 +185,8 @@ MPIOBJS :=	timestamp.o \
 		binary.o \
 		binarystr.o \
 		citruncate.o \
-		execute_pjayci.o
+		action_util.o \
+		execute_pjayci.o	
 
 DYCIOBJS := 	errorlib.o \
 		arrayutil.o \

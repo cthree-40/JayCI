@@ -40,16 +40,18 @@
  *  pegrps   = alpha electron groupings
  *  qeosp    = beta electron space array
  *  qegrps   = beta electron groupings
- * Output:
  *  astr_len = alpha string number
  *  bstr_len = beta  string number
- *  dstr_len = determinant number
+ *  dtrm_len = determinant number
+ *  pq_spaces = pq pairings
+ *  num_pq   = number of valid pq pairings
  */
 int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
 	    int nactv, int nfrzv, int xlvl, struct occstr *astrings,
             int astr_len, struct occstr *bstrings, int bstr_len,
             struct eospace *peosp, int pegrps,
-            struct eospace *qeosp, int qegrps, int *dtrm_len)
+            struct eospace *qeosp, int qegrps, int *dtrm_len,
+            int **pq_spaces, int *num_pq)
 {
         int error = 0; /* Error flag */
         int i;
@@ -66,33 +68,15 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
         ci_belec = belec - nfrzc;
         ci_orbs  = orbs - nfrzc - nfrzv;
 
-//        *astr_len = compute_stringnum(ci_orbs, ci_aelec, ndocc, nactv, xlvl);
-//        *bstr_len = compute_stringnum(ci_orbs, ci_belec, ndocc, nactv, xlvl);
-
         /* Allocate the electron string arrays. */
         pstrings = allocate_strings_array(astr_len, ci_aelec);
         qstrings = allocate_strings_array(bstr_len, ci_belec);
-//        astrings = allocate_occstr_arrays(*astr_len);
-//        bstrings = allocate_occstr_arrays(*bstr_len);
         if (pstrings == NULL || qstrings == NULL ||
             astrings == NULL || bstrings == NULL) {
                 error_message(mpi_proc_rank,
                               "Failed allocating electron string arrays",
                               "citrunc");
                 error = 100;
-                return error;
-        }
-
-        /* Allocate eospace arrays */
-//        peosp = allocate_eospace_array(ci_aelec, ci_orbs, ndocc, nactv, xlvl,
-//                                       pegrps);
-//        qeosp = allocate_eospace_array(ci_belec, ci_orbs, ndocc, nactv, xlvl,
-//                                       qegrps);
-        if (peosp == NULL || qeosp == NULL) {
-                error_message(mpi_proc_rank,
-                              "Failed to allocate electron grouping arrays",
-                              "citrunc");
-                error = 200;
                 return error;
         }
 
@@ -108,7 +92,7 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
 
         /* Compute number of determinants */
         *dtrm_len = compute_detnum(peosp, pegrps, qeosp, qegrps, ndocc,
-                                   nactv, xlvl);
+                                   nactv, xlvl, pq_spaces, num_pq);
         
         deallocate_eostrings_array(pstrings, astr_len);
         deallocate_eostrings_array(qstrings, bstr_len);
@@ -239,7 +223,8 @@ void compute_ci_elecs_and_orbitals(int aelec, int belec, int orbitals, int nfrzc
  * compute_detnum: compute the number of determinants in expansion.
  */
 int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
-                   int qegrps, int ndocc, int nactv, int xlvl)
+                   int qegrps, int ndocc, int nactv, int xlvl,
+                   int **pq_spaces, int *num_pq)
 {
         int dcnt = 0;    /* Determinant count. */
         int doccmin = 0; /* Minimum determinant DOCC occupations. */
@@ -250,16 +235,18 @@ int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
         doccmin = 2 * (ndocc - int_min(ndocc, xlvl));
 
         /* Loop over p (alpha) string groups. */
+        *num_pq = 0;
         for (i = 0; i < pegrps; i++) {
                 /* Loop over q (beta) string groups. */
                 for (j = 0; j < qegrps; j++) {
                         if ((peosp[i].docc + qeosp[j].docc) < doccmin) continue;
                         if ((peosp[i].virt + qeosp[j].virt) > xlvl) continue;
-                        
+                        pq_spaces[*num_pq][0] = i;
+                        pq_spaces[*num_pq][1] = j;
+                        (*num_pq)++;
                         dcnt = dcnt + peosp[i].nstr * qeosp[j].nstr;
                 }
         }
-
         return dcnt;
 }
 
@@ -420,10 +407,6 @@ void generate_binstring_list(struct eostring *str, int nstr, int elec,
 {
         for (int i = 0; i < nstr; i++) {
                 binstr[i] = str2occstr(str[i].string, elec, ndocc, nactv);
-//                for (int j = 0; j < elec; j++) {
-//                        printf(" %d", str[i].string[j]);
-//                }
-//                print_occstring
         }
         return;
 }
