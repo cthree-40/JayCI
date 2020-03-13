@@ -11,7 +11,8 @@
 #include "mpi_utilities.h"
 #include "pjayci_global.h"
 #include <mpi.h>
-
+#include <ga.h>
+#include <macdecls.h>
 
 /*
  * mpi_error_check_msg: check for error. Print message if error has
@@ -68,4 +69,14 @@ void set_mpi_process_number_and_rank ()
 {
         MPI_Comm_size(MPI_COMM_WORLD, &mpi_num_procs);
         MPI_Comm_rank(MPI_COMM_WORLD, &mpi_proc_rank);
+}
+
+/*
+ * set_ga_process_number_and_rank: set global variables $mpi_num_procs
+ * and $mpi_proc_rank with GA wrappers.
+ */
+void set_ga_process_number_and_rank ()
+{
+        mpi_proc_rank = GA_Nodeid();
+        mpi_num_procs = GA_Nnodes();
 }

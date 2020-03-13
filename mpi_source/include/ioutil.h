@@ -50,6 +50,29 @@ FILE *find_str_line(char *string, FILE *fptr);
  */
 void print_array_2d(double **array, int rows, int cols);
 
+/* readdaiinput: read diagonalization algorithm input.
+ * -------------------------------------------------------------------
+ * Calls readnamelist which returns a chracter array
+ *  nmlstr[0] = maxiter
+ *  nmlstr[1] = krymin
+ *  nmlstr[2] = krymax
+ *  nmlstr[3] = nroots
+ *  nmlstr[4] = prediagr
+ *  nmlstr[5] = refdim
+ *  nmlstr[6] = restol
+ *
+ * Output:
+ *  maxiter = maximum iterations of davidson algorithm
+ *  krymin  = minimum dimension of krylov space
+ *  krymax  = maximum dimension of krylov space
+ *  nroots  = number of roots to find
+ *  prediagr= prediagonalization subroutine choice
+ *  refdim  = intitial reference-space dimension (prediagonalization)
+ *  restol  = convergence tolerance of residual
+ *  err     = error handling: n = missing variable n */
+void readdaiinput(int *maxiter,  int *krymin, int *krymax, int *nroots,
+		  int *prediagr, int *refdim, double *restol, int *err);
+
 /* readgeninput: read general wavefunction input.
  * -------------------------------------------------------------------
  * Calls readnamelist which returns a character array

@@ -136,6 +136,54 @@ void print_array_2d(double **array, int rows, int cols)
     return;
 }
 
+/* readdaiinput: read diagonalization algorithm input.
+ * -------------------------------------------------------------------
+ * Calls readnamelist which returns a chracter array
+ *  nmlstr[0] = maxiter
+ *  nmlstr[1] = krymin
+ *  nmlstr[2] = krymax
+ *  nmlstr[3] = nroots
+ *  nmlstr[4] = prediagr
+ *  nmlstr[5] = refdim
+ *  nmlstr[6] = restol
+ *
+ * Output:
+ *  maxiter = maximum iterations of davidson algorithm
+ *  krymin  = minimum dimension of krylov space
+ *  krymax  = maximum dimension of krylov space
+ *  nroots  = number of roots to find
+ *  prediagr= prediagonalization subroutine choice
+ *  refdim  = intitial reference-space dimension (prediagonalization)
+ *  restol  = convergence tolerance of residual
+ *  err     = error handling: n = missing variable n */
+void readdaiinput(int *maxiter,  int *krymin, int *krymax, int *nroots,
+		  int *prediagr, int *refdim, double *restol, int *err)
+{
+    /* .. local scalars ..
+     * gnml = namelist to read in */
+    long long int gnml = 2;
+
+    /* .. local arrays ..
+     * nmlstr = namelist character arrays */
+    char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};
+
+    *err = 0;
+
+    readnamelist_(&gnml, nmlstr, &err);
+    if (err != 0) return;
+
+    /* stream input into proper values */
+    sscanf(nmlstr[0], "%d",  maxiter);
+    sscanf(nmlstr[1], "%d",   krymin);
+    sscanf(nmlstr[2], "%d",   krymax);
+    sscanf(nmlstr[3], "%d",   nroots);
+    sscanf(nmlstr[4], "%d", prediagr);
+    sscanf(nmlstr[6], "%d",   refdim);
+    sscanf(nmlstr[5], "%lf",  restol);
+    
+    return;
+}
+
 /* readgeninput: read general wavefunction input.
  * -------------------------------------------------------------------
  * Calls readnamelist which returns a character array

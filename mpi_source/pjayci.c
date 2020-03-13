@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include "pjayci_global.h"
 #include "mpi_utilities.h"
+#include "binarystr.h"
+#include "citruncate.h"
 #include "execute_pjayci.h"
 #include <mpi.h>
 #include <ga.h>
@@ -23,11 +25,15 @@ const int mpi_root = 0; /* MPI: Root rank is always 0 */
 int main (int argc, char **argv)
 {
         int error = 0;
+        int stack = 8000000, heap = 8000000;
 
         MPI_Init(&argc, &argv);
         GA_Initialize();
-        
-        set_mpi_process_number_and_rank();
+
+        /* Initialize memory allocator (MA) */
+        if (! MA_init(C_DBL, stack, heap)) GA_Error("MA_init failed",stack+heap);
+
+        set_ga_process_number_and_rank();
 
         error = execute_pjayci();
 
