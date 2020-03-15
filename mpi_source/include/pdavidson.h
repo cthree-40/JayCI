@@ -96,9 +96,9 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
 
 
 /*
- * compute_residual_norm: compute the norm of the residual vector.
+ * compute_GA_norm: compute the norm of a GA vector.
  */
-void compute_residual_norm (int r_hndl,  double *norm);
+void compute_GA_norm (int r_hndl,  double *norm);
 
 /*
  * determinant_string_info: compute string information given
@@ -181,6 +181,51 @@ void evaluate_hdblock_ij(int pq_start_i, int pstart_i, int qstart_i,
                          int belec, int intorb);
 
 /*
+ * evaluate_hdblock_ij_1d: evaluate a block of H: **(For one column)**
+ *  H(i,j)*V(j)=C(i)
+ *  Input:
+ *   vrows  = columns of C
+ *   vcols  = rows of C
+ *   crows  = columns of C
+ *   ccols  = rows of C
+ *   v      = V(j)
+ *   c      = C(i)
+ *   starti = starting index i
+ *   finali = ending index i
+ *   startj = starting index j
+ *   finalj = ending index j
+ *   ndets  = number of determinants
+ *   peosp  = alpha electron orbital spaces
+ *   pegrps = number of alpha string orbital spaces
+ *   pstr   = alpha electron strings
+ *   qeosp  = beta electron orbital spaces
+ *   qegrps = number of beta string orbital spaces
+ *   qstr   = beta electron strings
+ *   pq     = (p,q)-space pairings
+ *   npq    = number of (p, q)-space pairings
+ *   mo1    = 1-e integrals
+ *   mo2    = 2-e integrals
+ *   aelec  = alpha electrons
+ *   belec  = beta  electrons
+ *   intorb = internal orbitals (DOCC + CAS)
+ *  Output:
+ *   C      = C(i)
+ */
+void evaluate_hdblock_ij_1d(int pq_start_i, int pstart_i, int qstart_i,
+                            int pq_final_i, int pfinal_i, int qfinal_i,
+                            int pq_start_j, int pstart_j, int qstart_j,
+                            int pq_final_j, int pfinal_j, int qfinal_j,
+                            int vrows, int vcols, double *v,
+                            int crows, int ccols, double *c,
+                            int starti, int finali, int startj, int finalj,
+                            int ndets, struct eospace *peosp, int pegrps,
+                            struct occstr *pstr,
+                            struct eospace *qeosp, int qegrps,
+                            struct occstr *qstr,  int **pq,
+                            int npq, double *mo1, double *mo2, int aelec,
+                            int belec, int intorb);
+
+/*
  * generate_det_triples: generate list of triplets for each determinant:
  *  |i> = |(pq, p, q)>
  */
@@ -197,9 +242,11 @@ void generate_det_triples (int ndeti, int **d_triplet, int pq_start,
  *  r_hndl = GA handle for residual vector
  *  d_hndl = GA handle for diagonal elements
  *  n_hndl = GA handle for new vector
+ *  x_hndl = GA handle for scratch array
  */
 void generate_newvector (int r_hndl, int d_hndl, double eval, int ndets,
-                         int n_hndl);
+                         int n_hndl, int x_hndl);
+
 
 /*
  * generate_residual: generate residual vector.
@@ -213,9 +260,11 @@ void generate_newvector (int r_hndl, int d_hndl, double eval, int ndets,
  *  ndets  = number of determinants (length of vectors V, C, & r)
  *  ckdim  = current dimension of krylov subspace
  *  croot  = current root being optimized.
+ *  rscr_hndl = GA handle for residual vector scratch array
  */
 void generate_residual (int v_hndl, int c_hndl, int r_hndl, double **hevec,
-                        double *heval, int ndets, int ckdim, int croot);
+                        double *heval, int ndets, int ckdim, int croot,
+                        int rscr_hndl);
 
 
 /*

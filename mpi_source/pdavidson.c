@@ -44,6 +44,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         int n_dims[1]  = {0};     /* GLOBAL new vector dimensions */
         int n_chunk[1] = {0};     /* GLOBAL new vector chunk size */
         int r_hndl = 0;           /* GLOBAL residual vector, R */
+        int x_hndl = 0;        /* GLOBAL 1-D scratch array */
         int d_hndl = 0;           /* GLOBAL <i|H|i> vector, D */
 
         double *d_local = NULL;   /* LOCAL <i|H|i> array. */
@@ -56,7 +57,9 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         double *hevec_data = NULL;/* LOCAL v.Hv eigenvectors memory block */
         double *heval = NULL;     /* LOCAL v.Hv eigenvalues */
         double *hevec_scr= NULL;  /* LOCAL v.Hv eigenvector scratch array */
-        
+
+        double rnorm = 0.0;       /* ||r|| */
+        double nnorm = 0.0;       /* ||n|| */
         
         int citer = 0; /* current iteration */
         int croot = 0; /* current root */
@@ -89,6 +92,8 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         if (!n_hndl) GA_Error("Create failed: New vector", 1);
         r_hndl = NGA_Duplicate(n_hndl, "Residual vector");
         if (!r_hndl) GA_Error("Duplicate failed: Residual vector", 1);
+        x_hndl = NGA_Duplicate(n_hndl, "Scratch 1-D vector");
+        if (!x_hndl) GA_Error("Duplicate failed: Scratch 1-D vector", 1);
         d_hndl = NGA_Duplicate(n_hndl, "Diagonal vector");
         if (!d_hndl) GA_Error("Duplicate failed: Diagonal vectors", 1);
         
@@ -148,7 +153,42 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                                           vhv_scr, hevec_scr);
                 if (error != 0)  return error;
                 print_subspace_eigeninfo(hevec, heval, ckdim, totcore_e);
-                
+
+                GA_Sync();
+
+                while (ckdim < krymax) {
+                        generate_residual(v_hndl, c_hndl, r_hndl, hevec, heval,
+                                          ndets, ckdim, croot, x_hndl);
+                        compute_GA_norm(r_hndl, &rnorm);
+                        generate_newvector(r_hndl, d_hndl, heval[croot - 1],
+                                           ndets, n_hndl, x_hndl);
+
+                        compute_GA_norm(n_hndl, &nnorm);
+                        if (mpi_proc_rank == mpi_root) {
+                                printf("\n ||r|| = %12.8lf  ||n|| = %12.8lf\n",
+                                       rnorm, nnorm);
+                        }
+
+                        orthonormalize_newvector(v_hndl, ckdim, ndets, n_hndl);
+
+                        /* Increase current krylov space dimension */
+                        ckdim++;
+
+                        add_new_vector(v_hndl, ckdim, ndets, n_hndl);
+                        compute_hv_newvector(v_hndl, c_hndl, ckdim, pstrings,
+                                             peospace, pegrps, qstrings,
+                                             qeospace, qegrps, pq_space_pairs,
+                                             num_pq, moints1, moints2, aelec,
+                                             belec, intorb, ndets, krymax);
+                        make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
+                        print_subspacehmat(vhv, ckdim);
+                        error = diag_subspacehmat(vhv, hevec, heval, ckdim,
+                                                  krymax, vhv_scr, hevec_scr);
+                        if (error != 0)  return error;
+                        print_subspace_eigeninfo(hevec, heval, ckdim, totcore_e);
+
+//                        ckdim = krymax + 1;
+                }
                 citer = maxiter + 1;
         }
         
@@ -157,36 +197,18 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
 
 /*
  * add_new_vector: add a new vector to basis space.
+ * cdim = dimension INCLUDING new vector.
  */
 void add_new_vector(int v_hndl, int cdim, int len, int n_hndl)
 {
-        int nlo[1] = {0};
-        int nhi[1] = {0};
-        int nlen = 0;
         int vlo[2] = {0, 0};
         int vhi[2] = {0, 0};
-        char trans = "N";
-
-        /*nlo[0] = 0;
+        int nlo[1] = {0};
+        int nhi[1] = {0};
+        vlo[0] = cdim - 1; vhi[0] = cdim - 1;
+        vhi[1] = len - 1;
         nhi[0] = len - 1;
-        vlo[0] = 0;
-        vlo[1] = cdim;
-        vhi[0] = len - 1;
-        vhi[1] = cdim;*/
-        nlo[0] = 0;
-        nhi[0] = len - 1;
-        vlo[0] = 0;
-        vhi[0] = len - 1;
-        vlo[1] = cdim;
-        vhi[1] = cdim;
-        int type, ndim, dims[2];
-        NGA_Inquire(v_hndl, &type, &ndim, dims);
-        printf("cdim = %d\n", cdim);
-        printf("len  = %d\n", (len - 1));
-        printf("type, ndim, dims = %d, %d, %d %d\n", type, ndim, dims[0], dims[1]);
-        NGA_Copy_patch(trans, n_hndl, nlo, nhi, v_hndl, vlo, vhi);
-
-        
+        NGA_Copy_patch('n', n_hndl, nlo, nhi, v_hndl, vlo, vhi);
         return;
 }
 
@@ -443,15 +465,13 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
 {
         int error = 0; /* Error flag */
 
-        double **c_local = NULL; /* Local c array */
-        double *cdata = NULL;
-        int c_rows = 0;         /* Local c rows  */
-        int c_cols = 0;         /* Local c columns (=1) */
+        double *c_local = NULL;   /* Local c array */
+        int c_rows = 0;           /* Local c rows  */
+        int c_cols = 0;           /* Local c columns (=1) */
 
-        double **v_local = NULL; /* Local v array */
-        double *vdata = NULL;
-        int v_rows = 0;         /* Local v rows  */
-        int v_cols = 0;         /* Local v columns (=1) */
+        double *v_local = NULL;   /* Local v array */
+        int v_rows = 0;           /* Local v rows  */
+        int v_cols = 0;           /* Local v columns (=1) */
 
         /*
          * The following convention is used:
@@ -494,36 +514,34 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
          *         We only require the last columns of both V and C.
          */
         NGA_Distribution(c_hndl, mpi_proc_rank, c_lo, c_hi);
-        c_rows = c_hi[0] - c_lo[0] + 1;
-        c_cols = c_hi[1] - c_lo[1] + 1;
-        c_cols = int_min(c_cols, ckdim);
-        c_hi[1] = c_cols - 1;
-        c_lo[1] = c_cols - 1; // Last column is all that is required.
-        c_ld[0] = 1; //c_hi[1] - c_lo[1];
-        c_cols = c_ld[0];
-        c_ld[0] = 0;
-        cdata = allocate_mem_double_cont(&c_local, c_rows, c_cols);
-        v_lo[0] = 0;
-        v_lo[1] = c_lo[1];
-        v_hi[0] = ndets - 1;
-        v_hi[1] = c_hi[1];
-        v_rows = v_hi[0] - v_lo[0] + 1;
-        v_cols = v_hi[1] - v_lo[1] + 1;
-        v_ld[0] = 0;
-        vdata = allocate_mem_double_cont(&v_local, v_rows, v_cols);
+        c_rows  = c_hi[1] - c_lo[1] + 1;
+        c_lo[0] = ckdim - 1;  // Last column
+        c_hi[0] = ckdim - 1;  // Last column
+        c_cols  = c_hi[0] - c_lo[0] + 1;
+        c_ld[0] = 1;          // 1-D array
+        /* Allocate arrays */
+        c_local = malloc(sizeof(double) * c_rows);
 
-
-        NGA_Get(v_hndl, v_lo, v_hi, vdata, v_ld);
-        NGA_Get(c_hndl, c_lo, c_hi, cdata, c_ld);
+        v_lo[0] = ckdim - 1;
+        v_hi[0] = ckdim - 1;
+        v_lo[1] = 0;
+        v_hi[1] = ndets - 1;
+        v_rows  = v_hi[1] - v_lo[1] + 1;
+        v_cols  = v_hi[0] - v_hi[0] + 1;
+        v_ld[0] = 1;
+        /* Allocate arrays */
+        v_local = malloc(sizeof(double) * v_rows);
         
+        NGA_Get(v_hndl, v_lo, v_hi, v_local, v_ld);
+        NGA_Get(c_hndl, c_lo, c_hi, c_local, c_ld);
         
         GA_Sync();
 
         /* Get values for determinnat index at beginning/ending of block */
-        start_det_i = c_lo[0];
-        final_det_i = c_hi[0];
-        start_det_j = v_lo[0];
-        final_det_j = v_hi[0];
+        start_det_i = c_lo[1];
+        final_det_i = c_hi[1];
+        start_det_j = v_lo[1];
+        final_det_j = v_hi[1];
         determinant_string_info(start_det_i, peosp, pegrps, qeosp, qegrps, pqs,
                                 num_pq, &pq_start_i, &pstart_i, &qstart_i);
         determinant_string_info(final_det_i, peosp, pegrps, qeosp, qegrps, pqs,
@@ -535,61 +553,30 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
 
         /* Evaluate block of H(i,j)*V(j,k)=C(i,k). This is done via the        
          * space indexes. Each block is over all V vectors, k.*/
-        evaluate_hdblock_ij(pq_start_i, pstart_i, qstart_i,
-                            pq_final_i, pfinal_i, qfinal_i,
-                            pq_start_j, pstart_j, qstart_j,
-                            pq_final_j, pfinal_j, qfinal_j,
-                            v_rows, v_cols, v_local,
-                            c_rows, c_cols, c_local,
-                            start_det_i, final_det_i,
-                            start_det_j, final_det_j,
-                            ndets, peosp, pegrps, pstr, qeosp, qegrps, qstr,
-                            pqs, num_pq, m1, m2, aelec, belec, intorb);
+        evaluate_hdblock_ij_1d(pq_start_i, pstart_i, qstart_i,
+                               pq_final_i, pfinal_i, qfinal_i,
+                               pq_start_j, pstart_j, qstart_j,
+                               pq_final_j, pfinal_j, qfinal_j,
+                               v_rows, v_cols, v_local,
+                               c_rows, c_cols, c_local,
+                               start_det_i, final_det_i,
+                               start_det_j, final_det_j,
+                               ndets, peosp, pegrps, pstr, qeosp, qegrps, qstr,
+                               pqs, num_pq, m1, m2, aelec, belec, intorb);
 
-        NGA_Acc(c_hndl, c_lo, c_hi, cdata, c_ld, alpha);
+        NGA_Acc(c_hndl, c_lo, c_hi, c_local, c_ld, alpha);
         GA_Sync();
 
-        deallocate_mem_cont(&v_local, vdata);
-        deallocate_mem_cont(&c_local, cdata);
-        
         return;
 }
 
 /*
- * compute_residual_norm: compute the norm of the residual vector.
+ * compute_GA_norm: compute the norm of a global-array vector.
  */
-void compute_residual_norm (int r_hndl,  double *norm)
+void compute_GA_norm (int r_hndl,  double *norm)
 {
-        double *r_local = NULL; /* r local array */
-        int r_lo[1] = {0};
-        int r_hi[1] = {0};
-        int r_ld[1] = {0};
-        int r_len;
-        double local_norm;
-        double global_norm;
-        int i;
-
-        /* Find what chunk of R is held locally. Allocate local
-         * array of R. Get chunk of R from global array. */
-        NGA_Distribution(r_hndl, mpi_proc_rank, r_lo, r_hi);
-        r_len = r_hi[0] - r_lo[0] + 1;
-        r_local = malloc(sizeof(double) * r_len);
-        init_dbl_array_0(r_local, r_len);
-        if (r_local == NULL) {
-                error_message(mpi_proc_rank, "Error allocating memory",
-                              "compute_residual_norm");
-                return;
-        }
-        NGA_Get(r_hndl, r_lo, r_hi, r_local, r_ld);
-
-        /* Sum squares of elements */
-        local_norm = dot_product(r_local, r_local, r_len);
-        /* Sum all partial sums and take square root */
-        MPI_Allreduce(&local_norm, &global_norm, 1, MPI_DOUBLE, MPI_SUM,
-                      MPI_COMM_WORLD);
-        *norm = sqrt(global_norm);
-
-        free(r_local);
+        *norm = GA_Ddot(r_hndl, r_hndl);
+        *norm = sqrt(*norm);
         return;
 }
         
@@ -733,8 +720,6 @@ void evaluate_hdblock_ij(int pq_start_i, int pstart_i, int qstart_i,
         int i = 0, j = 0, k = 0, l = 0;
         int ii= 0;
         
-        printf(" start i = %d, final i = %d\n", starti, finali);
-        printf(" start j = %d, final j = %d\n", startj, finalj);
         /*
          * Each determinant is associated with a triple: (p, q, flag).
          * First, we generate this list.
@@ -801,6 +786,106 @@ void evaluate_hdblock_ij(int pq_start_i, int pstart_i, int qstart_i,
 //                                }
 //                        }
 //                        
+}
+
+/*
+ * evaluate_hdblock_ij_1d: evaluate a block of H: **(For one column)**
+ *  H(i,j)*V(j)=C(i)
+ *  Input:
+ *   vrows  = columns of C
+ *   vcols  = rows of C
+ *   crows  = columns of C
+ *   ccols  = rows of C
+ *   v      = V(j)
+ *   c      = C(i)
+ *   starti = starting index i
+ *   finali = ending index i
+ *   startj = starting index j
+ *   finalj = ending index j
+ *   ndets  = number of determinants
+ *   peosp  = alpha electron orbital spaces
+ *   pegrps = number of alpha string orbital spaces
+ *   pstr   = alpha electron strings
+ *   qeosp  = beta electron orbital spaces
+ *   qegrps = number of beta string orbital spaces
+ *   qstr   = beta electron strings
+ *   pq     = (p,q)-space pairings
+ *   npq    = number of (p, q)-space pairings
+ *   mo1    = 1-e integrals
+ *   mo2    = 2-e integrals
+ *   aelec  = alpha electrons
+ *   belec  = beta  electrons
+ *   intorb = internal orbitals (DOCC + CAS)
+ *  Output:
+ *   C      = C(i)
+ */
+void evaluate_hdblock_ij_1d(int pq_start_i, int pstart_i, int qstart_i,
+                            int pq_final_i, int pfinal_i, int qfinal_i,
+                            int pq_start_j, int pstart_j, int qstart_j,
+                            int pq_final_j, int pfinal_j, int qfinal_j,
+                            int vrows, int vcols, double *v,
+                            int crows, int ccols, double *c,
+                            int starti, int finali, int startj, int finalj,
+                            int ndets, struct eospace *peosp, int pegrps,
+                            struct occstr *pstr,
+                            struct eospace *qeosp, int qegrps,
+                            struct occstr *qstr,  int **pq,
+                            int npq, double *mo1, double *mo2, int aelec,
+                            int belec, int intorb)
+{
+        int cnti = 0, cntj = 0; /* i,j determinant counters */
+
+        int **d_triplet = NULL; /* |i> = (p, q, CAS-flag) list*/
+        int *d_trip_dat = NULL; /* d_triplet memory block */
+        int **dtj = NULL;
+        int *dtjdat=NULL;
+        int ndetj;
+        
+        struct det deti;        /* Determinant i */
+        struct det detj;        /* Determinant j */
+        int ndeti;              /* Number of i determinants (chunk size) */
+
+        double hijval = 0.0;    /* <i|H|j> value */
+        
+        int pstart = 0, pmax = 0;
+        int qstart = 0, qmax = 0;
+        int i = 0, j = 0, k = 0, l = 0;
+        int ii= 0;
+        
+        /*
+         * Each determinant is associated with a triple: (p, q, flag).
+         * First, we generate this list.
+         */
+        ndeti = finali - starti + 1;
+        ndetj = finalj - startj + 1;
+        d_trip_dat = allocate_mem_int_cont(&d_triplet, 3, ndeti);
+        dtjdat = allocate_mem_int_cont(&dtj, 3, ndetj);
+        generate_det_triples(ndeti, d_triplet, pq_start_i, pstart_i, qstart_i,
+                             pq_final_i, pfinal_i, qfinal_i, pq, npq,
+                             peosp, pegrps, qeosp, qegrps);
+        generate_det_triples(ndetj, dtj, pq_start_j, pstart_j, qstart_j,
+                             pq_final_j, pfinal_j, qfinal_j, pq, npq,
+                             peosp, pegrps, qeosp, qegrps);
+
+        /* Loop through list of triplets for determinants |i>. */
+        for (i = 0; i < ndeti; i++) {
+                deti.astr = pstr[d_triplet[i][0]];
+                deti.bstr = qstr[d_triplet[i][1]];
+                deti.cas = d_triplet[i][2];
+                /* Loop over determinants |j> */
+                for (j = 0; j < ndetj; j++) {
+                        detj.astr = pstr[dtj[j][0]];
+                        detj.bstr = qstr[dtj[j][1]];
+                        detj.cas  = dtj[j][2];
+                        
+                        hijval = hmatels(deti, detj, mo1, mo2,
+                                         aelec, belec, intorb);
+                        /* H_ij*v_j = c_i */
+                        c[i] = c[i] + hijval * v[j];
+                }
+        }
+        
+        return;
 }
 
 /*
@@ -883,51 +968,23 @@ void generate_det_triples (int ndeti, int **d_triplet, int pq_start,
  *  r_hndl = GA handle for residual vector
  *  d_hndl = GA handle for diagonal elements
  *  n_hndl = GA handle for new vector
+ *  x_hndl = GA handle for scratch array
  */
 void generate_newvector (int r_hndl, int d_hndl, double eval, int ndets,
-                         int n_hndl)
+                         int n_hndl, int x_hndl)
 {
-        int n_lo[1] = {0};  /* starting indices of memory block */
-        int n_hi[1] = {0};  /* ending indices of memory block */
-        int n_ld[1] = {0};  /* leading dimension of local N buffer */
-
-        double *r_local = NULL;
-        double *d_local = NULL;
-        double *n_local = NULL;
-
-        int nlen;
-        int i;
-
-        /* Zero-out new vector GA. Determine which blocks of N are
-         * locally owned. Read-in this data. Use these dimensions for
-         * R and D. */
-        NGA_Zero(n_hndl);
-        NGA_Distribution(n_hndl, mpi_proc_rank, n_lo, n_hi);
-        nlen = n_hi[0] - n_lo[0] + 1;
-        printf("nlen = %d\n", nlen);
-        /* Allocate local arrays */
-        n_local = malloc(sizeof(double) * nlen);
-        r_local = malloc(sizeof(double) * nlen);
-        d_local = malloc(sizeof(double) * nlen);
-        /* Get data for each local array */
-        NGA_Get(n_hndl, n_lo, n_hi, n_local, n_ld);
-        NGA_Get(r_hndl, n_lo, n_hi, r_local, n_ld);
-        NGA_Get(d_hndl, n_lo, n_hi, d_local, n_ld);
-
-        /* Compute new vector */
-        for (i = 0; i < nlen; i++) {
-                n_local[i] = (-1.0) * r_local[i] / (d_local[i] - eval);
-        }
-
-        /* Put new vector into global array */
-        NGA_Put(n_hndl, n_lo, n_hi, n_local, n_ld);
+        double e = 0.0;
+        double neg1 = -1.0;
         
-        free(n_local);
-        free(r_local);
-        free(d_local);
-        
+        NGA_Zero(x_hndl);
+        GA_Copy(d_hndl, x_hndl);
+        e = neg1 * eval;
+        GA_Add_constant(x_hndl, &e);
+        GA_Scale(x_hndl, &neg1);
+        GA_Elem_divide(r_hndl, x_hndl, n_hndl);
         return;
 }
+
 /*
  * generate_residual: generate residual vector.
  *  r_i = v_aj * (c_ji - e_a*v_ji)
@@ -940,96 +997,44 @@ void generate_newvector (int r_hndl, int d_hndl, double eval, int ndets,
  *  ndets  = number of determinants (length of vectors V, C, & r)
  *  ckdim  = current dimension of krylov subspace
  *  croot  = current root being optimized.
+ *  rscr_hndl = scratch vector global array
  */
 void generate_residual (int v_hndl, int c_hndl, int r_hndl, double **hevec,
-                        double *heval, int ndets, int ckdim, int croot)
+                        double *heval, int ndets, int ckdim, int croot,
+                        int rscr_hndl)
 {
-        int root_id;
+        int root_id = 0; /* Index of root. (croot - 1) */
+        /* For each column, j, alpha and beta equal
+         * alpha = v_aj; beta = v_aj*e_a*(-1) */
+        double alpha = 0.0, beta = 0.0;
+        int alo[2] = {0, 0}, blo[2] = {0, 0}, clo[1] = {0};
+        int ahi[2] = {0, 0}, bhi[2] = {0, 0}, chi[1] = {0};
+        int i = 0;
 
-        int r_lo[1] = {0};     /* starting indices of memory block */
-        int r_hi[1] = {0};     /* ending indices of memory block */
-        int r_ld[1] = {0};     /* Leading dimension of R local buffer */
-        int v_lo[2] = {0, 0};  /* starting indices of memory block */
-        int v_hi[2] = {0, 0};  /* ending indices of memory block */
-        int v_ld[1] = {0};     /* Leading dimension of V local buffer */
-        int c_lo[2] = {0, 0};  /* starting indices of memory block */
-        int c_hi[2] = {0, 0};  /* ending indices of memory block */
-        int c_ld[1] = {0};     /* Leading dimension of C local buffer */
-
-        double **v_local = NULL;
-        double *vdata = NULL;
-        double **c_local = NULL;
-        double *cdata = NULL;
-        double *r_local = NULL;
-
-        int i_start = 0, i_final = 0;
-        int v_rows = 0;
-        int v_cols = 0;
-
-        int i, j;
+        /* Set second indices for *hi for ndets (whole vector) */
+        ahi[1] = ndets - 1;
+        bhi[1] = ndets - 1;
+        chi[0] = ndets - 1;
         
         root_id = croot - 1;
-        /* Determine which blocks of data for r is locally owned. Read
-         * this data. Use these dimensions for getting chunks of V and C. */
         NGA_Zero(r_hndl);
-        NGA_Distribution(r_hndl, mpi_proc_rank, r_lo, r_hi);
-        // i_start = r_lo[0];
-        // i_final = r_hi[0];
-        v_rows = r_hi[0] - r_lo[0] + 1;
-        v_cols = ckdim;
-        if (mpi_proc_rank == mpi_root) {
-                printf("i_start = %d\ni_final = %d\nv_rows = %d\n",
-                       r_lo[0], r_hi[0], v_rows);
+        for (i = 0; i < ckdim; i++) {
+                NGA_Zero(rscr_hndl);
+                alpha = hevec[root_id][i];
+                beta  = hevec[root_id][i] * heval[root_id] * (-1.0);
+                /* r = c*alpha + v*beta */
+                alo[0] = i; ahi[0] = i;
+                blo[0] = i; bhi[0] = i;
+                NGA_Add_patch(&alpha, c_hndl, alo, ahi, &beta, v_hndl, blo, bhi,
+                              rscr_hndl, clo, chi);
+                /* Sum */
+                alpha = 1.0;
+                beta  = 1.0;
+                GA_Add(&alpha, rscr_hndl, &beta, r_hndl, r_hndl);
         }
-        printf("vrows = %d\nvcols = %d\n", v_rows, v_cols);
-        /* Allocate arrays */
-        vdata = allocate_mem_double_cont(&v_local, v_rows, v_cols);
-        cdata = allocate_mem_double_cont(&c_local, v_rows, v_cols);
-        r_local = malloc(sizeof(double) * v_rows);
-        if (r_local == NULL || cdata == NULL || vdata == NULL) {
-                error_message(mpi_proc_rank, "Error allocating memory",
-                              "generate_residual");
-                return -100;
-        }
-        
-        v_lo[0] = r_lo[0];
-        v_lo[1] = 0; // Always grab first column.
-        v_hi[0] = r_hi[0];
-        v_hi[1] = v_cols; // Grab all computed vectors
-        v_ld[0] = v_cols;
-        printf(" (%d, %d); (%d, %d); %d\n", v_lo[0], v_lo[1],
-               v_hi[0], v_hi[1], v_ld[0]);
-        //r_ld[0] = 0;
-        NGA_Get(v_hndl, v_lo, v_hi, vdata, v_ld);
-        NGA_Get(c_hndl, v_lo, v_hi, cdata, v_ld);
-        NGA_Get(r_hndl, r_lo, r_hi, r_local, r_ld);
-
-        printf("vrows = %d ckdim = %d root_id = %d\n", v_rows, ckdim, root_id);
-        init_dbl_array_0(r_local, v_rows);
-        for (i = 0; i < v_cols; i++) {
-                printf(" Eigenvector %d: %15.8lf ", i, heval[i]);
-                for (j = 0; j < v_cols; j++) {
-                        printf("%15.8lf ", hevec[i][j]);
-                }
-                printf("\n");
-        }
-
-        for (i = 0; i < v_rows; i++) {
-                for (j = 0; j < v_cols; j++) {
-                        r_local[i] += hevec[root_id][j] *
-                                (c_local[j][i] - heval[root_id] * v_local[j][i]);
-                }
-        }
-
-        NGA_Put(r_hndl, r_lo, r_hi, r_local, r_ld);
-
-        //deallocate_mem_cont(&c_local, cdata);
-        //deallocate_mem_cont(&v_local, vdata);
-        //free(r_local);
-        
         return;
 }
-
+        
 /*
  * get_upptri_element_index: get index of an element (i,j) in
  * list of elements in upper triangle of H matrix (n x n).
@@ -1195,59 +1200,6 @@ void make_subspacehmat_ga (int v_hndl, int c_hndl, int ndets, int ckdim,
         
         return;
 }
-/*
- * make_subspacehmat: build v.Hv matrix.
- */
-void make_subspacehmat (int v_hndl, int c_hndl, int ndets, int ckdim,
-                        double **vhv)
-{
-        int v_lo[2] = {0, 0};  /* starting indices of memory block */
-        int v_hi[2] = {0, 0};  /* ending indices of memory block */
-        int v_ld[1] = {0};     /* Leading dimension of V local buffer */
-        int c_lo[2] = {0, 0};  /* starting indices of memory block */
-        int c_hi[2] = {0, 0};  /* ending indices of memory block */
-        int c_ld[1] = {0};     /* Leading dimension of C local buffer */
-
-        double **v_local = NULL;   /* Local vectors v */
-        double *vdata = NULL;      /* Local vector data */
-        int vrows = 0, vcols = 0; /* Rows and columns of local V */
-        double **c_local = NULL;   /* Local vectors c */
-        double *cdata = NULL;      /* Local vector data */
-        
-        int i, j, k;
-        
-        /* Determine which block of data for V is locally owned. Read
-         * in this data. Get corresponding data for C = HV. */
-        NGA_Distribution(v_hndl, mpi_proc_rank, v_lo, v_hi);
-        vrows = v_hi[0] - v_lo[0] + 1;
-        vcols = v_hi[1] - v_lo[1] + 1;
-        vcols = ckdim;
-        v_hi[1] = ckdim - 1;
-        v_ld[0] = ckdim;
-        printf("Hello from, %d: %d %d %d %d %d %d\n",
-               mpi_proc_rank, v_lo[0], v_lo[1], v_hi[0], v_hi[1], vrows, vcols);
-        vdata = allocate_mem_double_cont(&v_local, vrows, vcols);
-        cdata = allocate_mem_double_cont(&c_local, vrows, vcols);
-
-        NGA_Get(v_hndl, v_lo, v_hi, vdata, v_ld);
-        c_ld[0] = vcols;
-        NGA_Get(c_hndl, v_lo, v_hi, cdata, c_ld);
-
-        /* Perform v_i.c_j for i, j vectors */
-        printf("ckdim = %d\n", ckdim);
-        for (i = 0; i < ckdim; i++) {
-                for (j = 0; j < ckdim; j++) {
-                        vhv[i][j] = dot_product(&(v_local[i][0]), &(c_local[j][0]), vrows);
-                }
-        }
-        
-        GA_Sync();
-
-        deallocate_mem_cont(&v_local, vdata);
-        deallocate_mem_cont(&c_local, cdata);
-        
-        return;
-}
 
 /*
  * orthonormalize_newvector: orthogonalize new vector to rest of basis.
@@ -1260,92 +1212,53 @@ void make_subspacehmat (int v_hndl, int c_hndl, int ndets, int ckdim,
  */
 void orthonormalize_newvector (int v_hndl, int nvecs, int ndets, int n_hndl)
 {
-        double *ovrlps = NULL;    /* Overlaps with basis space (local) */
-        double *overlaps = NULL;  /* Overlaps with basis space (global) */
-        double *nlocal = NULL;    /* Local new vector array */
-        double **vlocal= NULL;    /* Local v vector array */
-        double *vdata  = NULL;
-        int nlen = 0;
-        int vlo[2] = {0, 0};
-        int vhi[2] = {0, 0};
-        int vld[1] = {0};
-        int nlo[1] = {0};
-        int nhi[1] = {0};
-        int nld[1] = {0};
-        double alpha[1] = {0.0};
-        double beta[1]  = {0.0};
-        double nnrm_local  = 0.0;
-        double nnrm_global = 0.0;
-        int i, j;
-        /* Get GA n vector held locally on process, and corresponding
-         * basis vector patch, V.*/
-        NGA_Distribution(n_hndl, mpi_proc_rank, nlo, nhi);
-        nlen = nhi[0] - nlo[0] + 1;
-        nlocal = malloc(sizeof(double) * nlen);
-        NGA_Get(n_hndl, nlo, nhi, nlocal, nld);
-        vhi[0] = nlen - 1;
-        vhi[1] = nvecs - 1;
-        vld[0] = nvecs;
-        vdata = allocate_mem_double_cont(&vlocal, nlen, nvecs);
-        NGA_Get(v_hndl, vlo, vhi, vdata, vld);
-        /* Compute overlaps */
-        ovrlps = malloc(sizeof(double) * nvecs);
+        double *overlaps = NULL;
+        int vlo[2] = {0, 0}, vhi[2] = {0, 0};
+        int nlo[1] = {0},    nhi[1] = {0};
+        double alpha = 1.0;
+        int i = 0;
         overlaps = malloc(sizeof(double) * nvecs);
+        vhi[1] = ndets - 1;
+        nhi[0] = ndets - 1;
         for (i = 0; i < nvecs; i++) {
-                ovrlps[i] = dot_product(&(vlocal[i][0]), nlocal, nlen);
+                vlo[0] = i; vhi[0] = i;
+                overlaps[i] = NGA_Ddot_patch(v_hndl, 'n', vlo, vhi,
+                                             n_hndl, 'n', nlo, nhi);
         }
-        MPI_Allreduce(ovrlps, overlaps, nvecs, MPI_DOUBLE, MPI_SUM,
-                      MPI_COMM_WORLD);
-        /* Subtract overlaps from vector N */
         for (i = 0; i < nvecs; i++) {
-                for (j = 0; j < nlen; j++) {
-                        nlocal[j] = nlocal[j] - overlaps[i]*vlocal[i][j];
-                }
+                overlaps[i] = overlaps[i] * (-1.0);
+                vlo[0] = i; vhi[0] = i;
+                NGA_Add_patch(&alpha, n_hndl, nlo, nhi, &overlaps[i], v_hndl,
+                              vlo, vhi, n_hndl, nlo, nhi);
         }
-        /* Normalize this vector */
-        nnrm_local = dot_product(nlocal, nlocal, nlen);
-        MPI_Allreduce(&nnrm_local, &nnrm_global, 1, MPI_DOUBLE, MPI_SUM,
-                      MPI_COMM_WORLD);
-        nnrm_global = sqrt(nnrm_global);
-        for (i = 0; i < nlen; i++) {
-                nlocal[i] = nlocal[i] / nnrm_global;
-        }
+        /* Get normalize the new, now orthogonal vector */
+        alpha = GA_Ddot(n_hndl, n_hndl);
+        alpha = sqrt(alpha);
+        alpha = 1 / alpha;
+        GA_Scale(n_hndl, &alpha);
 
         /* Check overlaps */
         for (i = 0; i < nvecs; i++) {
-                ovrlps[i] = dot_product(&(vlocal[i][0]), nlocal, nlen);
-                overlaps[i] = 0.0;
+                vlo[0] = i; vhi[0] = i;
+                overlaps[i] = NGA_Ddot_patch(v_hndl, 'n', vlo, vhi,
+                                             n_hndl, 'n', nlo, nhi);
         }
-        MPI_Allreduce(ovrlps, overlaps, nvecs, MPI_DOUBLE, MPI_SUM,
-                      MPI_COMM_WORLD);
         for (i = 0; i < nvecs; i++) {
-                printf(" overlap %d = %14.8lf\n", i, overlaps[i]);
                 if (overlaps[i] > 0.000001) {
                         error_message(mpi_proc_rank,
-                                      " Warning! Non-zero overlap.",
+                                      "Warning! Non-zero overlap.",
                                       "orthonormalize_newvector");
                 }
         }
         /* Check norm */
-        nnrm_local = dot_product(nlocal, nlocal, nlen);
-        MPI_Allreduce(&nnrm_local, &nnrm_global, 1, MPI_DOUBLE, MPI_SUM,
-                      MPI_COMM_WORLD);
-        nnrm_global = sqrt(nnrm_global);
-        if ((nnrm_global - 1.0) > 0.000001) {
+        alpha = GA_Ddot(n_hndl, n_hndl);
+        alpha = sqrt(alpha);
+        if ((alpha - 1.0) > 0.000001) {
                 error_message(mpi_proc_rank,
-                              " Warning! New vector norm != 1.0",
+                              "Warning! New vector norm != 1.0",
                               "orthonormalize_newvector");
         }
-
-
-        /* Update global array */
-        NGA_Put(n_hndl, nlo, nhi, nlocal, nld);
-
-        /* Deallocate arrays */
-        deallocate_mem_cont(&vlocal, vdata);
-        free(nlocal);
         free(overlaps);
-        free(ovrlps);
         return;
 }
 
@@ -1432,13 +1345,11 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         /* Determine which block of data is locally owned. And get the blocks of
          * V that are required to compute c. */
         NGA_Distribution(c_hndl, mpi_proc_rank, c_lo, c_hi);
-        printf("c_lo = %d %d; c_hi = %d %d\n", c_lo[0], c_lo[1], c_hi[0], c_hi[1]);
         c_cols = c_hi[0] - c_lo[0] + 1;
         c_rows = c_hi[1] - c_lo[1] + 1;
         c_cols = int_min(c_cols, dim);
         c_hi[0] = c_cols - 1;
         c_ld[0] = c_rows;
-        printf("C_LD[0] = %d\n", c_cols);
         cdata = allocate_mem_double_cont(&c_local, c_rows, c_cols);
         v_lo[0] = 0;
         v_lo[1] = 0;
@@ -1452,7 +1363,6 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         NGA_Get(v_hndl, v_lo, v_hi, vdata, v_ld);
         NGA_Get(c_hndl, c_lo, c_hi, cdata, c_ld);
 
-        printf("Perf_HV: \n");
         print_vector_space(v_hndl, v_cols, 21);
         print_vector_space(c_hndl, c_cols, 21);
         GA_Sync();
@@ -1489,11 +1399,6 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         //NGA_Put(c_hndl, c_lo, c_hi, cdata, c_ld);
         GA_Sync();
 
-        printf("    1    \n---------\n");
-        for (int w = 0; w < 21; w++) {
-                printf("%d%14.5lf\n", (w + 1), v_local[0][w]);
-        }
-        printf("\n");
         deallocate_mem_cont(&v_local, vdata);
         deallocate_mem_cont(&c_local, cdata);
         
