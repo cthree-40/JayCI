@@ -11,7 +11,7 @@ int pdavidson (struct occstr *pstrings, struct eospace *peospace, int pegrps,
                int **pq_space_pairs, int num_pq, double *moints1, double *moints2,
                int aelec, int belec, int intorb, int ndets, double nucrep_e,
                double frzcore_e, int printlvl, int maxiter, int krymin,
-              int krymax, int nroots, int prediagr, int refdim, int restol);
+               int krymax, int nroots, int prediagr, int refdim, double restol);
 
 /*
  * add_new_vector: add a new vector to basis space.
@@ -367,6 +367,33 @@ void print_subspace_eigeninfo(double **v, double *e, int kdim, double core_e);
  * print_subspacehmat: print the krylov space hmat, v.Hv
  */
 void print_subspacehmat(double **vhv, int d);
+
+/*
+ * test_convergence: test convergence of davidson algorithm. returns
+ * convergence flag.
+ * Input:
+ *  rnorm  = norm of residual, ||r||
+ *  restol = convergence tolerance
+ *  croot  = current root being optimized
+ *  nroot  = total number of roots
+ *  f      = flag
+ */
+int test_convergence(double rnorm, double restol, int croot, int nroot);
+
+/*
+ * truncate_krylov_space: truncate the krylov space from krymax to krymin.
+ * Input:
+ *  v_hndl = GA handle of basis vectors array
+ *  ndets  = number of determinants
+ *  krymin = minimum dimension of krylov space
+ *  krymax = maximum dimension of krylov space
+ *  croot  = current root
+ *  hevec  = eigenvectors
+ *  x_hndl = scratch array
+ */
+void truncate_krylov_space(int v_hndl, int ndets, int krymin, int krymax,
+                           int croot, double **hevec, int x_hndl);
+
 
 #ifdef DEBUGGING
 void test_new_vector_space(int v, int ckdim, int ndets, int nv);

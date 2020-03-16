@@ -34,7 +34,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
               int **pq_space_pairs, int num_pq, double *moints1, double *moints2,
               int aelec, int belec, int intorb, int ndets, double nucrep_e,
               double frzcore_e, int printlvl, int maxiter, int krymin,
-              int krymax, int nroots, int prediagr, int refdim, int restol)
+              int krymax, int nroots, int prediagr, int refdim, double restol)
 {
         int v_hndl = 0;           /* GLOBAL basis vectors, V */
         int v_dims[2]  = {0, 0};  /* GLOBAL basis vectors dimensions */
@@ -64,6 +64,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         int citer = 0; /* current iteration */
         int croot = 0; /* current root */
         int ckdim = 0; /* current dimension of krylo space */
+        int cflag = 0; /* convergence flag */
         
         int lo[2] = {0, 0}; 
         int hi[2] = {0, 0};
@@ -139,14 +140,16 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         print_vector_space(v_hndl, 6, ndets);
 
         /* .. MAIN LOOP .. */
-        citer = 1; croot = 1; ckdim = krymin;
+        citer = 1; croot = 1; ckdim = krymin; cflag = 0;
         while (citer < maxiter && croot <= nroots) {
+
+                GA_Sync();
+
                 perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
                                      qeospace, qegrps, pq_space_pairs, num_pq,
                                      moints1, moints2, aelec, belec, intorb,
                                      ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
                                      c_hndl);
-                print_vector_space(c_hndl, 6, ndets);
                 make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
                 print_subspacehmat(vhv, ckdim);
                 error = diag_subspacehmat(vhv, hevec, heval, ckdim, krymax,
@@ -157,9 +160,33 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                 GA_Sync();
 
                 while (ckdim < krymax) {
+
+                        GA_Sync();
+
                         generate_residual(v_hndl, c_hndl, r_hndl, hevec, heval,
                                           ndets, ckdim, croot, x_hndl);
                         compute_GA_norm(r_hndl, &rnorm);
+
+                        cflag = test_convergence(rnorm, restol, croot, nroots);
+                        if (cflag == 2) {
+                                if (mpi_proc_rank == mpi_root) {
+                                        printf("\n ** CI CONVERGED! **\n");
+                                }
+                                break;
+                        } else if (cflag == 1) {
+                                if (mpi_proc_rank == mpi_root) {
+                                        printf(" Root %d converged!\n", croot);
+                                }
+                                croot++;
+                                break;
+                        } else {
+                                if (mpi_proc_rank == mpi_root) {
+                                        printf(" Root not yet converged.\n");
+                                }
+                        }
+
+                        GA_Sync();
+                        
                         generate_newvector(r_hndl, d_hndl, heval[croot - 1],
                                            ndets, n_hndl, x_hndl);
 
@@ -186,12 +213,22 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                                                   krymax, vhv_scr, hevec_scr);
                         if (error != 0)  return error;
                         print_subspace_eigeninfo(hevec, heval, ckdim, totcore_e);
-
-//                        ckdim = krymax + 1;
+                        citer++;
                 }
-                citer = maxiter + 1;
+                /* truncate the krylov space. Note: the Hv=c array is used
+                 * as a scratch buffer for this routine. */
+                truncate_krylov_space(v_hndl, ndets, krymin, krymax, croot,
+                                      hevec, c_hndl);
+                ckdim = krymin;
+                GA_Zero(c_hndl);
+                /* Check if CI has converged. If it has, leave loop. */
+                if (cflag == 2) {
+                        break;
+                }
         }
-        
+        if (mpi_proc_rank == mpi_root) {
+                printf(" Davidson algorithm finished. \n");
+        }
         return error;
 }
 
@@ -1448,6 +1485,81 @@ void print_subspacehmat(double **vhv, int d)
         return;
 }
 
+/*
+ * test_convergence: test convergence of davidson algorithm. returns
+ * convergence flag.
+ * Input:
+ *  rnorm  = norm of residual, ||r||
+ *  restol = convergence tolerance
+ *  croot  = current root being optimized
+ *  nroot  = total number of roots
+ *  f      = flag
+ */
+int test_convergence(double rnorm, double restol, int croot, int nroot)
+{
+        /*
+         * f = 0, no convergence
+         * f = 1, convergence is reached. on to croot + 1
+         * f = 2, convergence is reached. calc finished. */
+        int f = 0;
+        if (rnorm >= restol) f = 0;
+        if (rnorm < restol) {
+                if (croot < nroot) {
+                        f = 1;
+                } else {
+                        f = 2;
+                }
+        }
+        return f;
+}
+
+/*
+ * truncate_krylov_space: truncate the krylov space from krymax to krymin.
+ * Input:
+ *  v_hndl = GA handle of basis vectors array
+ *  ndets  = number of determinants
+ *  krymin = minimum dimension of krylov space
+ *  krymax = maximum dimension of krylov space
+ *  croot  = current root
+ *  hevec  = eigenvectors
+ *  x_hndl = scratch array
+ */
+void truncate_krylov_space(int v_hndl, int ndets, int krymin, int krymax,
+                           int croot, double **hevec, int x_hndl)
+{
+        int vlo[2] = {0, 0}, vhi[2] = {0, 0};
+        int xlo[2] = {0, 0}, xhi[2] = {0, 0};
+        double alpha = 0.0, beta = 0.0;
+        int i = 0, j = 0;
+        if (mpi_proc_rank == mpi_root) {
+                printf(" Truncating krylov space...\n");
+        }
+        NGA_Zero(x_hndl);
+        vhi[1] = ndets - 1;
+        xhi[1] = ndets - 1;
+        /* b_i = e_ik * v_k */
+        for (i = 0; i < krymin; i++) {
+                xlo[0] = i;
+                xhi[0] = i;
+                for (j = 0; j < krymax; j++) {
+                        vlo[0] = j;
+                        vhi[0] = j;
+                        alpha = hevec[i][j];
+                        beta  = 1.0;
+                        NGA_Add_patch(&alpha, v_hndl, vlo, vhi, &beta, x_hndl,
+                                      xlo, xhi, x_hndl, xlo, xhi);
+                }
+#ifdef DEBUGGING
+                print_vector_space(x_hndl, krymin, 10);
+#endif
+        }
+        NGA_Zero(v_hndl);
+        GA_Copy(x_hndl, v_hndl);
+        if (mpi_proc_rank == mpi_root) {
+                printf(" Completed krylov space truncation.\n");
+        }
+        return;
+}
 
 #ifdef DEBUGGING
 void print_vector_space(int v, int ckdim, int ndets)
