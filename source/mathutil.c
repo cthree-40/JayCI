@@ -176,6 +176,9 @@ void orthonormalize_vector(double **bvecs, int nbv, int vlen, double *nvec)
 	 * vector. */
 	for (i = 0; i < nbv; i++) {
 		ovrlp = dot_product(bvecs[i], nvec, vlen);
+                //
+                printf(" overlap %d = %15.8lf\n", i, ovrlp);
+                //
 		for (j = 0; j < vlen; j++) {
 			nvec[j] = nvec[j] - ovrlp * bvecs[i][j];
 		}

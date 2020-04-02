@@ -223,15 +223,16 @@ int dvdalg(struct det *dlist, int ndets, double *moints1, double *moints2,
 			/* generate new vector to add to space */
 			generate_newvector(rvec, hdgls, heval[croot - 1],
 					   ndets, nvec);
+                        double nvecnrm = compute_vector_norm(nvec, ndets);
+                        printf("New vec norm = %15.8lf\n", nvecnrm);
 			orthonormalize_vector(vscr, ckdim, ndets, nvec);
-			append_vector_to_space(vscr, ckdim, ndets, nvec);
+                        append_vector_to_space(vscr, ckdim, ndets, nvec);
 			ckdim++;
 			
 			/* compute Hv=c for new vector */
 			compute_hv(dlist, ndets, moints1, moints2, aelec,
 				   belec, vscr[ckdim - 1], cscr[ckdim - 1],
 				   ninto, hmap);
-			
 			/* make subspace hamiltonian */
 			make_subspacehmat(vscr, cscr, ndets, ckdim, hscr);
 			if (plvl > 3) {
@@ -310,12 +311,25 @@ void generate_residual(double **vvecs, double **cvecs, int ndets, int nvec,
 	root_id = croot - 1;
 	/* zero out vector */
 	init_dbl_array_0(rvec, ndets);
+
+        //
+        for (i = 0; i < nvec; i++) {
+                printf(" Eigenvector %d: %15.8lf ", i, heval[i]);
+                for (j = 0; j < nvec; j++) {
+                        printf("%15.8lf ", hevec[i][j]);
+                }
+                printf("\n");
+        }
+        
+        
 	for (i = 0; i < ndets; i++) {
 		for (j = 0; j < nvec; j++) {
 			rvec[i] += hevec[root_id][j] *
 				(cvecs[j][i] - heval[root_id] *	vvecs[j][i]);
 		}
 	}
+
+        //
 	return;
 }
 
@@ -350,6 +364,10 @@ void perform_hv_initspace(struct det *dlist, int ndets, double *moints1,
 		compute_hv(dlist, ndets, moints1, moints2, aelec, belec, vecs[i],
                            hvecs[i], ninto, hmap);
 	}
+        printf("      V            C\n");
+        for (i = 0; i < 21; i++) {
+                printf("%14.5lf%14.5lf\n", vecs[1][i], hvecs[1][i]);
+        }
 	return;
 }
 

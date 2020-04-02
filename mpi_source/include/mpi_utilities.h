@@ -31,6 +31,11 @@ void mpi_error_check_msg (int error, char *fcn_name, char *message);
 void mpi_split_work_array_1d (int len, int *chunk, int *lo, int *hi);
 
 /*
+ * print_gavectors2file: print a set of GA vectors to a file.
+ */
+void print_gavectors2file(int hndl, int len, int dim, char *fname);
+
+/*
  * set_mpi_process_number_and_rank: set global variables $mpi_num_procs
  * and $mpi_proc_rank.
  */

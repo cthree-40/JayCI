@@ -170,6 +170,8 @@ OBJS := 	timestamp.o \
 MPIOBJS :=	timestamp.o \
 	   	errorlib.o \
 		arrayutil.o \
+		dlamch_fcn.o \
+		mathutil.o \
 		allocate_mem.o \
 		readmoints.o \
 		readnamelist.o \
@@ -186,6 +188,7 @@ MPIOBJS :=	timestamp.o \
 		binarystr.o \
 		citruncate.o \
 		action_util.o \
+                pdavidson.o \
 		execute_pjayci.o	
 
 DYCIOBJS := 	errorlib.o \
@@ -450,6 +453,14 @@ $(MPISDIR)/readmocoef.o:$(MPISDIR)/readmocoef.f90
 
 $(MPISDIR)/ioutil.o:$(MPISDIR)/ioutil.c
 	$(MPICC) -c -o $(MPISDIR)/ioutil.o $(MPISDIR)/ioutil.c $(DEBUG) $(CFLAGS) -Wno-implicit-function-declaration
+	@echo ""
+
+$(MPISDIR)/dlamch_fcn.o:$(MPISDIR)/dlamch_fcn.f90
+	$(FC) -c -o $(MPISDIR)/dlamch_fcn.o $(MPISDIR)/dlamch_fcn.f90 $(DEBUG) $(FDEBUG) $(FFLAGS)
+	@echo ""
+
+$(MPISDIR)/mathutil.o:$(MPISDIR)/mathutil.c
+	$(MPICC) -c -o $(MPISDIR)/mathutil.o $(MPISDIR)/mathutil.c $(DEBUG) $(CFLAGS) -Wno-implicit-function-declaration
 	@echo ""
 
 $(BDIR) $(LDIR):

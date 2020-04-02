@@ -229,6 +229,8 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         if (mpi_proc_rank == mpi_root) {
                 printf(" Davidson algorithm finished. \n");
         }
+        print_gavectors2file(v_hndl, ndets, nroots,"civec");
+        if (cflag != 2) print_gavectors2file(c_hndl, ndets, nroots, "hvvec");
         return error;
 }
 
