@@ -166,7 +166,10 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                         generate_residual(v_hndl, c_hndl, r_hndl, hevec, heval,
                                           ndets, ckdim, croot, x_hndl);
                         compute_GA_norm(r_hndl, &rnorm);
-
+                        print_iter_info(heval, ckdim, croot, rnorm, totcore_e);
+                        
+                        GA_Sync();
+                        
                         cflag = test_convergence(rnorm, restol, croot, nroots);
                         if (cflag == 2) {
                                 if (mpi_proc_rank == mpi_root) {
@@ -1443,6 +1446,41 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         
         return;
 }
+
+/*
+ * print_iter_info: print iteration information.
+ */
+void print_iter_info(double *heval, int ckdim, int croot, double rnorm,
+                     double totfrze)
+{
+	int i;
+        if (mpi_proc_rank == mpi_root) {
+                for (i = 0; i < 70; i++) {
+                        printf("-");
+                }
+                printf("\n  Eigenvalues:\n");
+                for (i = 0; i < ckdim; i++) {
+                        if ((i + 1) < croot) {
+                                printf("   Root #%2d  %15.8lf *CONVERGED*\n",
+                                       (i + 1), (heval[i] + totfrze));
+                        } else if ((i + 1) == croot) {
+                                printf("   Root #%2d  %15.8lf ||r||: %15.8lf\n",
+                                       (i + 1), (heval[i] + totfrze), rnorm);
+                        } else {
+                                printf("   Root #%2d  %15.8lf\n",
+                                       (i + 1), (heval[i] + totfrze));
+                        }
+                }
+                for (i = 0; i < 70; i++) {
+                        printf("-");
+                }
+                fprintf(stdout,"\n");
+        }
+
+        return;
+}
+
+
 
 /*
  * print_subspace_eigeninfo: print diagonalization iformation for krylov

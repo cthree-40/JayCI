@@ -358,6 +358,12 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
                           int c_hndl);
 
 /*
+ * print_iter_info: print iteration information.
+ */
+void print_iter_info(double *heval, int ckdim, int croot, double rnorm,
+                     double totfrze);
+
+/*
  * print_subspace_eigeninfo: print diagonalization information for krylov
  * space.
  */

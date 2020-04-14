@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "errorlib.h"
+#include "iminmax.h"
 #include "mpi_utilities.h"
 #include "pjayci_global.h"
 #include <mpi.h>
@@ -71,10 +72,55 @@ void mpi_split_work_array_1d (int len, int *chunk, int *lo, int *hi)
  */
 void print_gavectors2file(int hndl, int len, int dim, char *fname)
 {
-        FILE *fptr = NULL;
+#define BUFSIZE 6
+        double vdata[BUFSIZE];       /* GA Vector buffer */
+        int ld = 1;                  /* Local vector buffer leading dimension */
+        FILE *fptr = NULL;           /* File pointer */
+        int hi[2] = {0, 0};
+        int lo[2] = {0, 0};
+        int ga_type    = 0;          /* Data type of GA */
+        int ga_ndim    = 0;          /* Number of dimensions of GA */
+        int ga_dims[2] = {0, 0};     /* Dimensions of GA */
+        int buflen = BUFSIZE;
+        int i, j, jj;
+        int jmax;
+        
+        if (mpi_proc_rank == mpi_root) {
+                
+                NGA_Inquire(hndl, &ga_type, &ga_ndim, ga_dims);
+                if (dim > ga_dims[0] || len > ga_dims[1]) {
+                        error_message(mpi_proc_rank, "Dimension out of range.",
+                                      "print_gavectors2file");
+                        fprintf(stderr, "(%d, %d) != GA[%d, %d]\n", dim, len,
+                                ga_dims[0], ga_dims[1]);
+                        return;
+                }
+
+                fptr = fopen(fname, "w");
+                fprintf(fptr, " %10d %10d\n", dim, len);
+                
+                for (i = 0; i < dim; i++) {
+                        for (j = 0; j < len; j += buflen) {
+                                jmax = int_min((j + buflen), (len - 1));
+                                lo[0] = i;
+                                lo[1] = j;
+                                hi[0] = i;
+                                hi[1] = jmax;
+                                NGA_Get(hndl, lo, hi, vdata, &ld);
+                                for (jj = 0; jj < (jmax - j + 1); jj++) {
+                                        fprintf(fptr, " %20.15lf", vdata[jj]);
+                                }
+                        }
+                        fprintf(fptr, "\n");
+                }
+
+                fflush(fptr);
+
+                fclose(fptr);
+
+        }
 
         GA_Sync();
-        
         return;
 }
 
