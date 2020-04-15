@@ -494,6 +494,7 @@ void compute_diagonal_matrix_elements(double *hdgls, int start, int final,
 
 /*
  * compute_hv_newvector: compute Hv=c for newest vector in basis space.
+ * Reads buffer of V, rather than entire array lengths.
  * Input:
  *  v_hndl = GA handle for basis vectors (ckdim is new vector)
  *  c_hndl = GA handle for Hv=c vectors
@@ -505,6 +506,9 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           int num_pq, double *m1, double *m2, int aelec,
                           int belec, int intorb, int ndets, int kmax)
 {
+        
+#define BUFFERSIZE 100
+        
         int error = 0; /* Error flag */
 
         double *c_local = NULL;   /* Local c array */
@@ -512,6 +516,7 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
         int c_cols = 0;           /* Local c columns (=1) */
 
         double *v_local = NULL;   /* Local v array */
+        int buflen = 0;
         int v_rows = 0;           /* Local v rows  */
         int v_cols = 0;           /* Local v columns (=1) */
 
@@ -548,6 +553,8 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
         int c_ld[1] = {0}; /* Leading dimensions of C local buffer */
 
         double alpha[1] = {1.0}; /* Scale factor for c_local into c_global. */
+
+        int i, j, jmax;
         
         /*
          * Determine which block of data is locally owned. And get the blocks
@@ -561,9 +568,18 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
         c_hi[0] = ckdim - 1;  // Last column
         c_cols  = c_hi[0] - c_lo[0] + 1;
         c_ld[0] = 1;          // 1-D array
-        /* Allocate arrays */
+        /* Allocate local array and get C data*/
         c_local = malloc(sizeof(double) * c_rows);
+        NGA_Get(c_hndl, c_lo, c_hi, c_local, c_ld);
 
+        /* Get values for determinant index at beginning/ending of block */
+        start_det_i = c_lo[1];
+        final_det_i = c_hi[1];
+        determinant_string_info(start_det_i, peosp, pegrps, qeosp, qegrps, pqs,
+                                num_pq, &pq_start_i, &pstart_i, &qstart_i);
+        determinant_string_info(final_det_i, peosp, pegrps, qeosp, qegrps, pqs,
+                                num_pq, &pq_final_i, &pfinal_i, &qfinal_i);
+        
         v_lo[0] = ckdim - 1;
         v_hi[0] = ckdim - 1;
         v_lo[1] = 0;
@@ -571,44 +587,52 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
         v_rows  = v_hi[1] - v_lo[1] + 1;
         v_cols  = v_hi[0] - v_hi[0] + 1;
         v_ld[0] = 1;
-        /* Allocate arrays */
-        v_local = malloc(sizeof(double) * v_rows);
-        
-        NGA_Get(v_hndl, v_lo, v_hi, v_local, v_ld);
-        NGA_Get(c_hndl, c_lo, c_hi, c_local, c_ld);
-        
+        /* Allocate local array */
+        v_local = malloc(sizeof(double) * BUFFERSIZE);
+        buflen = BUFFERSIZE;
+
         GA_Sync();
 
-        /* Get values for determinnat index at beginning/ending of block */
-        start_det_i = c_lo[1];
-        final_det_i = c_hi[1];
-        start_det_j = v_lo[1];
-        final_det_j = v_hi[1];
-        determinant_string_info(start_det_i, peosp, pegrps, qeosp, qegrps, pqs,
-                                num_pq, &pq_start_i, &pstart_i, &qstart_i);
-        determinant_string_info(final_det_i, peosp, pegrps, qeosp, qegrps, pqs,
-                                num_pq, &pq_final_i, &pfinal_i, &qfinal_i);
-        determinant_string_info(start_det_j, peosp, pegrps, qeosp, qegrps, pqs,
-                                num_pq, &pq_start_j, &pstart_j, &qstart_j);
-        determinant_string_info(final_det_j, peosp, pegrps, qeosp, qegrps, pqs,
-                                num_pq, &pq_final_j, &pfinal_j, &qfinal_j);
+        for (j = 0; j < ndets; j += buflen) {
 
-        /* Evaluate block of H(i,j)*V(j,k)=C(i,k). This is done via the        
-         * space indexes. Each block is over all V vectors, k.*/
-        evaluate_hdblock_ij_1d(pq_start_i, pstart_i, qstart_i,
-                               pq_final_i, pfinal_i, qfinal_i,
-                               pq_start_j, pstart_j, qstart_j,
-                               pq_final_j, pfinal_j, qfinal_j,
-                               v_rows, v_cols, v_local,
-                               c_rows, c_cols, c_local,
-                               start_det_i, final_det_i,
-                               start_det_j, final_det_j,
-                               ndets, peosp, pegrps, pstr, qeosp, qegrps, qstr,
-                               pqs, num_pq, m1, m2, aelec, belec, intorb);
+                jmax = int_min((j + buflen - 1), (ndets - 1));
+                v_lo[1] = j;
+                v_hi[1] = jmax;
+                v_rows = v_hi[1] - v_lo[1] + 1;
+                printf(" v[%d %d; %d %d]\n", v_lo[0], v_lo[1], v_hi[0], v_hi[1]);
+                NGA_Get(v_hndl, v_lo, v_hi, v_local, v_ld);
 
+                /* Get determinant index values */
+                start_det_j = v_lo[1];
+                final_det_j = v_hi[1];
+                determinant_string_info(start_det_j, peosp, pegrps, qeosp,
+                                        qegrps, pqs, num_pq, &pq_start_j,
+                                        &pstart_j, &qstart_j);
+                determinant_string_info(final_det_j, peosp, pegrps, qeosp,
+                                        qegrps, pqs, num_pq, &pq_final_j,
+                                        &pfinal_j, &qfinal_j);
+                
+                /* Evaluate block of H(i,j)*V(j,k)=C(i,k). This is done via the   
+                 * space indexes. Each block is over all V vectors, k.*/
+                evaluate_hdblock_ij_1d(pq_start_i, pstart_i, qstart_i,
+                                       pq_final_i, pfinal_i, qfinal_i,
+                                       pq_start_j, pstart_j, qstart_j,
+                                       pq_final_j, pfinal_j, qfinal_j,
+                                       v_rows, v_cols, v_local,
+                                       c_rows, c_cols, c_local,
+                                       start_det_i, final_det_i,
+                                       start_det_j, final_det_j,
+                                       ndets, peosp, pegrps, pstr, qeosp, qegrps,
+                                       qstr, pqs, num_pq, m1, m2, aelec, belec,
+                                       intorb);
+                
+        }
         NGA_Acc(c_hndl, c_lo, c_hi, c_local, c_ld, alpha);
-        GA_Sync();
 
+        free(v_local);
+
+        GA_Sync();
+        
         return;
 }
 
@@ -799,35 +823,6 @@ void evaluate_hdblock_ij(int pq_start_i, int pstart_i, int qstart_i,
         }
         
         return;
-                /* Loop over determinants |j> */
-//                for (ii = 0; ii < npq; ii++) {
-//                        pstart = peosp[(pq[ii][0])].start;
-//                        pmax   = pstart + peosp[(pq[ii][0])].nstr;
-//                        qstart = qeosp[(pq[ii][1])].start;
-//                        qmax   = qstart + qeosp[(pq[ii][1])].nstr;
-//                        detj.cas = 0;
-//                        if ((peosp[(pq[ii][0])].virt +
-//                             qeosp[(pq[ii][0])].virt) == 0) {
-//                                detj.cas = 1;
-//                        }
-//                        cntj = 0;                
-//                        /* Loop over alpha strings. */
-//                        for (j = pstart; j < pmax; j++) {
-//                                detj.astr = pstr[j];
-//                                /* Loop over beta strings */
-//                                for (k = qstart; k < qmax; k++) {
-//                                        detj.bstr = qstr[k];
-//                                        hijval = hmatels(deti, detj, mo1, mo2,
-//                                                         aelec, belec, intorb);
-//                                        /* H_ij*v_jk = c_ik */
-//                                        for (l = 0; l < vcols; l++) {
-//                                                c[l][starti + i] = c[l][starti + i] +
-//                                                        hijval * v[l][cntj];
-//                                        }
-//                                        cntj++;
-//                                }
-//                        }
-//                        
 }
 
 /*
@@ -1336,17 +1331,20 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
                           double core_e, int dim, int mdim, int v_hndl, int d_hndl,
                           int c_hndl)
 {
+#define BUFFERSIZE 100
+        
         int error = 0; /* Error flag */
         
         double **c_local = NULL;  /* Local c array */
-        double *cdata = NULL;    /* Local c array data */
-        int c_rows = 0;          /* Local c rows */
-        int c_cols = 0;          /* Local c columns */
+        double *cdata = NULL;     /* Local c array data */
+        int c_rows = 0;           /* Local c rows */
+        int c_cols = 0;           /* Local c columns */
 
         double **v_local = NULL;  /* Local v array */
-        double *vdata = NULL;    /* Local v array data */
-        int v_rows = 0;          /* Local v rows */
-        int v_cols = 0;          /* LOcal v columns */
+        double *vdata = NULL;     /* Local v array data */
+        double buflen = 0;        /* Length of ONE COLUMN of v buffer */
+        int v_rows = 0;           /* Local v rows */
+        int v_cols = 0;           /* LOcal v columns */
 
         /*
          * The following convention is used:
@@ -1381,6 +1379,8 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         int c_ld[1] = {0}; /* Leading dimensions of C local buffer */
 
         double alpha[1] = {1.0}; /* Scale factor for c_local into c_global. */
+
+        int j, jmax;
         
         NGA_Zero(c_hndl);
 
@@ -1392,58 +1392,73 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         c_cols = int_min(c_cols, dim);
         c_hi[0] = c_cols - 1;
         c_ld[0] = c_rows;
+        /* Allocate local array and get C data */
         cdata = allocate_mem_double_cont(&c_local, c_rows, c_cols);
+        NGA_Get(c_hndl, c_lo, c_hi, cdata, c_ld);
+        
+        /* Get values for determinant index at begining/ending of block */
+        start_det_i = c_lo[1];
+        final_det_i = c_hi[1];
+        determinant_string_info(start_det_i, peosp, pegrps, qeosp, qegrps, pqs,
+                                num_pq, &pq_start_i, &pstart_i, &qstart_i);
+        determinant_string_info(final_det_i, peosp, pegrps, qeosp, qegrps, pqs,
+                                num_pq, &pq_final_i, &pfinal_i, &qfinal_i);
+        
+        buflen = BUFFERSIZE; /* Set buffer size for each column */
         v_lo[0] = 0;
         v_lo[1] = 0;
         v_hi[0] = dim - 1;
         v_hi[1] = ndets - 1;
         v_cols = v_hi[0] - v_lo[0] + 1;
-        v_rows = v_hi[1] - v_lo[1] + 1;
+        //v_rows = v_hi[1] - v_lo[1] + 1;
+        v_rows = buflen;
         v_ld[0] = v_rows;
+        /* Allocate local array (buflen x v_cols) */
         vdata = allocate_mem_double_cont(&v_local, v_rows, v_cols);
-
-        NGA_Get(v_hndl, v_lo, v_hi, vdata, v_ld);
-        NGA_Get(c_hndl, c_lo, c_hi, cdata, c_ld);
 
         print_vector_space(v_hndl, v_cols, 21);
         print_vector_space(c_hndl, c_cols, 21);
+
         GA_Sync();
-        
-        /* Get values for determinant index at beginning/ending of block */
-        start_det_i = c_lo[1];
-        final_det_i = c_hi[1];
-        start_det_j = v_lo[1];
-        final_det_j = v_hi[1];
-        determinant_string_info(start_det_i, peosp, pegrps, qeosp, qegrps, pqs,
-                                num_pq, &pq_start_i, &pstart_i, &qstart_i);
-        determinant_string_info(final_det_i, peosp, pegrps, qeosp, qegrps, pqs,
-                                num_pq, &pq_final_i, &pfinal_i, &qfinal_i);
-        determinant_string_info(start_det_j, peosp, pegrps, qeosp, qegrps, pqs,
-                                num_pq, &pq_start_j, &pstart_j, &qstart_j);
-        determinant_string_info(final_det_j, peosp, pegrps, qeosp, qegrps, pqs,
-                                num_pq, &pq_final_j, &pfinal_j, &qfinal_j);
 
-        
-        /* Evaluate block of H(i,j)*V(j,k)=C(i,k). This is done via the
-         * space indexes. Each block is over all V vectors, k.*/
-        evaluate_hdblock_ij(pq_start_i, pstart_i, qstart_i,
-                            pq_final_i, pfinal_i, qfinal_i,
-                            pq_start_j, pstart_j, qstart_j,
-                            pq_final_j, pfinal_j, qfinal_j,
-                            v_rows, v_cols, v_local,
-                            c_rows, c_cols, c_local,
-                            start_det_i, final_det_i,
-                            start_det_j, final_det_j,
-                            ndets, peosp, pegrps, pstr, qeosp, qegrps, qstr,
-                            pqs, num_pq, m1, m2, aelec, belec, intorb);
+        for (j = 0; j < ndets; j += buflen) {
+                jmax = int_min((j + buflen - 1), (ndets - 1));
+                v_lo[1] = j;
+                v_hi[1] = jmax;
+                v_rows = v_hi[1] - v_lo[1] + 1;
+                NGA_Get(v_hndl, v_lo, v_hi, vdata, v_ld);
 
+                /* Get values for determinant indexes */
+                start_det_j = v_lo[1];
+                final_det_j = v_hi[1];
+                determinant_string_info(start_det_j, peosp, pegrps, qeosp,
+                                        qegrps, pqs, num_pq, &pq_start_j,
+                                        &pstart_j, &qstart_j);
+                determinant_string_info(final_det_j, peosp, pegrps, qeosp,
+                                        qegrps, pqs, num_pq, &pq_final_j,
+                                        &pfinal_j, &qfinal_j);
+                
+                /* Evaluate block of H(i,j)*V(j,k)=C(i,k). This is done via the
+                 * space indexes. Each block is over all V vectors, k.*/
+                evaluate_hdblock_ij(pq_start_i, pstart_i, qstart_i,
+                                    pq_final_i, pfinal_i, qfinal_i,
+                                    pq_start_j, pstart_j, qstart_j,
+                                    pq_final_j, pfinal_j, qfinal_j,
+                                    v_rows, v_cols, v_local,
+                                    c_rows, c_cols, c_local,
+                                    start_det_i, final_det_i,
+                                    start_det_j, final_det_j,
+                                    ndets, peosp, pegrps, pstr, qeosp,
+                                    qegrps, qstr, pqs, num_pq, m1, m2,
+                                    aelec, belec, intorb);
+        }
         NGA_Acc(c_hndl, c_lo, c_hi, cdata, c_ld, alpha);
-        //NGA_Put(c_hndl, c_lo, c_hi, cdata, c_ld);
-        GA_Sync();
 
         deallocate_mem_cont(&v_local, vdata);
         deallocate_mem_cont(&c_local, cdata);
-        
+
+        GA_Sync();
+                
         return;
 }
 

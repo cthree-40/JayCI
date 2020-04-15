@@ -94,7 +94,6 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           int num_pq, double *m1, double *m2, int aelec,
                           int belec, int intorb, int ndets, int kmax);
 
-
 /*
  * compute_GA_norm: compute the norm of a GA vector.
  */
