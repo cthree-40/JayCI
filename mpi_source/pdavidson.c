@@ -23,6 +23,13 @@
 
 #include <mpi.h>
 
+/* -- OpenMP options -- */
+#ifdef _OPENMP
+#include <omp.h>
+#else
+#define omp_get_thread_num() 0
+#endif
+/* -------------------- */
 
 /*
  * pdavidson: parallel implementation of davidson algorithm.
@@ -507,7 +514,7 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           int belec, int intorb, int ndets, int kmax)
 {
         
-#define BUFFERSIZE 100
+#define BUFFERSIZE 1000
         
         int error = 0; /* Error flag */
 
@@ -801,6 +808,12 @@ void evaluate_hdblock_ij(int pq_start_i, int pstart_i, int qstart_i,
                              pq_final_j, pfinal_j, qfinal_j, pq, npq,
                              peosp, pegrps, qeosp, qegrps);
 
+        /* OMP Section */
+#pragma omp parallel                                                               \
+        shared(ndeti,ndetj,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,dtj,d_triplet) \
+        private(deti,detj,i,j,l,hijval)
+        {
+#pragma omp for schedule(runtime)
         /* Loop through list of triplets for determinants |i>. */
         for (i = 0; i < ndeti; i++) {
                 deti.astr = pstr[d_triplet[i][0]];
@@ -816,12 +829,12 @@ void evaluate_hdblock_ij(int pq_start_i, int pstart_i, int qstart_i,
                                          aelec, belec, intorb);
                         /* H_ij*v_jl = c_il */
                         for (l = 0; l < vcols; l++) {
-                                c[l][i] = c[l][i] +
-                                        hijval * v[l][j];
+#pragma omp atomic update
+                                c[l][i] = c[l][i] + hijval * v[l][j];
                         }
                 }
         }
-        
+        } /* End of OMP Section */
         return;
 }
 
@@ -904,6 +917,12 @@ void evaluate_hdblock_ij_1d(int pq_start_i, int pstart_i, int qstart_i,
                              pq_final_j, pfinal_j, qfinal_j, pq, npq,
                              peosp, pegrps, qeosp, qegrps);
 
+        /* OMP Section */
+#pragma omp parallel                                                               \
+        shared(ndeti,ndetj,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,dtj,d_triplet) \
+        private(deti,detj,i,j,l,hijval)
+        {
+#pragma omp for schedule(runtime)
         /* Loop through list of triplets for determinants |i>. */
         for (i = 0; i < ndeti; i++) {
                 deti.astr = pstr[d_triplet[i][0]];
@@ -918,10 +937,11 @@ void evaluate_hdblock_ij_1d(int pq_start_i, int pstart_i, int qstart_i,
                         hijval = hmatels(deti, detj, mo1, mo2,
                                          aelec, belec, intorb);
                         /* H_ij*v_j = c_i */
+#pragma omp atomic update
                         c[i] = c[i] + hijval * v[j];
                 }
         }
-        
+        }
         return;
 }
 
@@ -1331,7 +1351,7 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
                           double core_e, int dim, int mdim, int v_hndl, int d_hndl,
                           int c_hndl)
 {
-#define BUFFERSIZE 100
+#define BUFFERSIZE 1000
         
         int error = 0; /* Error flag */
         
