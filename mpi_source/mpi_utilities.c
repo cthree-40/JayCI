@@ -101,7 +101,7 @@ void print_gavectors2file(int hndl, int len, int dim, char *fname)
                 
                 for (i = 0; i < dim; i++) {
                         for (j = 0; j < len; j += buflen) {
-                                jmax = int_min((j + buflen), (len - 1));
+                                jmax = int_min((j + buflen - 1), (len - 1));
                                 lo[0] = i;
                                 lo[1] = j;
                                 hi[0] = i;
