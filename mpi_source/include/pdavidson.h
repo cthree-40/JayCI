@@ -34,7 +34,7 @@ void build_init_guess_vectors(int n, int v, int dim, int kmin, int ndets,
                               int pegrps, struct occstr *qstr,
                               struct eospace *qeosp, int qegrps,
                               int **pqs, int num_pq, double *m1, double *m2,
-                              int aelec, int belec, int intorb);
+                              int aelec, int belec, int intorb, int w);
 
 /*
  * compute_cimat_chunks: compute chunksize of bounds of H for evaluation.
@@ -92,7 +92,7 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           struct eospace *peosp, int pegrps, struct occstr *qstr,
                           struct eospace *qeosp, int qegrps, int **pqs,
                           int num_pq, double *m1, double *m2, int aelec,
-                          int belec, int intorb, int ndets, int kmax);
+                          int belec, int intorb, int ndets, int kmax, int w_hndl);
 
 /*
  * compute_GA_norm: compute the norm of a GA vector.
@@ -225,6 +225,47 @@ void evaluate_hdblock_ij_1d(int pq_start_i, int pstart_i, int qstart_i,
                             int belec, int intorb);
 
 /*
+ * evaluate_hdblock_ij_1d: evaluate a block of H: **(For one column)**
+ *  H(i,j)*V(j)=C(i)
+ *  Input:
+ *   vrows  = columns of C
+ *   vcols  = rows of C
+ *   crows  = columns of C
+ *   ccols  = rows of C
+ *   v      = V(j)
+ *   c      = C(i)
+ *   starti = starting index i
+ *   finali = ending index i
+ *   startj = starting index j
+ *   finalj = ending index j
+ *   ndets  = number of determinants
+ *   peosp  = alpha electron orbital spaces
+ *   pegrps = number of alpha string orbital spaces
+ *   pstr   = alpha electron strings
+ *   qeosp  = beta electron orbital spaces
+ *   qegrps = number of beta string orbital spaces
+ *   qstr   = beta electron strings
+ *   pq     = (p,q)-space pairings
+ *   npq    = number of (p, q)-space pairings
+ *   mo1    = 1-e integrals
+ *   mo2    = 2-e integrals
+ *   aelec  = alpha electrons
+ *   belec  = beta  electrons
+ *   intorb = internal orbitals (DOCC + CAS)
+ *  Output:
+ *   C      = C(i)
+ */
+void evaluate_hdblock_ij_1d2(int **wi, int idets, int **wj, int jdets,
+                             int vrows, int vcols, double *v,
+                             int crows, int ccols, double *c,
+                             int ndets, struct eospace *peosp, int pegrps,
+                             struct occstr *pstr,
+                             struct eospace *qeosp, int qegrps,
+                             struct occstr *qstr,  int **pq,
+                             int npq, double *mo1, double *mo2, int aelec,
+                             int belec, int intorb);
+
+/*
  * generate_det_triples: generate list of triplets for each determinant:
  *  |i> = |(pq, p, q)>
  */
@@ -265,6 +306,22 @@ void generate_residual (int v_hndl, int c_hndl, int r_hndl, double **hevec,
                         double *heval, int ndets, int ckdim, int croot,
                         int rscr_hndl);
 
+/*
+ * generate_wlist: generate the wavefunction list of triplets
+ * Input:
+ *  hndl     = handle of global array of W
+ *  ndets    = number of determinants
+ *  pq       = alpha/beta pairs
+ *  npq      = number of alpha/beta pairs
+ *  peospace = alpha string electron orbital space
+ *  pegrps   = number of alpha string orbital spaces
+ *  qeospace = beta  string electron orbital space
+ *  qegrps   = number of beta  string orbital spaces
+ */
+void generate_wlist(int hndl, int ndets, int **pq, int npq,
+                    struct eospace *peosp, int pegrps,
+                    struct eospace *qeosp, int qegrps);
+
 
 /*
  * get_upptri_element_index: get index of an element (i,j) in
@@ -293,9 +350,10 @@ int get_upptri_size (int n);
  * init_diag_H_subspace: generate reference vectors from diagonalization
  * of a subspace of Hij.
  */
-void init_diag_H_subspace(struct occstr *pstr, struct eospace *peosp, int pegrps,
-                          struct occstr *qstr, struct eospace *qeosp, int qegrps,
-                          int **pqs, int num_pq, double *m1, double *m2,
+void init_diag_H_subspace(int w_hndl,
+                          struct occstr *pstr,// struct eospace *peosp, int pegrps,
+                          struct occstr *qstr,// struct eospace *qeosp, int qegrps,
+                          double *m1, double *m2,
                           int aelec, int belec, int intorb, int ndets, int dim,
                           double **refspace);
 
@@ -346,6 +404,7 @@ void orthonormalize_newvector (int v_hndl, int nvecs, int ndets, int n_hndl);
  *  mdim  = maximum size of krylov space
  *  v_hndl= (GLOBAL ARRAY HANDLE) basis vectors
  *  d_hndl= (GLOBAL ARRAY HANDLE) diagonal elements <i|H|i>
+ *  w_hndl= (GLOBAL ARRAY HANDLE) wavefunction
  * Output:
  *  c_hndl= (GLOBAL ARRAY HANDLE) Hv=c vectors
  */
@@ -354,7 +413,7 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
                           int **pqs, int num_pq, double *m1, double *m2,
                           int aelec, int belec, int intorb, int ndets,
                           double core_e, int dim, int mdim, int v_hndl, int d_hndl,
-                          int c_hndl);
+                          int c_hndl, int w_hndl);
 
 /*
  * print_iter_info: print iteration information.

@@ -146,4 +146,12 @@ void deallocate_mem_cont(double ***array, double *ptr)
         free(ptr);
         free(*array);
 }
+/*
+ * deallocate_mem_cont_int: deallocate *contiguous* 2d array (C_INT)
+ */
+void deallocate_mem_cont_int(int ***array, int *ptr)
+{
+        free(ptr);
+        free(*array);
+}
 
