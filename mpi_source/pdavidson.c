@@ -1290,7 +1290,6 @@ void generate_wlist(int hndl, int ndets, int **pq, int npq,
                 return;
         }
         wdata = allocate_mem_int_cont(&w, rows, cols);
-        printf("Local w array allocated\n");
         
         /* Get starting deteriminant index values, and generate the determinant
          * triplet list for this section. */
@@ -1305,7 +1304,7 @@ void generate_wlist(int hndl, int ndets, int **pq, int npq,
         /* Send this info to the global array W. */
         ld[0] = rows;
         NGA_Put(hndl, lo, hi, wdata, ld);
-        printf("Deallocating w array\n");
+
         deallocate_mem_cont_int(&w, wdata);
 
         GA_Sync();
