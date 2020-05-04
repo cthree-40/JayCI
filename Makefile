@@ -100,7 +100,7 @@ CPOPS  :=
 ifeq ($(findstring gfortran,$(FC)),)
 # intel compilers
 	FFLAGS := -i8 -auto -assume byterecl -O3
-	CFLAGS := -Wall -std=c11 -march=native -funroll-all-loops \
+	CFLAGS := -Wall -std=c11 -funroll-all-loops \
 		  -fomit-frame-pointer -fstrict-aliasing -O3
 	VTUNE := -g
 else
