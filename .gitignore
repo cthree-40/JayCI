@@ -7,3 +7,4 @@ source/*.o
 source/colib/*.o
 source/UNIX/*.o
 mpi_source.old/
+mpi_source/*.o
