@@ -111,7 +111,8 @@ int execute_pjayci ()
         /* Read &dgalinfo namelist. */
         if (mpi_proc_rank == mpi_root) {
                 readdaiinput(&maxiter, &krymin, &krymax, &nroots,
-                             &prediag_routine, &refdim, &restol, &error);
+                             &prediag_routine, &refdim, &restol, &ga_buffer_len,
+                             &error);
                 if (error != 0) {
                         error_flag(0, error, "execute_ci_calculation");
                         return error;
@@ -124,6 +125,7 @@ int execute_pjayci ()
         MPI_Bcast(&nroots,  1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&prediag_routine, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&restol,  1, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
+        MPI_Bcast(&ga_buffer_len, 1,MPI_INT, mpi_root, MPI_COMM_WORLD);
 
         /* Get number of alpha/beta electrons */
         abecalc(electrons, &aelec, &belec);

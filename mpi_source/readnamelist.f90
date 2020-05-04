@@ -27,7 +27,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
 
   ! .. &dalginfo arguments ..
   integer :: maxiter, krymin, krymax, nroots
-  integer :: prediagr, refdim
+  integer :: prediagr, refdim, buflen
   real*8  :: restol
 
   ! .. &dysonorb arguments ..
@@ -38,7 +38,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
   namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, &
           nfrzvirt, xlevel, printlvl, printwvf
   namelist /dalginfo/ maxiter, krymin, krymax, nroots, prediagr, &
-          restol, refdim
+          restol, refdim, buflen
   namelist /wavefcn0/ electrons, orbitals, nfrozen, ndocc, nactive, &
           nfrzvirt, xlevel
   namelist /wavefcn1/ electrons, orbitals, nfrozen, ndocc, nactive, &
@@ -83,6 +83,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
           prediagr  =  1
           restol    = 1.0d-5
           refdim    =  3
+          buflen    = 1000
           open(file = "jayci.in", unit = 10, action = "read", status = "old", &
                   iostat = err)
           if (err .ne. 0) return
@@ -96,6 +97,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
           write(nmlstr(5),9) prediagr
           write(nmlstr(6),8) restol
           write(nmlstr(7),9) refdim
+          write(nmlstr(8),9) buflen
           
           close(10)
           return

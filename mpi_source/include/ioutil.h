@@ -60,6 +60,7 @@ void print_array_2d(double **array, int rows, int cols);
  *  nmlstr[4] = prediagr
  *  nmlstr[5] = refdim
  *  nmlstr[6] = restol
+ *  nmlstr[7] = buflen
  *
  * Output:
  *  maxiter = maximum iterations of davidson algorithm
@@ -69,9 +70,11 @@ void print_array_2d(double **array, int rows, int cols);
  *  prediagr= prediagonalization subroutine choice
  *  refdim  = intitial reference-space dimension (prediagonalization)
  *  restol  = convergence tolerance of residual
+ *  buflen  = GA buffer length during Hv=c
  *  err     = error handling: n = missing variable n */
 void readdaiinput(int *maxiter,  int *krymin, int *krymax, int *nroots,
-		  int *prediagr, int *refdim, double *restol, int *err);
+		  int *prediagr, int *refdim, double *restol, int *buflen,
+                  int *err);
 
 /* readgeninput: read general wavefunction input.
  * -------------------------------------------------------------------

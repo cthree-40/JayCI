@@ -531,8 +531,6 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           int belec, int intorb, int ndets, int kmax, int w_hndl)
 {
         
-#define BUFFERSIZE 1000
-        
         int error = 0; /* Error flag */
 
         double *c_local = NULL;   /* Local c array */
@@ -606,8 +604,9 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
         v_cols  = v_hi[0] - v_hi[0] + 1;
         v_ld[0] = 1;
         /* Allocate local array */
-        v_local = malloc(sizeof(double) * BUFFERSIZE);
-        buflen = BUFFERSIZE;
+        buflen = ga_buffer_len;
+        v_local = malloc(sizeof(double) * buflen);
+
         
         /* Allocate local Wj array  */
         wjdata = allocate_mem_int_cont(&wj, 3, buflen);
@@ -1572,7 +1571,6 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
                           double core_e, int dim, int mdim, int v_hndl, int d_hndl,
                           int c_hndl, int w_hndl)
 {
-#define BUFFERSIZE 1000
         
         double **c_local = NULL;  /* Local c array */
         double *cdata = NULL;     /* Local c array data */
@@ -1642,7 +1640,7 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         NGA_Get(w_hndl, wi_lo, wi_hi, widata, wi_ld); 
 
         
-        buflen = BUFFERSIZE; /* Set buffer size for each column */
+        buflen = ga_buffer_len; /* Set buffer size for each column */
         v_lo[0] = 0;
         v_lo[1] = 0;
         v_hi[0] = dim - 1;
