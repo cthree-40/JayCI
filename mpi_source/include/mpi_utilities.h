@@ -8,6 +8,11 @@
 #ifndef mpi_utilities_h
 #define mpi_utilities_h
 
+int mpi_num_procs;          /* MPI: Number of mpi processes */
+int mpi_proc_rank;          /* MPI: Processor rank */
+
+extern const int mpi_root;  /* MPI: Root process is always 0. */
+
 /*
  * mpi_error_check_msg: check for error. Print message if error has
  * occured.

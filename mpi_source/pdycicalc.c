@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include "pdyson_global.h"
 #include "mpi_utilities.h"
+#include "run_pdycicalc.h"
 #include <mpi.h>
 #include <ga.h>
 #include <macdecls.h>
@@ -31,8 +32,8 @@ int main (int argc, char **argv)
         if (! MA_init(C_DBL, stack, heap)) GA_Error("MA_init failed",stack+heap);
 
         set_ga_process_number_and_rank();
-
-        error = 0;
+        
+        error = run_pdycicalc();
 
         GA_Terminate();
         MPI_Finalize();
