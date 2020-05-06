@@ -5,11 +5,6 @@
 #ifndef pdyson_global_h
 #define pdyson_global_h
 
-int mpi_num_procs;
-int mpi_proc_rank;
-
-extern const int mpi_root; /* GA Root process */
-
 /*
  * Wavefunction information.
  * 0 refers to the N+1 electron wavefunction, and 1 refers to the

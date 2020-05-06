@@ -10,7 +10,6 @@
 #include "errorlib.h"
 #include "iminmax.h"
 #include "mpi_utilities.h"
-//#include "pjayci_global.h"
 #include <mpi.h>
 #include <ga.h>
 #include <macdecls.h>

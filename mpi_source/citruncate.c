@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "pjayci_global.h"
+#include "mpi_utilities.h"
 #include "ioutil.h"
 #include "iminmax.h"
 #include "binary.h"

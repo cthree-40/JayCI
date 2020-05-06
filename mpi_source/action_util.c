@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include "pjayci_global.h"
+#include "mpi_utilities.h"
 #include "errorlib.h"
 #include "arrayutil.h"
 #include "bitutil.h"

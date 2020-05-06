@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include "errorlib.h"
 #include "allocate_mem.h"
-#include "pjayci_global.h"
+#include "mpi_utilities.h"
 #include <mpi.h>
 
 /*

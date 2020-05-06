@@ -1,7 +1,4 @@
 // File: run_pdycical.c
-/*
- * run_pdycicalc: Execute CI dyson orbital calculation.
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include "pdyson_global.h"
@@ -10,7 +7,10 @@
 #include <ga.h>
 #include <macdecls.h>
 
-int run_dycicalc ()
+/*
+ * run_pdycicalc: Execute CI dyson orbital calculation.
+ */
+int run_pdycicalc ()
 {
         int error = 0; /* Error flag */
         
