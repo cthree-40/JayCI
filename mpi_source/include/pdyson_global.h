@@ -38,4 +38,5 @@ int ciorbs1;  /* NUmber of ci orbitals */
 int ciaelec1; /* Number of CI alpha electrons */
 int cibelec1; /* Number of CI beta  electrons */
 
+
 #endif
