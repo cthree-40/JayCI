@@ -159,7 +159,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
 
         
         GA_Sync();
-        print_vector_space(v_hndl, 6, 20);
+//        print_vector_space(v_hndl, 6, 20);
 
         /* .. MAIN LOOP .. */
         citer = 1; croot = 1; ckdim = krymin; cflag = 0;

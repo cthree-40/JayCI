@@ -25,8 +25,8 @@ const int mpi_root = 0; /* MPI: Root rank is always 0 */
 int main (int argc, char **argv)
 {
         int error = 0;
-        int stack = 8000000, heap = 8000000;
-
+	int stack = 800000000, heap = 800000000;
+	
         MPI_Init(&argc, &argv);
         GA_Initialize();
 
@@ -42,3 +42,4 @@ int main (int argc, char **argv)
 
         return error;
 }
+

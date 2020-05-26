@@ -77,6 +77,7 @@ int execute_pjayci ()
 	int refdim = 0; /* prediagonalization reference space */
 	double restol = 0.0; /* residual norm converegence tolerance */
 
+	double memusage = 0.0; /* Estimated memory usage */
         
         /* Read in the &general namelist. Ensure that the expansion's
          * CAS space is not greater than 64 orbitals. */
@@ -98,6 +99,8 @@ int execute_pjayci ()
                 }
         }
         /* Broadcast &general values. These are needed on all processes. */
+	if (mpi_proc_rank == mpi_root) printf("Casting &general values...\n");
+	GA_Sync();
         MPI_Bcast(&electrons, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&orbitals,  1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&nfrzc,     1, MPI_INT, mpi_root, MPI_COMM_WORLD);
@@ -107,7 +110,7 @@ int execute_pjayci ()
         MPI_Bcast(&nfrzv,     1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&printlvl,  1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&printwvf,  1, MPI_INT, mpi_root, MPI_COMM_WORLD);
-
+	
         /* Read &dgalinfo namelist. */
         if (mpi_proc_rank == mpi_root) {
                 readdaiinput(&maxiter, &krymin, &krymax, &nroots,
@@ -126,7 +129,7 @@ int execute_pjayci ()
         MPI_Bcast(&prediag_routine, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&restol,  1, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&ga_buffer_len, 1,MPI_INT, mpi_root, MPI_COMM_WORLD);
-
+	
         /* Get number of alpha/beta electrons */
         abecalc(electrons, &aelec, &belec);
         
@@ -138,9 +141,9 @@ int execute_pjayci ()
         pstrings = allocate_occstr_arrays(pstr_len);
         qstrings = allocate_occstr_arrays(qstr_len);
         peospace = allocate_eospace_array(ci_aelec, ci_orbs, ndocc, nactv, xlvl,
-                                       &pegrps);
+					  &pegrps);
         qeospace = allocate_eospace_array(ci_belec, ci_orbs, ndocc, nactv, xlvl,
-                                       &qegrps);
+					  &qegrps);
         num_pq = pegrps * qegrps;
         error = allocate_mem_int(&pq_space_pairs, 2, num_pq);
         error = citrunc(aelec, belec, orbitals, nfrzc, ndocc, nactv, nfrzv,
@@ -148,13 +151,20 @@ int execute_pjayci ()
                         peospace, pegrps, qeospace, qegrps, &dtrm_len,
                         pq_space_pairs, &num_pq);
         intorb = ndocc + nactv;
-        MPI_Barrier(MPI_COMM_WORLD);
+//        MPI_Barrier(MPI_COMM_WORLD);
+	GA_Sync();
         if (printlvl > 0 && mpi_proc_rank == mpi_root) {
                 printf("Determinants   = %15d\n", dtrm_len);
                 printf(" Alpha strings = %15d\n", pstr_len);
                 printf(" Beta  strings = %15d\n", qstr_len);
-                fflush(stdout);
-        }
+//		printf(" Local memory usage: ");
+		memusage = ((pstr_len + qstr_len) * (8 + 4 + 4 + 4) +
+			    (pegrps * qegrps) * 2 * 4 +
+			    (pegrps + qegrps) * (4 + 4 + 4 + 4 + 4))
+			/ 1048576;
+//		printf(" %10.2lf MB\n", memusage);
+//		fflush(stdout);
+	}
         
         /* Read the molecular orbitals */
         m1len = index1e(orbitals, orbitals);
@@ -162,18 +172,26 @@ int execute_pjayci ()
         strncpy(moflname, "moints", FLNMSIZE);
         moints1 = malloc(sizeof(double) * m1len);
         moints2 = malloc(sizeof(double) * m2len);
+	memusage = memusage + ((m1len + m2len) * 8) / 1048576;
         init_dbl_array_0(moints1, m1len);
         init_dbl_array_0(moints2, m2len);
         if (mpi_proc_rank == mpi_root) {
                 readmointegrals(moints1, moints2, itype, ci_orbs, moflname,
                                 m1len, m2len, &nucrep_e, &frzcore_e);
         }
+	if (mpi_proc_rank == mpi_root) printf("Casting moints...\n");
+	GA_Sync();
         MPI_Bcast(moints1, m1len, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(moints2, m2len, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&nucrep_e, 1, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&frzcore_e,1, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
         nuc_rep_e = nucrep_e;
         total_core_e = nucrep_e + frzcore_e;
+	if (printlvl > 0 && mpi_proc_rank == mpi_root) {
+		printf(" Local memory usage: ");
+		printf(" %10.2lf MB\n", memusage);
+		fflush(stdout);
+	}
         /* Execute davidson procedure. */
         error = pdavidson(pstrings, peospace, pegrps, qstrings, qeospace,
                           qegrps, pq_space_pairs, num_pq, moints1, moints2,
