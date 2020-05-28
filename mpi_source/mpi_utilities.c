@@ -15,6 +15,16 @@
 #include <macdecls.h>
 
 /*
+ * mpi_end_program: end program if error occurs.
+ */
+void mpi_end_program ()
+{
+        GA_Terminate();
+        MPI_Finalize();
+        exit(-1);
+}
+
+/*
  * mpi_error_check_msg: check for error. Print message if error has
  * occured.
  * Input:
@@ -352,8 +362,11 @@ void print_gavectors2file_dbl_ufmt(int hndl, int len, int dim, char *fname)
  *  len   = length of vectors
  *  dim   = number of vectors
  *  fname = file name
+ * Output:
+ *  error = error flag
  */
-void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname)
+void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname,
+                                 int *error)
 {
 #define BUFSIZE 6
         double vdata[BUFSIZE];     /* GA Vector buffer */
@@ -369,22 +382,59 @@ void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname)
         int i, j, jj;
         int jmax;
 
+        *error = 0;
+        
         if (mpi_proc_rank == mpi_root) {
 
                 NGA_Inquire(hndl, &ga_type, &ga_ndim, ga_dims);
                 if (dim > ga_dims[0] || len > ga_dims[1]) {
                         error_message(mpi_proc_rank, "Dimension of of range.",
-                                      "read_gavectorsfile_dbl");
+                                      "read_gavectorsfile_dbl_ufmt");
                         fprintf(stderr, "(%d, %d) != GA[%d, %d]\n", dim, len,
                                 ga_dims[0], ga_dims[1]);
-                        return;
+                        *error = 1;
                 }
-
-                fptr = fopen(fname, "r");
-                
-
-                
         }
+        mpi_error_check_msg(*error, "read_gavectorsfile_dbl_ufmt", "Error!");
+        GA_Sync();
+        
+        if (mpi_proc_rank == mpi_root) {
+                
+                fptr = fopen(fname, "r");
+                if (fptr == NULL) {
+                        error_message(mpi_proc_rank, "Could not open file.",
+                                      "read_gavectorsfile_dbl_ufmt");
+                        fprintf(stderr, "File: %s\n", fname);
+                        *error = 2;
+                }
+        }
+        mpi_error_check_msg(*error, "read_gavectorsfile_dbl", "Error!");
+        GA_Sync();
+        
+        if (mpi_proc_rank == mpi_root) {
+                for (i = 0; i < dim; i++) {
+                        for (j = 0; j < len; j += buflen) {
+                                jmax = int_min((j + buflen - 1), (len - 1));
+                                lo[0] = i;
+                                lo[1] = j;
+                                hi[0] = i;
+                                hi[1] = jmax;
+
+                                if (fread(vdata, sizeof(double), (jmax - j + 1),
+                                          fptr) != (jmax - j + 1)) {
+                                        fprintf(stderr, "Error ");
+                                        fprintf(stderr, "reading vector!\n");
+                                        fclose (fptr);
+                                        *error = i * len + j;
+                                        return;
+                                }
+
+                                NGA_Put(hndl, lo, hi, vdata, &ld);
+                        }
+                }
+                fclose(fptr);
+        }
+        GA_Sync();
         return;
 }
 /*

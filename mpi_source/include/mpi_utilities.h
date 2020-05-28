@@ -14,6 +14,11 @@ int mpi_proc_rank;          /* MPI: Processor rank */
 extern const int mpi_root;  /* MPI: Root process is always 0. */
 
 /*
+ * mpi_end_program: end program if error occurs.
+ */
+void mpi_end_program ();
+
+/*
  * mpi_error_check_msg: check for error. Print message if error has
  * occured.
  * Input:
@@ -80,8 +85,11 @@ void print_gavectors2file_dbl_ufmt(int hndl, int len, int dim, char *fname);
  *  len   = length of vectors
  *  dim   = number of vectors
  *  fname = file name
+ * Ouput:
+ *  error = error flag
  */
-void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname);
+void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname,
+                                 int *error);
 
 /*
  * set_mpi_process_number_and_rank: set global variables $mpi_num_procs

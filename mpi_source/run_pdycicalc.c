@@ -95,10 +95,18 @@ int run_pdycicalc ()
         int v1_dims[2] = {0, 0};  /* GA 1 (Neutral) CI vector dimensions */
         int v1_chunk[2]= {0, 0};  /* GA 1 (Neutral) CI vector chunk sizes */
         
+        int ndyorbs = 0;              /* Number of dyson orbitals to compute */
+        int *dysnst0 = NULL;          /* Anion states of dyson orbital */
+        int *dysnst1 = NULL;          /* Neutral states of dyson orbital */
+        int maxstates = 5;            /* Max Anion/Neutral states */
+        int ndyst0 = 0;               /* Number of anion staets in dyson orb. */
+        int ndyst1 = 0;               /* Number of neutral states in dyson orb.*/
         double **dyorb = NULL;        /* LOCAL dyson orbitals */
         double *dyorb_data = NULL;    /* LOCAL dyson orbital memory block */
 
         double memusage = 0.0;  /* Estimated memory usage. */
+
+        int i = 0;
         
         /* Read wavefunction input. */
         if (mpi_proc_rank == mpi_root) {
@@ -145,6 +153,30 @@ int run_pdycicalc ()
         mpi_error_check_msg(error, "run_pdycicalc",
                             "Error in wavefunction input");
 
+        /* Read dysonorbital input */
+        dysnst0 = malloc(sizeof(int) * maxstates);
+        dysnst1 = malloc(sizeof(int) * maxstates);
+        if (mpi_proc_rank == mpi_root) {
+                readdysoninput(dysnst0, dysnst1, maxstates, &ndyst0, &ndyst1,
+                               &error);
+                printf("\nComputing dyson orbitals between:\n");
+                printf("Anion states:   ");
+                for (i = 0; i < ndyst0; i++) {
+                        printf(" %d", dysnst0[i]);
+                }
+                printf("\n");
+                printf("Neutral states: ");
+                for (i = 0; i < ndyst1; i++) {
+                        printf(" %d", dysnst1[i]);
+                }
+                printf("\n\n");
+        }
+        mpi_error_check_msg(error, "run_dycicalc", "Error reading dyson input.");
+        MPI_Bcast(&dysnst0,  maxstates, MPI_INT, mpi_root, MPI_COMM_WORLD);
+        MPI_Bcast(&ndyst0,           1, MPI_INT, mpi_root, MPI_COMM_WORLD);
+        MPI_Bcast(&dysnst1,  maxstates, MPI_INT, mpi_root, MPI_COMM_WORLD);
+        MPI_Bcast(&ndyst1,           1, MPI_INT, mpi_root, MPI_COMM_WORLD);
+        
         /* Set up wavefunctions */
         /* W0 (Anion) */
         abecalc(nelecs0, &naelec0, &nbelec0);
@@ -200,7 +232,7 @@ int run_pdycicalc ()
                             "Error during wavefunction generation.");
         GA_Sync();
         if (mpi_proc_rank == mpi_root) {
-                printf("Wavefunction 0:\n");
+                printf("Wavefunction 1:\n");
                 printf(" Determinants   = %15d\n", dtrm1_len);
                 printf("  Alpha strings = %15d\n", pstr1_len);
                 printf("  Beta  strings = %15d\n", qstr1_len);
@@ -212,10 +244,10 @@ int run_pdycicalc ()
 
         if (mpi_proc_rank == mpi_root) {
                 if (memusage < 1.0) {
-                        printf("Estimated local memory usage: %10.2f KB\n",
+                        printf("\nEstimated local memory usage: %10.2f KB\n",
                                memusage * 1024);
                 } else {
-                        printf("Estimated local memory usage: %10.2f MB\n",
+                        printf("\nEstimated local memory usage: %10.2f MB\n",
                                memusage);
                 }
         }
@@ -224,7 +256,7 @@ int run_pdycicalc ()
         /* WX arrays are 3 x ndet arrays with (p, q, cas) where p is the
          * alpha string index, q is the beta string index, and cas is the
          * CAS flag. */
-        if (mpi_proc_rank == mpi_root) printf("Creating global arrays...\n");
+        if (mpi_proc_rank == mpi_root) printf("\nCreating global arrays...\n");
         w0_dims[0] = dtrm0_len;
         w0_dims[1] = 3;
         w0_chunk[0] = -1; // Distribute evenly
@@ -252,11 +284,19 @@ int run_pdycicalc ()
         if (!v1_hndl) GA_Error("Create failed: V1: CI Vector", 2);
         if (mpi_proc_rank == mpi_root) printf("Global arrays created.\n");
         
-        
         /* Allocate LOCAL arrays: dyorb */
+        ndyorbs = ndyst0 * ndyst1;
+        dyorb_data = allocate_mem_double_cont(&dyorb, norbs0, ndyorbs);
+        GA_Sync();
         
         /* Read civectors. */
-
+        read_gavectorsfile_dbl_ufmt(v0_hndl, dtrm0_len, nstates0, "anion.ci",
+                                    &error);
+        mpi_error_check_msg(error, "run_dycicalc", "Error reading ci vectors.");
+        read_gavectorsfile_dbl_ufmt(v1_hndl, dtrm1_len, nstates1, "neutral.ci",
+                                    &error);
+        mpi_error_check_msg(error, "run_dycicalc", "Error reading ci vectors.");
+        
         /* Compute dyson orbital */
         
         return error;

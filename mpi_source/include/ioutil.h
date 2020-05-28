@@ -58,6 +58,20 @@ void print_wavefunction_info(char *wfname, int nelecs, int norbs, int nfrzc,
                              int nstates);
 
 /*
+ * readdysoninput: read &dysonorbital namelist.
+ * Input:
+ *  maxst = maximum number of states
+ *  nst0  = number of anion states
+ *  nst1  = number of neutral states
+ * Output:
+ *  states0 = states of anion to compute dyson orbitals
+ *  states1 = states of neutral to compute dyson orbitals
+ *  error   = error flag
+ */
+void readdysoninput(int *states0, int *states1, int maxst, int *nst0, int *nst1,
+                    int *error);
+
+/*
  * readwf0input: read wavefunction input for anion (0)
  */
 void readwf0input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,

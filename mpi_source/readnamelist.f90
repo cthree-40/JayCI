@@ -19,6 +19,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
   
   ! .. namelists ..
   integer :: gen_nml = 1, dai_nml = 2, dys_wf0 = 3, dys_wf1 = 4
+  integer :: dys_orb = 5
   
   ! .. &general arguments ..
   integer :: electrons, orbitals
@@ -30,9 +31,14 @@ subroutine readnamelist(nmlist, nmlstr, err)
   integer :: prediagr, refdim, buflen
   real*8  :: restol
 
-  ! .. &dysonorb unique arguments ..
+  ! .. &wavefcn0 & &wavefcn1 unique arguments ..
   character*300 :: wvfcn_file0, wvfcn_file1
   integer :: nstates
+
+  ! .. &dysonorbital arguments ..
+  integer, dimension(5) :: states0, states1
+
+  integer :: i, j
   
   namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, &
           nfrzvirt, xlevel, printlvl, printwvf
@@ -42,7 +48,8 @@ subroutine readnamelist(nmlist, nmlstr, err)
           nfrzvirt, xlevel, nstates
   namelist /wavefcn1/ electrons, orbitals, nfrozen, ndocc, nactive, &
           nfrzvirt, xlevel, nstates
-
+  namelist /dysonorbital/ states0, states1
+  
   ! initialize error flag
   err = 0
   if (nmlist .eq. gen_nml) then
@@ -134,7 +141,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
           nfrzvirt  = 0
           xlevel    = 0
           nstates   = 0
-          open(file = "dycicalc.in", unit = 10, action = "read", status = "old", &
+          open(file = "dycicalc.in", unit = 10, action = "read", status = "old",&
                   iostat = err)
           if (err .ne. 0) return
 
@@ -153,6 +160,25 @@ subroutine readnamelist(nmlist, nmlstr, err)
           close(10)
           return
 
+  else if (nmlist .eq. dys_orb) then
+          states0 = (/ 1, 0, 0, 0, 0 /)
+          states1 = (/ 1, 0, 0, 0, 0 /)
+          open(file="dycicalc.in", unit=10, action="read", status="old", &
+                  position="rewind", iostat=err)
+          if (err .ne. 0) return
+
+          read(10, nml=dysonorbital)
+
+          ! write values to namelist array
+          do i = 1, 5
+                  j = i + 5
+                  write(nmlstr(i),9) states0(i)
+                  write(nmlstr(j),9) states1(i)
+          end do
+
+          close(10)
+
+          return
   else
           ! uknown namelist flag
           err = 99

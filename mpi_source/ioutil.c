@@ -150,6 +150,34 @@ void print_wavefunction_info(char *wfname, int nelecs, int norbs, int nfrzc,
         return;
 }
 
+/*
+ * readdysoninput: read &dysonorbital namelist.
+ * Output:
+ *  states0 = states of anion to compute dyson orbitals
+ *  states1 = states of neutral to compute dyson orbitals
+ *  error   = error flag
+ */
+void readdysoninput(int *states0, int *states1, int maxst, int *nst0, int *nst1,
+                    int *error)
+{
+        long long int dysonnml = 5; /* &dysonorbital namelist flag */
+        char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};
+        int i, j;
+        *error = 0;
+        /* Read namelist */
+        readnamelist_(&dysonnml, nmlstr, &error);
+        if (error != 0) return;
+        /* Stream the input into the proper variables */
+        for (i = 0; i < maxst; i++) {
+                j = i + maxst;
+                sscanf(nmlstr[i], "%d", &states0[i]);
+                sscanf(nmlstr[j], "%d", &states1[i]);
+                if (states0[i] != 0) *nst0 = (i + 1);
+                if (states1[i] != 0) *nst1 = (i + 1);
+        }
+        return;
+}
+        
 /* readwf0input: read wavefunction input for anion (0)
  * -------------------------------------------------------------------
  * Calls readnamelist which returns a character array
