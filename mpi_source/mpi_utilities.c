@@ -27,11 +27,12 @@ void mpi_error_check_msg (int error, char *fcn_name, char *message)
         int eflag;
         MPI_Allreduce(&error, &eflag, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
         if (eflag != 0) {
-                MPI_Allreduce(&error, &eflag, 1, MPI_INT, MPI_MINLOC,
+                MPI_Allreduce(&error, &eflag, 1, MPI_2INT, MPI_MAXLOC,
                               MPI_COMM_WORLD);
                 if (mpi_proc_rank == mpi_root) {
                         error_message(eflag, message, fcn_name);
                 }
+                GA_Terminate();
                 MPI_Finalize();
                 exit(-1);
         }

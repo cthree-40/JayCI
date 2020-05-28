@@ -25,8 +25,12 @@ const int mpi_root = 0; /* MPI: Root rank is always 0 */
 int main (int argc, char **argv)
 {
         int error = 0;
-	int stack = 800000000, heap = 800000000;
-	
+#ifdef BIGMEM
+	long long int stack = 800000000, heap = 800000000;
+#else
+        long long int stack = 80000000,  heap = 80000000;
+#endif
+        
         MPI_Init(&argc, &argv);
         GA_Initialize();
 

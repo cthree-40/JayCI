@@ -28,6 +28,7 @@
 JAYCIVER := 2.0.1
 PJAYCIVER:= 1.0.0
 DYCICALCVER:= 1.0.0
+PDYCICALCVER:= 1.0.0
 
 # Get OS name and version
 UNAME	:= $(shell uname -a)
@@ -65,9 +66,9 @@ CORI:=cori
 EDISON:=edison
 ifneq ($(filter cori edison,$(NERSC_HOST)),)
 	CC := cc -qopenmp -I $(IDIR) 
-	MPICC := cc -qopenmp -I $(MPIIDIR)
+	MPICC := cc -qopenmp -I $(MPIIDIR) -DBIGMEM
 	FC := ftn
-	MPIFC := ftn
+	MPIFC := ftn -DBIGMEM
 	AR := ar rv
 	RANL := ranlib
 else
@@ -221,6 +222,25 @@ DYCIOBJS := 	errorlib.o \
 #		execute_dycicalc.o \
 	    	run_dycicalc.o
 
+PDYCIOBJS :=	timestamp.o \
+		errorlib.o \
+		arrayutil.o \
+		allocate_mem.o \
+		abecalc.o \
+		straddress.o \
+		iminmax.o \
+		mpi_utilities.o \
+		moindex.o \
+		readmoints.o \
+		readnamelist.o \
+		bitutil.o \
+		binary.o \
+		binarystr.o \
+		combinatorial.o \
+		citruncate.o \
+                ioutil.o \
+		run_pdycicalc.o
+
 # Objects for AO evaluation test
 AOTESTOBJS	:=	errorlib.o \
 			mathutil.o \
@@ -240,12 +260,14 @@ JEXPO := $(OBJS) jayci_exp.o
 JYCIO := $(OBJS) jayci.o
 MPIJYCIO := $(MPIOBJS) pjayci.o
 DYCIO := $(DYCIOBJS) dycicalc.o
+PDYCIO:= $(PDYCIOBJS) pdycicalc.o
 AOTESTO := $(DYCIOBJS) test_aorbitals.o
 
 JEXPOBJS := $(addprefix $(SDIR)/,$(JEXPO))
 JYCIOBJS := $(addprefix $(SDIR)/,$(JYCIO))
 PJYCIOBJS:= $(addprefix $(MPISDIR)/,$(MPIJYCIO))
 DYCIOBJS := $(addprefix $(SDIR)/,$(DYCIO))
+PDYCIOBJS:= $(addprefix $(MPISDIR)/,$(PDYCIO))
 AOTESTOBJS:= $(addprefix $(SDIR)/,$(AOTESTO))
 TESTOBJS := $(addprefix $(SDIR)/,$(TESTO))
 COLIBOBJS:= $(addprefix $(COLIBDIR)/,$(COLIBO))
@@ -258,6 +280,7 @@ JCIEXE := $(BDIR)/jayci-$(JAYCIVER)-$(OS)-$(ARC)
 PJCIEXE:= $(BDIR)/pjayci-$(PJAYCIVER)-$(OS)-$(ARC)
 JXPEXE := $(BDIR)/jayci_exp-$(JAYCIVER)-$(OS)-$(ARC)
 DYCIEXE:= $(BDIR)/dycicalc-$(DYCICALCVER)-$(OS)-$(ARC)
+PDYCIEXE:=$(BDIR)/pdycicalc-$(PDYCICALCVER)-$(OS)-$(ARC)
 TESTEXE:= $(TDIR)/test.x
 ATESTEXE:= $(BDIR)/testao.x
 COLIBX := $(LDIR)/colib-$(JAYCIVER)-$(OS)-$(ARC).a
@@ -266,7 +289,7 @@ CDPS:= cd $(MPISDIR)
 RM  := rm -rf
 
 # Build --------------------------------------------------------------
-all: colib jayci_exp jayci pjayci dycicalc
+all: colib jayci_exp jayci pjayci dycicalc pdycicalc
 	@echo "Finished building jayci."
 	@echo ""
 
@@ -393,10 +416,34 @@ dycicalc: $(DYCIOBJS) | $(BDIR)
 	@echo " Finished build."
 	@echo ""
 
+pdycicalc: $(PDYCIOBJS) | $(BDIR)
+	@echo ""
+	@echo "------------------------------------------------------"
+	@echo "   PARALLEL DYCICALC PROGRAM "
+	@echo " Program version:	$(PDYCICALCVER)"
+	@echo " BLAS/LAPACK Lib:	$(MATHLIBS)"
+	@echo " COLIB library:		$(COLIBLIB)"
+	@echo " Debug flags:		$(DEBUG)"
+	@echo " C Compiler options: 	$(CFLAGS)"
+	@echo " F90 Compiler options:	$(FFLAGS)"
+	@echo "------------------------------------------------------"
+	$(CDS); $(MPICC) -o $(PDYCIEXE) $(PDYCIOBJS) $(MATHLIBS) $(COLIBLIB) $(GALIBS) $(DEBUG) $(CFLAGS)
+	@echo "------------------------------------------------------"
+	@echo " Creating symbolic link to new binary"
+	ln -sf $(PDYCIEXE) $(BDIR)/pdycicalc
+	@echo "------------------------------------------------------"
+	@echo " Finished build."
+	@echo ""
+
 # Clean --------------------------------------------------------------
 clean:
-	rm -rf $(JYCIOBJS) $(PJYCIOBJS) $(DYCIOBJS)
-	rm -rf $(SDIR)/test.o $(MPISDIR)/test.o $(SDIR)/jayci_exp.o $(MPISDIR)/mpi_jayci.o $(SDIR)/jayci.o 
+	rm -rf $(JYCIOBJS) $(PJYCIOBJS) $(DYCIOBJS) $(PDYCIOBJS)
+	rm -rf $(SDIR)/test.o $(MPISDIR)/test.o $(SDIR)/jayci_exp.o $(MPISDIR)/pjayci.o $(SDIR)/jayci.o $(MPISDIR)/pdycalc.o
+	rm -rf $(SDIR)/dycicalc.o
+
+deepclean:
+	rm -rf $(JYCIOBJS) $(PJYCIOBJS) $(DYCIOBJS) $(PDYCIOBJS)
+	rm -rf $(SDIR)/test.o $(MPISDIR)/test.o $(SDIR)/jayci_exp.o $(MPISDIR)/pjayci.o $(SDIR)/jayci.o $(MPISDIR)/pdycalc.o
 	rm -rf $(SDIR)/dycicalc.o
 	rm -rf $(COLIBOBJS) $(UNIXOBJS)
 

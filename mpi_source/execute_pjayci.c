@@ -87,17 +87,20 @@ int execute_pjayci ()
                              &xlvl, &nfrzv, &printlvl, &printwvf, &error);
                 if (error != 0) {
                         error_flag(mpi_proc_rank, error, "execute_pjayci");
-                        return error;
                 }
+        }
+        mpi_error_check_msg(error, "execute_pjayci", "Error reading input.");
+        if (mpi_proc_rank == mpi_root) {
                 if ((ndocc + nactv) > 64) {
                         error = ndocc + nactv;
                         error_flag(mpi_proc_rank, error, "execute_pjayci");
                         error_message(mpi_proc_rank,
                                       "CI-active orbital number must be < 64.\n",
                                       "execute_pjayci");
-                        return error;
                 }
         }
+        mpi_error_check_msg(error, "execute_pjayci", "Error!");
+        
         /* Broadcast &general values. These are needed on all processes. */
 	if (mpi_proc_rank == mpi_root) printf("Casting &general values...\n");
 	GA_Sync();
@@ -118,9 +121,10 @@ int execute_pjayci ()
                              &error);
                 if (error != 0) {
                         error_flag(0, error, "execute_ci_calculation");
-                        return error;
                 }
 	}
+        mpi_error_check_msg(error, "execute_pjayci", "Error!");
+        
         /* Broadcast values */
         MPI_Bcast(&maxiter, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&krymin,  1, MPI_INT, mpi_root, MPI_COMM_WORLD);

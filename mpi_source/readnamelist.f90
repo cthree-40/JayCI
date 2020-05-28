@@ -30,19 +30,18 @@ subroutine readnamelist(nmlist, nmlstr, err)
   integer :: prediagr, refdim, buflen
   real*8  :: restol
 
-  ! .. &dysonorb arguments ..
+  ! .. &dysonorb unique arguments ..
   character*300 :: wvfcn_file0, wvfcn_file1
-  integer :: nstates0, nstates1
-  integer :: nelecs0,  nelecs1, norbs0, norbs1, ndets0, ndets1, ninto0, ninto1
+  integer :: nstates
   
   namelist /general/ electrons, orbitals, nfrozen, ndocc, nactive, &
           nfrzvirt, xlevel, printlvl, printwvf
   namelist /dalginfo/ maxiter, krymin, krymax, nroots, prediagr, &
           restol, refdim, buflen
   namelist /wavefcn0/ electrons, orbitals, nfrozen, ndocc, nactive, &
-          nfrzvirt, xlevel
+          nfrzvirt, xlevel, nstates
   namelist /wavefcn1/ electrons, orbitals, nfrozen, ndocc, nactive, &
-          nfrzvirt, xlevel
+          nfrzvirt, xlevel, nstates
 
   ! initialize error flag
   err = 0
@@ -108,6 +107,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
           ndocc     = 0
           nfrzvirt  = 0
           xlevel    = 0
+          nstates   = 0
           open(file = "dycicalc.in", unit = 10, action = "read", status = "old", &
                   iostat = err)
           if (err .ne. 0) return
@@ -122,6 +122,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
           write(nmlstr(5),9) nactive
           write(nmlstr(6),9) xlevel
           write(nmlstr(7),9) nfrzvirt
+          write(nmlstr(8),9) nstates
           
           close(10)
           return
@@ -132,6 +133,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
           ndocc     = 0
           nfrzvirt  = 0
           xlevel    = 0
+          nstates   = 0
           open(file = "dycicalc.in", unit = 10, action = "read", status = "old", &
                   iostat = err)
           if (err .ne. 0) return
@@ -146,6 +148,7 @@ subroutine readnamelist(nmlist, nmlstr, err)
           write(nmlstr(5),9) nactive
           write(nmlstr(6),9) xlevel
           write(nmlstr(7),9) nfrzvirt
+          write(nmlstr(8),9) nstates
           
           close(10)
           return

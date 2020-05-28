@@ -126,14 +126,138 @@ FILE *find_str_line(char *string, FILE *fptr)
  */
 void print_array_2d(double **array, int rows, int cols)
 {
-    int i, j;
-    for (i = 0; i < rows; i++) {
-	for (j = 0; j < cols; j++) {
-	    fprintf(stdout, " %15.8lf ", array[j][i]);
-	}
-	fprintf(stdout,"\n");
-    }
-    return;
+        int i, j;
+        for (i = 0; i < rows; i++) {
+                for (j = 0; j < cols; j++) {
+                        fprintf(stdout, " %15.8lf ", array[j][i]);
+                }
+                fprintf(stdout,"\n");
+        }
+        return;
+}
+
+/*
+ * print_wavefunction_info: print wavefunction information.
+ */
+void print_wavefunction_info(char *wfname, int nelecs, int norbs, int nfrzc,
+                             int ndocc, int nactv, int nfrzv, int xlvl,
+                             int nstates)
+{
+        printf("%s: electrons = %d orbitals = %d\n", wfname, nelecs, norbs);
+        printf(" (Frozen core, DOCC, ACTV, Frozen virtual) = %d %d %d %d\n",
+               nfrzc, ndocc, nactv, nfrzv);
+        printf(" Number of states: %d\n", nstates);
+        return;
+}
+
+/* readwf0input: read wavefunction input for anion (0)
+ * -------------------------------------------------------------------
+ * Calls readnamelist which returns a character array
+ *  nmlstr[0] = elec
+ *  nmlstr[1] = orbs
+ *  nmlist[2] = nfrozen
+ *  nmlist[3] = ndocc
+ *  nmlist[4] = nactive
+ *  nmlist[5] = xlevel
+ *  nmlist[6] = nfrzvirt
+ *  nmlist[7] = nstates
+ *
+ * Output:
+ *  elec = number of electrons in system (alpha + beta)
+ *  orbs = number of orbitals in system (including forzen core)
+ *  nfrozen = number of frozen core orbitals
+ *  ndocc = number of doubly-occupied orbitals
+ *  nactive = number of active orbitals
+ *  xlevel = excitaion level (Default is 2)
+ *  nfrzvirt = number of frozen virtual orbitals
+ *  nstates = number of states
+ *  err = error handling: n = missing variable n */
+void readwf0input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt,
+                  int *nstates,  int *err)
+{
+     /* local scalars
+      * dywf0nml = namelist to read in */
+     long long int dywf0nml=3;
+     
+     /* local arrays
+      * nmlstr = namelist character arrays */
+     char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};
+     
+
+     *err = 0;
+
+     /* read namelist 1 */
+     readnamelist_(&dywf0nml, nmlstr, &err);
+     if (err != 0) return;
+
+     /* stream the input into the proper variables */
+     sscanf(nmlstr[0], "%d", elec);
+     sscanf(nmlstr[1], "%d", orbs);
+     sscanf(nmlstr[2], "%d", nfrozen);
+     sscanf(nmlstr[3], "%d", ndocc);
+     sscanf(nmlstr[4], "%d", nactive);
+     sscanf(nmlstr[5], "%d", xlevel);
+     sscanf(nmlstr[6], "%d", nfrzvirt);
+     sscanf(nmlstr[7], "%d", nstates);
+
+     return;
+     
+}
+
+/* readwf1input: read wavefunction input for neutral (1)
+ * -------------------------------------------------------------------
+ * Calls readnamelist which returns a character array
+ *  nmlstr[0] = elec
+ *  nmlstr[1] = orbs
+ *  nmlist[2] = nfrozen
+ *  nmlist[3] = ndocc
+ *  nmlist[4] = nactive
+ *  nmlist[5] = xlevel
+ *  nmlist[6] = nfrzvirt
+ *  nmlist[7] = nstates
+ *
+ * Output:
+ *  elec = number of electrons in system (alpha + beta)
+ *  orbs = number of orbitals in system (including forzen core)
+ *  nfrozen = number of frozen core orbitals
+ *  ndocc = number of doubly-occupied orbitals
+ *  nactive = number of active orbitals
+ *  xlevel = excitaion level (Default is 2)
+ *  nfrzvirt = number of frozen virtual orbitals
+ *  nstates = number of states to read
+ *  err = error handling: n = missing variable n */
+void readwf1input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt,
+                  int *nstates,  int *err)
+{
+     /* local scalars
+      * dywf0nml = namelist to read in */
+     long long int dywf1nml=4;
+     
+     /* local arrays
+      * nmlstr = namelist character arrays */
+     char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};
+     
+
+     *err = 0;
+
+     /* read namelist 1 */
+     readnamelist_(&dywf1nml, nmlstr, &err);
+     if (err != 0) return;
+
+     /* stream the input into the proper variables */
+     sscanf(nmlstr[0], "%d", elec);
+     sscanf(nmlstr[1], "%d", orbs);
+     sscanf(nmlstr[2], "%d", nfrozen);
+     sscanf(nmlstr[3], "%d", ndocc);
+     sscanf(nmlstr[4], "%d", nactive);
+     sscanf(nmlstr[5], "%d", xlevel);
+     sscanf(nmlstr[6], "%d", nfrzvirt);
+     sscanf(nmlstr[7], "%d", nstates);
+
+     return;
+     
 }
 
 /* readdaiinput: read diagonalization algorithm input.

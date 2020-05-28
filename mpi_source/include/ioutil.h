@@ -50,6 +50,27 @@ FILE *find_str_line(char *string, FILE *fptr);
  */
 void print_array_2d(double **array, int rows, int cols);
 
+/*
+ * print_wavefunction_info: print wavefunction information.
+ */
+void print_wavefunction_info(char *wfname, int nelecs, int norbs, int nfrzc,
+                             int ndocc, int nactv, int nfrzv, int xlvl,
+                             int nstates);
+
+/*
+ * readwf0input: read wavefunction input for anion (0)
+ */
+void readwf0input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt,
+                  int *nstates,  int *err);
+
+/*
+ * readwf1input: read wavefunction input for neutral (1)
+ */
+void readwf1input(int *elec,     int *orbs,   int *nfrozen,  int *ndocc,
+	          int *nactive,  int *xlevel, int *nfrzvirt,
+                  int *nstates,  int *err);
+
 /* readdaiinput: read diagonalization algorithm input.
  * -------------------------------------------------------------------
  * Calls readnamelist which returns a chracter array

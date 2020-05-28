@@ -383,7 +383,7 @@ int compute_stringnum(int orbs, int elecs, int ndocc, int nactv, int xlvl)
                         }
                 }
         }
-        
+
         return num;
 }
 
