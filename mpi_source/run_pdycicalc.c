@@ -290,12 +290,8 @@ int run_pdycicalc ()
         GA_Sync();
         
         /* Read civectors. */
-        read_gavectorsfile_dbl_ufmt(v0_hndl, dtrm0_len, nstates0, "anion.ci",
-                                    &error);
-        mpi_error_check_msg(error, "run_dycicalc", "Error reading ci vectors.");
-        read_gavectorsfile_dbl_ufmt(v1_hndl, dtrm1_len, nstates1, "neutral.ci",
-                                    &error);
-        mpi_error_check_msg(error, "run_dycicalc", "Error reading ci vectors.");
+        read_gavectorsfile_dbl_ufmt(v0_hndl, dtrm0_len, nstates0, "anion.ci");
+        read_gavectorsfile_dbl_ufmt(v1_hndl, dtrm1_len, nstates1, "neutral.ci");
         
         /* Compute dyson orbital */
         

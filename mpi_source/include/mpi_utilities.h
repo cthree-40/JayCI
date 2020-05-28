@@ -85,11 +85,8 @@ void print_gavectors2file_dbl_ufmt(int hndl, int len, int dim, char *fname);
  *  len   = length of vectors
  *  dim   = number of vectors
  *  fname = file name
- * Ouput:
- *  error = error flag
  */
-void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname,
-                                 int *error);
+void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname);
 
 /*
  * set_mpi_process_number_and_rank: set global variables $mpi_num_procs
