@@ -170,7 +170,7 @@ void print_gavectors2file_int_ufmt(int hndl, int len, int dim, char *fname)
                         return;
                 }
 
-                fptr = fopen(fname, "w");
+                fptr = fopen(fname, "wb");
                 if (fwrite(&dim, sizeof(int), 1, fptr) != 1) {
                         fprintf(stderr, "Error occured writing to file.\n");
                         fclose(fptr);
@@ -312,7 +312,7 @@ void print_gavectors2file_dbl_ufmt(int hndl, int len, int dim, char *fname)
                         return;
                 }
 
-                fptr = fopen(fname, "w");
+                fptr = fopen(fname, "wb");
                 if (fwrite(&dim, sizeof(int), 1, fptr) != 1) {
                         fprintf(stderr, "Error occured writing to file.\n");
                         fclose(fptr);
@@ -375,7 +375,8 @@ void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname)
         int ga_dims[2] = {0, 0};   /* Dimensions of GA */
         int ga_ndim    = {0};      /* Number of dimensions of GA */
         int ga_type    = 0;        /* Data type of GA */
-        
+
+        int fdim = 0, flen = 0;    /* Dim and len values of file */
         int buflen = BUFSIZE;
         int i, j, jj;
         int jmax;
@@ -396,7 +397,7 @@ void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname)
         
         if (mpi_proc_rank == mpi_root) {
                 
-                fptr = fopen(fname, "r");
+                fptr = fopen(fname, "rb");
                 if (fptr == NULL) {
                         error_message(mpi_proc_rank, "Could not open file.",
                                       "read_gavectorsfile_dbl_ufmt");
@@ -404,7 +405,39 @@ void read_gavectorsfile_dbl_ufmt(int hndl, int len, int dim, char *fname)
                         error = 2;
                 }
         }
-        mpi_error_check_msg(error, "read_gavectorsfile_dbl", "Error!");
+        mpi_error_check_msg(error, "read_gavectorsfile_dbl_ufmt", "Error!");
+        GA_Sync();
+
+        /* Read dimensions of vectors */
+        if (mpi_proc_rank == mpi_root) {
+                if (fread(&fdim, sizeof(int), 1, fptr) != 1) {
+                        fprintf(stderr, "Error occured reading from file.\n");
+                        fprintf(stderr, "File: %s\n", fname);
+                        error = 3;
+                }
+        }
+        mpi_error_check_msg(error, "read_gavectorsfile_dbl_ufmt", "Error!");
+        GA_Sync();
+        if (mpi_proc_rank == mpi_root) {
+                if (fread(&flen, sizeof(int), 1, fptr) != 1) {
+                        fprintf(stderr, "Error occured reading from file.\n");
+                        fprintf(stderr, "File: %s\n", fname);
+                        error = 4;
+                }
+        }
+        mpi_error_check_msg(error, "read_gavectorsfile_dbl_ufmt", "Error!");
+        GA_Sync();
+
+        if (mpi_proc_rank == mpi_root) {
+                if (flen != len || fdim != dim) {
+                        error_message(mpi_proc_rank, "Incorrect dimensions!",
+                                      "read_gavectorsfile_dbl_ufmt");
+                        fprintf(stderr, "File: %d %d, Declared: %d %d\n",
+                                fdim, flen, dim, len);
+                        error = 5;
+                }
+        }
+        mpi_error_check_msg(error, "read_gavectorsfile_dbl_ufmt", "Error!");
         GA_Sync();
         
         if (mpi_proc_rank == mpi_root) {

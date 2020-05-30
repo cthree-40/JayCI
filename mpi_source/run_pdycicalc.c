@@ -292,6 +292,10 @@ int run_pdycicalc ()
         /* Read civectors. */
         read_gavectorsfile_dbl_ufmt(v0_hndl, dtrm0_len, nstates0, "anion.ci");
         read_gavectorsfile_dbl_ufmt(v1_hndl, dtrm1_len, nstates1, "neutral.ci");
+#ifdef DEBUGGING
+        print_gavectors2file_dbl_ufmt(v0_hndl, dtrm0_len, nstates0, "anion.0");
+        print_gavectors2file_dbl_ufmt(v1_hndl, dtrm1_len, nstates1, "neutr.0");
+#endif
         
         /* Compute dyson orbital */
         
