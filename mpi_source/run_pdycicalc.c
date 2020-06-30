@@ -10,6 +10,7 @@
 #include "binarystr.h"
 #include "iminmax.h"
 #include "citruncate.h"
+#include "dysoncomp.h"
 #include "run_pdycicalc.h"
 
 #include <ga.h>
@@ -22,6 +23,7 @@
  */
 int run_pdycicalc ()
 {
+#define MAXSTATES_CI 5
         int error = 0; /* Error flag */
 
         int w0_hndl = 0;               /* GA wavefunction 0 */
@@ -44,6 +46,7 @@ int run_pdycicalc ()
         int ndocc0;    /* Number of DOCC orbitals */
         int nactv0;    /* Number of CAS  orbitals */
         int nfrzv0;    /* Number of frozen virtual orbitals */
+        int ninto0;    /* Number of internal (DOCC+CAS) orbitals */
         int xlvl0;     /* CI excitation level */
         int norbs0;    /* Number of orbitals */
         int ciorbs0;   /* NUmber of ci orbitals */
@@ -70,6 +73,7 @@ int run_pdycicalc ()
         int ndocc1;    /* Number of DOCC orbitals */
         int nactv1;    /* Number of CAS  orbitals */
         int nfrzv1;    /* Number of frozen virtual orbitals */
+        int ninto1;    /* Number of internal (DOCC+CAS) orbitals */
         int xlvl1;     /* CI excitation level */
         int norbs1;    /* Number of orbitals */
         int ciorbs1;   /* NUmber of ci orbitals */
@@ -96,9 +100,9 @@ int run_pdycicalc ()
         int v1_chunk[2]= {0, 0};  /* GA 1 (Neutral) CI vector chunk sizes */
         
         int ndyorbs = 0;              /* Number of dyson orbitals to compute */
-        int *dysnst0 = NULL;          /* Anion states of dyson orbital */
-        int *dysnst1 = NULL;          /* Neutral states of dyson orbital */
-        int maxstates = 5;            /* Max Anion/Neutral states */
+        int *dysnst0[MAXSTATES_CI];   /* Anion states of dyson orbital */
+        int *dysnst1[MAXSTATES_CI];   /* Neutral states of dyson orbital */
+        int maxstates = 0;            /* Max Anion/Neutral states */
         int ndyst0 = 0;               /* Number of anion staets in dyson orb. */
         int ndyst1 = 0;               /* Number of neutral states in dyson orb.*/
         double **dyorb = NULL;        /* LOCAL dyson orbitals */
@@ -137,7 +141,8 @@ int run_pdycicalc ()
         MPI_Bcast(&nfrzv0,   1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&xlvl0,    1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&nstates0, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
-
+        ninto0 = ndocc0 + nactv0;
+        
         MPI_Bcast(&nelecs1,  1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&norbs1,   1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&nfrzc1,   1, MPI_INT, mpi_root, MPI_COMM_WORLD);
@@ -146,7 +151,8 @@ int run_pdycicalc ()
         MPI_Bcast(&nfrzv1,   1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&xlvl1,    1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&nstates1, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
-
+        ninto1 = ndocc1 + nactv1;
+        
         error = check_wavefunction_input(nelecs0, norbs0, nfrzc0, ndocc0,
                                          nactv0, nfrzv0, nelecs1, norbs1,
                                          nfrzc1, ndocc1, nactv1, nfrzv1);
@@ -154,8 +160,7 @@ int run_pdycicalc ()
                             "Error in wavefunction input");
 
         /* Read dysonorbital input */
-        dysnst0 = malloc(sizeof(int) * maxstates);
-        dysnst1 = malloc(sizeof(int) * maxstates);
+        maxstates = MAXSTATES_CI;
         if (mpi_proc_rank == mpi_root) {
                 readdysoninput(dysnst0, dysnst1, maxstates, &ndyst0, &ndyst1,
                                &error);
@@ -171,12 +176,15 @@ int run_pdycicalc ()
                 }
                 printf("\n\n");
         }
+        
+        
         mpi_error_check_msg(error, "run_dycicalc", "Error reading dyson input.");
         MPI_Bcast(&dysnst0,  maxstates, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&ndyst0,           1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&dysnst1,  maxstates, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&ndyst1,           1, MPI_INT, mpi_root, MPI_COMM_WORLD);
-        
+        printf(" %d: %d %d \n", mpi_proc_rank, dysnst0[0], dysnst0[1]);
+        printf(" %d: %d %d \n", mpi_proc_rank, dysnst1[0], dysnst1[1]);
         /* Set up wavefunctions */
         /* W0 (Anion) */
         abecalc(nelecs0, &naelec0, &nbelec0);
@@ -292,13 +300,41 @@ int run_pdycicalc ()
         /* Read civectors. */
         read_gavectorsfile_dbl_ufmt(v0_hndl, dtrm0_len, nstates0, "anion.ci");
         read_gavectorsfile_dbl_ufmt(v1_hndl, dtrm1_len, nstates1, "neutral.ci");
-#ifdef DEBUGGING
-        print_gavectors2file_dbl_ufmt(v0_hndl, dtrm0_len, nstates0, "anion.0");
-        print_gavectors2file_dbl_ufmt(v1_hndl, dtrm1_len, nstates1, "neutr.0");
-#endif
+
+        /* Generate W arrays for each wavefunction. */
+        generate_wlist(w0_hndl, dtrm0_len, pq_space_pairs0, num_pq0, peospace0,
+                       pegrps0, qeospace0, qegrps0);
+        generate_wlist(w1_hndl, dtrm1_len, pq_space_pairs1, num_pq1, peospace1,
+                       pegrps1, qeospace1, qegrps1);
         
-        /* Compute dyson orbital */
-        
+        /* Compute dyson orbitals */
+        /* If number of alpha/beta electrons are equal in both (N+1) and (N)
+         * electron wavefunctions, then alpha/beta strings are IDENTICAL, and
+         * they do not need to be compared. (Contribution is 1.)
+         * An important point must be made: the abecalc() routine will always
+         * make the number of alpha electrons greater than the number of beta
+         * electrons.
+         * THEREFORE:
+         *  1) Singlet/Triplet (alpha = beta) -> Doublet (alpha > beta)
+         *         :: compare beta  strings only
+         *  2) Doublet (alpha > beta) -> Singlet/Triplet (alpha = beta)
+         *         :: compare alpha strings only
+         */
+        if (nelecs0 % 2) {
+                /* S/T (N+1) wavefunction, compare beta  strings. */
+                compute_dyson_orbital(w0_hndl, dtrm0_len, w1_hndl, dtrm1_len,
+                                      v0_hndl, v1_hndl,
+                                      qstrings0, qstrings1, 1, 0, ninto0, ninto1,
+                                      norbs0, dysnst0, ndyst0, dysnst1,
+                                      ndyst1, ndyorbs, dyorb);
+        } else {
+                /* D   (N+1) wavefunction, compare alpha strings. */
+                compute_dyson_orbital(w0_hndl, dtrm0_len, w1_hndl, dtrm1_len,
+                                      v0_hndl, v1_hndl,
+                                      pstrings0, pstrings1, 0, 1, ninto0, ninto1,
+                                      norbs0, dysnst0, ndyst0, dysnst1,
+                                      ndyst1, ndyorbs, dyorb);
+        }
         return error;
 }
 
@@ -338,3 +374,184 @@ int check_wavefunction_input(int nelecs0, int norbs0, int nfrzc0,  int ndocc0,
         }
         return error;
 }
+
+/*
+ * determinant_string_info: compute string information given
+ * a determinant.
+ * Input:
+ *  detindx = determinant index (position in list)
+ *  peosp   = alpha electron orbital spaces
+ *  pegrps  = number of alpha electron orbital spaces
+ *  qeosp   = beta  electron orbital spaces
+ *  qegrps  = number of beta  electron orbital spaces
+ *  pq      = (p,q)-space pairings
+ *  npq     = number of (p,q)-space pairings
+ * Output:
+ *  pqval = (p,q) pairing start
+ *  pval  = p string of (p,q)-space pairing
+ *  qval  = q string of (p,q)-space pairing
+ */
+void determinant_string_info(int detindx, struct eospace *peosp, int pegrps,
+                             struct eospace *qeosp, int qegrps, int **pq,
+                             int npq, int *pqval, int *pval, int *qval)
+{
+        int i, j, k;
+        int jstart, jmax, kstart, kmax;
+        int cntr = 0; /* counter */
+        /* Loop over p,q string pairings */
+        for (i = 0; i < npq; i++) {
+                jstart = peosp[(pq[i][0])].start;
+                kstart = qeosp[(pq[i][1])].start;
+                jmax   = jstart + peosp[(pq[i][0])].nstr;
+                kmax   = kstart + qeosp[(pq[i][1])].nstr;
+                for (j = jstart; j < jmax; j++) {
+                        for (k = kstart; k < kmax; k++) {
+                                if (cntr == detindx) {
+                                        *pqval = i;
+                                        *pval = j;
+                                        *qval = k;
+                                        return;
+                                }
+                                cntr++;
+                        }
+                }
+        }
+        error_message(mpi_proc_rank, "Determinant not found",
+                      "determinant_string_info");
+        error_flag(mpi_proc_rank, detindx, "determinat_string_info");
+        return;
+}
+
+/*
+ * generate_det_triples: generate list of triplets for each determinant:
+ *  |i> = |(pq, p, q)>
+ */
+void generate_det_triples (int ndeti, int **d_triplet, int pq_start,
+                           int p_start, int q_start, int pq_final,
+                           int p_final, int q_final, int **pq, int npq,
+                           struct eospace *peosp, int pegrps,
+                           struct eospace *qeosp, int qegrps)
+{
+        int i, j, k;
+        int j_start, j_max;
+        int k_start, k_max;
+        int cnt;
+
+        /* Loop over p,q string pairings */
+        cnt = 0;
+        for (i = pq_start; i <= pq_final; i++) {
+
+                if (i == pq_start) {
+                        /* If first pq pair, then we skip ahead */
+                        j_start = p_start;
+                } else {
+                        /* If not first pair, start at beginning p string. */
+                        j_start = peosp[(pq[i][0])].start;
+                }
+                if (i == pq_final) {
+                        /* If last pq pair, we end prematurely */
+                        j_max = p_final + 1;
+                } else {
+                        /* If not last pair, we end at last p string */
+                        j_max = peosp[(pq[i][0])].start +
+                                peosp[(pq[i][0])].nstr;
+                }
+
+                /* Loop over alpha (p) strings */ 
+                for (j = j_start; j < j_max; j++) {
+
+                        /* First loop, we skip ahead */
+                        if (i == pq_start &&
+                            j_start == p_start && j == p_start) {
+                                k_start = q_start;
+                        } else {
+                                k_start = qeosp[(pq[i][1])].start;
+                        }
+                        /* Last loop */
+                        if (i == pq_final &&
+                            j_max == (p_final + 1) && j == (p_final)) {
+                                k_max = q_final + 1;
+                        } else {
+                                k_max = qeosp[(pq[i][1])].start +
+                                        qeosp[(pq[i][1])].nstr;
+                        }
+                        
+                        /* Loop over beta (q) strings */
+                        for (k = k_start; k < k_max; k++) {
+                                d_triplet[cnt][0] = j;
+                                d_triplet[cnt][1] = k;
+                                /* Set cas flags for electron space */
+                                if ((peosp[(pq[i][0])].virt +
+                                     qeosp[(pq[i][1])].virt) == 0) {
+                                        d_triplet[cnt][2] = 1;
+                                } else {
+                                        d_triplet[cnt][2] = 0;
+                                }
+                                cnt++;
+                        }
+                }
+        }
+        return;
+
+}
+
+
+/*
+ * generate_wlist: generate the wavefunction list of triplets
+ * Input:
+ *  hndl     = handle of global array of W
+ *  ndets    = number of determinants
+ *  pq       = alpha/beta pairs
+ *  npq      = number of alpha/beta pairs
+ *  peospace = alpha string electron orbital space
+ *  pegrps   = number of alpha string orbital spaces
+ *  qeospace = beta  string electron orbital space
+ *  qegrps   = number of beta  string orbital spaces
+ */
+void generate_wlist(int hndl, int ndets, int **pq, int npq,
+                    struct eospace *peosp, int pegrps,
+                    struct eospace *qeosp, int qegrps)
+{
+        int lo[2] = {0, 0};
+        int hi[2] = {0, 0};
+        int ld[1] = {0};       /* Leading dimension of w buffer */
+        int rows = 0, cols = 0;/* Dimensions of local w array */
+        int **w = NULL;        /* Local w array */
+        int *wdata = NULL;     /* Local w array data (1-d) */
+
+        int pq_start = 0, pq_final = 0;
+        int pstart = 0, pfinal = 0;
+        int qstart = 0, qfinal = 0;
+        
+        /* Find distribution of W that is allocate on this process.
+         * Allocate local W array */
+        NGA_Distribution(hndl, mpi_proc_rank, lo, hi);
+        cols = hi[0] - lo[0] + 1;
+        rows = hi[1] - lo[1] + 1;
+        if (rows != 3) {
+                error_message(mpi_proc_rank, "rows != 3","generate_wlist");
+                error_flag(mpi_proc_rank, rows, "generate_wlist");
+                return;
+        }
+        wdata = allocate_mem_int_cont(&w, rows, cols);
+        
+        /* Get starting deteriminant index values, and generate the determinant
+         * triplet list for this section. */
+        determinant_string_info(lo[0], peosp, pegrps, qeosp, qegrps, pq, npq,
+                                &pq_start, &pstart, &qstart);
+        determinant_string_info(hi[0], peosp, pegrps, qeosp, qegrps, pq, npq,
+                                &pq_final, &pfinal, &qfinal);
+        generate_det_triples(cols, w, pq_start, pstart, qstart, pq_final,
+                             pfinal, qfinal, pq, npq, peosp, pegrps,
+                             qeosp, qegrps);
+
+        /* Send this info to the global array W. */
+        ld[0] = rows;
+        NGA_Put(hndl, lo, hi, wdata, ld);
+
+        deallocate_mem_cont_int(&w, wdata);
+
+        GA_Sync();
+                
+        return;
+}    
