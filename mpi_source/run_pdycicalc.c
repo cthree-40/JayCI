@@ -100,18 +100,20 @@ int run_pdycicalc ()
         int v1_chunk[2]= {0, 0};  /* GA 1 (Neutral) CI vector chunk sizes */
         
         int ndyorbs = 0;              /* Number of dyson orbitals to compute */
-        int *dysnst0[MAXSTATES_CI];   /* Anion states of dyson orbital */
-        int *dysnst1[MAXSTATES_CI];   /* Neutral states of dyson orbital */
+        int dysnst0[MAXSTATES_CI];    /* Anion states of dyson orbital */
+        int dysnst1[MAXSTATES_CI];    /* Neutral states of dyson orbital */
         int maxstates = 0;            /* Max Anion/Neutral states */
         int ndyst0 = 0;               /* Number of anion staets in dyson orb. */
         int ndyst1 = 0;               /* Number of neutral states in dyson orb.*/
-        double **dyorb = NULL;        /* LOCAL dyson orbitals */
-        double *dyorb_data = NULL;    /* LOCAL dyson orbital memory block */
+        double **dyorb_lc = NULL;     /* LOCAL dyson orbitals */
+        double *dyorb_lc_data = NULL; /* LOCAL dyson orbital memory block */
+        double **dyorb_gl = NULL;     /* GLOBAL dyson orbitals */
+        double *dyorb_gl_data = NULL; /* GLOBAL dyson orbitals memory block */
 
         double memusage = 0.0;  /* Estimated memory usage. */
 
         int i = 0;
-        
+
         /* Read wavefunction input. */
         if (mpi_proc_rank == mpi_root) {
                 readwf0input(&nelecs0, &norbs0, &nfrzc0, &ndocc0, &nactv0,
@@ -164,27 +166,31 @@ int run_pdycicalc ()
         if (mpi_proc_rank == mpi_root) {
                 readdysoninput(dysnst0, dysnst1, maxstates, &ndyst0, &ndyst1,
                                &error);
+
                 printf("\nComputing dyson orbitals between:\n");
-                printf("Anion states:   ");
+                printf(" Anion states (%d):   ", ndyst0);
                 for (i = 0; i < ndyst0; i++) {
                         printf(" %d", dysnst0[i]);
+                        /* Decrement value for C array indexing. */
+                        dysnst0[i] = dysnst0[i] - 1;
                 }
                 printf("\n");
-                printf("Neutral states: ");
+                printf(" Neutral states (%d): ", ndyst1);
                 for (i = 0; i < ndyst1; i++) {
+                        /* Decrement value for C array indexing. */
                         printf(" %d", dysnst1[i]);
+                        dysnst1[i] = dysnst1[i] - 1;
                 }
                 printf("\n\n");
-        }
         
+        }
         
         mpi_error_check_msg(error, "run_dycicalc", "Error reading dyson input.");
         MPI_Bcast(&dysnst0,  maxstates, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&ndyst0,           1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&dysnst1,  maxstates, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&ndyst1,           1, MPI_INT, mpi_root, MPI_COMM_WORLD);
-        printf(" %d: %d %d \n", mpi_proc_rank, dysnst0[0], dysnst0[1]);
-        printf(" %d: %d %d \n", mpi_proc_rank, dysnst1[0], dysnst1[1]);
+
         /* Set up wavefunctions */
         /* W0 (Anion) */
         abecalc(nelecs0, &naelec0, &nbelec0);
@@ -292,9 +298,10 @@ int run_pdycicalc ()
         if (!v1_hndl) GA_Error("Create failed: V1: CI Vector", 2);
         if (mpi_proc_rank == mpi_root) printf("Global arrays created.\n");
         
-        /* Allocate LOCAL arrays: dyorb */
+        /* Allocate LOCAL arrays: dyorb_lc, dyorb_gl */
         ndyorbs = ndyst0 * ndyst1;
-        dyorb_data = allocate_mem_double_cont(&dyorb, norbs0, ndyorbs);
+        dyorb_lc_data = allocate_mem_double_cont(&dyorb_lc, norbs0, ndyorbs);
+        dyorb_gl_data = allocate_mem_double_cont(&dyorb_gl, norbs0, ndyorbs);
         GA_Sync();
         
         /* Read civectors. */
@@ -320,21 +327,44 @@ int run_pdycicalc ()
          *  2) Doublet (alpha > beta) -> Singlet/Triplet (alpha = beta)
          *         :: compare alpha strings only
          */
-        if (nelecs0 % 2) {
+        if (nelecs0 % 2 == 0) {
+                if (mpi_proc_rank == mpi_root) {
+                        printf("N+1 wavefunction is singlet/triplet.\n");
+                        printf(" Comparing beta electron strings...\n");
+                }
                 /* S/T (N+1) wavefunction, compare beta  strings. */
                 compute_dyson_orbital(w0_hndl, dtrm0_len, w1_hndl, dtrm1_len,
                                       v0_hndl, v1_hndl,
                                       qstrings0, qstrings1, 1, 0, ninto0, ninto1,
                                       norbs0, dysnst0, ndyst0, dysnst1,
-                                      ndyst1, ndyorbs, dyorb);
+                                      ndyst1, ndyorbs, dyorb_lc);
         } else {
+                if (mpi_proc_rank == mpi_root) {
+                        printf("N+1 wavefunction is doublet.\n");
+                        printf(" Comparing alpha electron strings...\n");
+                }
                 /* D   (N+1) wavefunction, compare alpha strings. */
                 compute_dyson_orbital(w0_hndl, dtrm0_len, w1_hndl, dtrm1_len,
                                       v0_hndl, v1_hndl,
                                       pstrings0, pstrings1, 0, 1, ninto0, ninto1,
                                       norbs0, dysnst0, ndyst0, dysnst1,
-                                      ndyst1, ndyorbs, dyorb);
+                                      ndyst1, ndyorbs, dyorb_lc);
         }
+
+        /* Accumulate dyson orbitals from each process. */
+        GA_Sync();
+        MPI_Allreduce(dyorb_lc_data, dyorb_gl_data, (ndyorbs * norbs0),
+                      MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+        if (mpi_proc_rank == mpi_root) {
+                printf("Finished computing %d dyson orbitals.\n", ndyorbs);
+        }
+        /* Print dyson orbitals to file */
+        if (mpi_proc_rank == mpi_root) {
+                print_dysonorbitals_to_file("dysonorb.dat", ndyorbs, norbs0,
+                                            dyorb_gl, dysnst0, ndyst0, dysnst1,
+                                            ndyst1);
+        }
+        
         return error;
 }
 
@@ -555,3 +585,47 @@ void generate_wlist(int hndl, int ndets, int **pq, int npq,
                 
         return;
 }    
+
+/*
+ * print_dysonorbitals_to_file: print the compute dyson orbitals to file.
+ */
+void print_dysonorbitals_to_file(char *filename, int ndyorbs, int orbs,
+                                 double **dyorbs, int *dysnst0, int ndyst0,
+                                 int *dysnst1, int ndyst1)
+{
+        FILE* fptr = NULL; /* File pointer */
+        int i, j, k;
+
+        fptr = fopen(filename, "w");
+        if (fptr == NULL) {
+                printf("Could not open file: %s\n", filename);
+                return;
+        }
+        /* Print dyson orbital information first */
+        /*
+         * 1st line: # of... dyson orbitals, anion states, neutral states
+         * 2nd line: # of molecular orbitals
+         * 3rd line: Anion states
+         * 4th line: Neutral states
+         */
+        fprintf(fptr, " %d %d %d\n", ndyorbs, ndyst0, ndyst1);
+        fprintf(fptr, " %d\n", orbs);
+        for (i = 0; i < ndyst0; i++) {
+                fprintf(fptr, " %d", (dysnst0[i] + 1));
+        }
+        fprintf(fptr, "\n");
+        for (i = 0; i < ndyst1; i++) {
+                fprintf(fptr, " %d", (dysnst1[i] + 1));
+        }
+        fprintf(fptr, "\n");
+        for (i = 0; i < ndyorbs; i++) {
+                for (j = 0; j < orbs; j++) {
+                        fprintf(fptr, "%15.8lf\n", dyorbs[i][j]);
+                }
+                fprintf(fptr,"\n");
+        }
+
+        fclose(fptr);
+        
+        return;
+}

@@ -62,5 +62,11 @@ void generate_wlist(int hndl, int ndets, int **pq, int npq,
                     struct eospace *peosp, int pegrps,
                     struct eospace *qeosp, int qegrps);
 
-        
+/*
+ * print_dysonorbitals_to_file: print the compute dyson orbitals to file.
+ */
+void print_dysonorbitals_to_file(char *filename, int ndyorbs, int orbs,
+                                 double **dyorbs, int *dysnst0, int ndyst0,
+                                 int *dysnst1, int ndyst1);
+
 #endif

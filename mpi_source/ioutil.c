@@ -157,8 +157,8 @@ void print_wavefunction_info(char *wfname, int nelecs, int norbs, int nfrzc,
  *  states1 = states of neutral to compute dyson orbitals
  *  error   = error flag
  */
-void readdysoninput(int *states0, int *states1, int maxst, int *nst0, int *nst1,
-                    int *error)
+void readdysoninput(int *states0, int *states1, int maxst, int *nst0,
+                    int *nst1, int *error)
 {
         long long int dysonnml = 5; /* &dysonorbital namelist flag */
         char nmlstr[MAX_NAMELIST_SIZE][MAX_LINE_SIZE] = {{""},{""}};

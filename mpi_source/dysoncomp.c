@@ -202,9 +202,11 @@ void compute_dyson_orbital(int w0_hndl, int dlen0, int w1_hndl, int dlen1,
                                           v1_rows, v1_cols, spindx1, spindx2,
                                           str0, str1, dysnst0, ndyst0,
                                           dysnst1, ndyst1, dyorb, ninto);
+                
         }
+        
         GA_Sync();
-        printf("Finished computing dyson orbitals.\n");
+
         return;
 }
 
@@ -244,8 +246,6 @@ void compute_det_contributions(int **w0, double **v0, int v0_rows, int v0_cols,
         int dyind = 0;      /* dyson orbital index */
         int ndiff = 0;      /* number of differences */
         int orbindx = 0;    /* orbital index of contribution */
-        
-        printf("Evaluating det contributions.\n");
 
         /* Loop over determinants. N electrons must be in the same slots for
          * both determinants. The N+1 electron, in a unique slot, is the MO
@@ -257,16 +257,16 @@ void compute_det_contributions(int **w0, double **v0, int v0_rows, int v0_cols,
                         orbindx = comparestrings_dyson(str0[w0[i][sp]],
                                                        str1[w1[j][sp]], ninto);
                         if (orbindx == 0) continue;
+
                         /* Compute contributions to orbital (orbindx) for all
                          * CI vectors involved in dyson orbitals */
                         dyind = 0;
                         for (k = 0; k < ndyst0; k++) {
                                 for (l = 0; l < ndyst1; l++) {
-                                        printf("%d: dyst1[%d] = %d\n",
-                                               mpi_proc_rank, l, dyst1[l]);
                                         dyorb[dyind][(orbindx - 1)] =
-                                                v0[dyst0[k]-1][i]*
-                                                   v1[dyst1[l]-1][j];
+                                                dyorb[dyind][(orbindx - 1)] +
+                                                v0[dyst0[k]][i]*
+                                                v1[dyst1[l]][j];
                                         dyind++;
                                 }
                         }
