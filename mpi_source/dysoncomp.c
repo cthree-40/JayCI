@@ -11,6 +11,7 @@
 #include "binary.h"
 #include "bitutil.h"
 #include "binarystr.h"
+#include "citruncate.h"
 #include "action_util.h"
 #include "iminmax.h"
 #include "dysoncomp.h"
