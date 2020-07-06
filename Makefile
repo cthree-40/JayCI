@@ -239,6 +239,8 @@ PDYCIOBJS :=	timestamp.o \
 		combinatorial.o \
 		citruncate.o \
                 ioutil.o \
+		action_util.o \
+		dysoncomp.o \
 		run_pdycicalc.o
 
 # Objects for AO evaluation test
