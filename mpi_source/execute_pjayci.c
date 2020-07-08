@@ -68,7 +68,7 @@ int execute_pjayci ()
         double nucrep_e  = 0.0;         /* Nuclear repulsion energy */
         char moflname[FLNMSIZE] = {""}; /* SIFS integral filename */
         int itype = 1;                  /* Integral type. Always 1 */
-
+        
         int maxiter = 0; /* maximum number of davidson algorithm iterations */
 	int krymin = 0; /* minimum size of the krylov space */
 	int krymax = 0; /* maximum size of the krylov space */
@@ -76,7 +76,7 @@ int execute_pjayci ()
 	int prediag_routine = 0; /* prediagonalization routine */
 	int refdim = 0; /* prediagonalization reference space */
 	double restol = 0.0; /* residual norm converegence tolerance */
-
+        int ga_buffer_len = 0; /* Length of GA buffers. */
 	double memusage = 0.0; /* Estimated memory usage */
         
         /* Read in the &general namelist. Ensure that the expansion's
@@ -134,7 +134,7 @@ int execute_pjayci ()
         MPI_Bcast(&prediag_routine, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&restol,  1, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&ga_buffer_len, 1,MPI_INT, mpi_root, MPI_COMM_WORLD);
-		
+
         /* Get number of alpha/beta electrons */
         abecalc(electrons, &aelec, &belec);
         
@@ -201,7 +201,8 @@ int execute_pjayci ()
                           qegrps, pq_space_pairs, num_pq, moints1, moints2,
                           ci_aelec, ci_belec, intorb, dtrm_len, nucrep_e,
 	                  frzcore_e, printlvl, maxiter, krymin, krymax,
-                          nroots, prediag_routine, refdim, restol);
+                          nroots, prediag_routine, refdim, restol,
+                          ga_buffer_len);
         
         GA_Sync();
         free(moints1);

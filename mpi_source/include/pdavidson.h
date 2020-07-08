@@ -11,7 +11,8 @@ int pdavidson (struct occstr *pstrings, struct eospace *peospace, int pegrps,
                int **pq_space_pairs, int num_pq, double *moints1, double *moints2,
                int aelec, int belec, int intorb, int ndets, double nucrep_e,
                double frzcore_e, int printlvl, int maxiter, int krymin,
-               int krymax, int nroots, int prediagr, int refdim, double restol);
+               int krymax, int nroots, int prediagr, int refdim, double restol,
+               int ga_buffer_len);
 
 /*
  * add_new_vector: add a new vector to basis space.
@@ -92,7 +93,8 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           struct eospace *peosp, int pegrps, struct occstr *qstr,
                           struct eospace *qeosp, int qegrps, int **pqs,
                           int num_pq, double *m1, double *m2, int aelec,
-                          int belec, int intorb, int ndets, int kmax, int w_hndl);
+                          int belec, int intorb, int ndets, int kmax, int w_hndl,
+                          int ga_buffer_len);
 
 /*
  * compute_GA_norm: compute the norm of a GA vector.
@@ -413,7 +415,7 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
                           int **pqs, int num_pq, double *m1, double *m2,
                           int aelec, int belec, int intorb, int ndets,
                           double core_e, int dim, int mdim, int v_hndl, int d_hndl,
-                          int c_hndl, int w_hndl);
+                          int c_hndl, int w_hndl, int ga_buffer_len);
 
 /*
  * print_iter_info: print iteration information.

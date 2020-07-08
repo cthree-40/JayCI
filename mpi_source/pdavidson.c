@@ -40,7 +40,8 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
               int **pq_space_pairs, int num_pq, double *moints1, double *moints2,
               int aelec, int belec, int intorb, int ndets, double nucrep_e,
               double frzcore_e, int printlvl, int maxiter, int krymin,
-              int krymax, int nroots, int prediagr, int refdim, double restol)
+              int krymax, int nroots, int prediagr, int refdim, double restol,
+              int ga_buffer_len)
 {
         int v_hndl = 0;           /* GLOBAL basis vectors, V */
         int v_dims[2]  = {0, 0};  /* GLOBAL basis vectors dimensions */
@@ -199,7 +200,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                                      qeospace, qegrps, pq_space_pairs, num_pq,
                                      moints1, moints2, aelec, belec, intorb,
                                      ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
-                                     c_hndl, w_hndl);
+                                     c_hndl, w_hndl, ga_buffer_len);
                 make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
                 print_subspacehmat(vhv, ckdim);
                 error = diag_subspacehmat(vhv, hevec, heval, ckdim, krymax,
@@ -264,7 +265,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                                              qeospace, qegrps, pq_space_pairs,
                                              num_pq, moints1, moints2, aelec,
                                              belec, intorb, ndets, krymax,
-                                             w_hndl);
+                                             w_hndl, ga_buffer_len);
                         make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
                         print_subspacehmat(vhv, ckdim);
                         error = diag_subspacehmat(vhv, hevec, heval, ckdim,
@@ -562,7 +563,8 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           struct eospace *peosp, int pegrps, struct occstr *qstr,
                           struct eospace *qeosp, int qegrps, int **pqs,
                           int num_pq, double *m1, double *m2, int aelec,
-                          int belec, int intorb, int ndets, int kmax, int w_hndl)
+                          int belec, int intorb, int ndets, int kmax, int w_hndl,
+                          int ga_buffer_len)
 {
         
         int error = 0; /* Error flag */
@@ -1604,7 +1606,7 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
                           int **pqs, int num_pq, double *m1, double *m2,
                           int aelec, int belec, int intorb, int ndets,
                           double core_e, int dim, int mdim, int v_hndl, int d_hndl,
-                          int c_hndl, int w_hndl)
+                          int c_hndl, int w_hndl, int ga_buffer_len)
 {
         
         double **c_local = NULL;  /* Local c array */
