@@ -134,7 +134,7 @@ int execute_pjayci ()
         MPI_Bcast(&prediag_routine, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&restol,  1, MPI_DOUBLE, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&ga_buffer_len, 1,MPI_INT, mpi_root, MPI_COMM_WORLD);
-	
+		
         /* Get number of alpha/beta electrons */
         abecalc(electrons, &aelec, &belec);
         

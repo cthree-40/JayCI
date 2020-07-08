@@ -18,10 +18,9 @@
 #include "action_util.h"
 #include "pdavidson.h"
 
+#include <mpi.h>
 #include <ga.h>
 #include <macdecls.h>
-
-#include <mpi.h>
 
 /* -- OpenMP options -- */
 #ifdef _OPENMP
@@ -97,6 +96,13 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
 		memusage = memusage / 1048576;
 		printf(" Global Arrays memory usage: ");
 		printf("  %10.2lf MB\n", memusage);
+		memusage = ga_buffer_len * krymax * 8;
+		memusage = memusage + ga_buffer_len * 4 * 3;
+		memusage = memusage / 1048576;
+		memusage = memusage * mpi_num_procs;
+		printf(" Local buffer usage: ");
+		printf("  %10.2lf MB\n", memusage);
+		printf("  buflen = %d\n", ga_buffer_len);
 		fflush(stdout);
 	}
 	GA_Sync();
