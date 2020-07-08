@@ -88,7 +88,6 @@ subroutine readmoints (moints1, moints2, type1n, orbitals, &
   integer :: aoints, n1int, n2int
   integer, parameter :: verin = 2
 
-  print *, "Reading molecular integrals."
   mofile = "moints"
   
   aoints = 16

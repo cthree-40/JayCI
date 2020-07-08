@@ -83,6 +83,7 @@ int execute_pjayci ()
          * CAS space is not greater than 64 orbitals. */
         if (mpi_proc_rank == mpi_root) {
                 printf("Reading &general input\n");
+		fflush(stdout);
                 readgeninput(&electrons, &orbitals, &nfrzc, &ndocc, &nactv,
                              &xlvl, &nfrzv, &printlvl, &printwvf, &error);
                 if (error != 0) {
@@ -155,19 +156,15 @@ int execute_pjayci ()
                         peospace, pegrps, qeospace, qegrps, &dtrm_len,
                         pq_space_pairs, &num_pq);
         intorb = ndocc + nactv;
-//        MPI_Barrier(MPI_COMM_WORLD);
 	GA_Sync();
         if (printlvl > 0 && mpi_proc_rank == mpi_root) {
                 printf("Determinants   = %15d\n", dtrm_len);
                 printf(" Alpha strings = %15d\n", pstr_len);
                 printf(" Beta  strings = %15d\n", qstr_len);
-//		printf(" Local memory usage: ");
 		memusage = ((pstr_len + qstr_len) * (8 + 4 + 4 + 4) +
 			    (pegrps * qegrps) * 2 * 4 +
 			    (pegrps + qegrps) * (4 + 4 + 4 + 4 + 4))
 			/ 1048576;
-//		printf(" %10.2lf MB\n", memusage);
-//		fflush(stdout);
 	}
         
         /* Read the molecular orbitals */
@@ -192,18 +189,21 @@ int execute_pjayci ()
         nuc_rep_e = nucrep_e;
         total_core_e = nucrep_e + frzcore_e;
 	if (printlvl > 0 && mpi_proc_rank == mpi_root) {
-		printf(" Local memory usage: ");
+		printf("\nLocal memory usage: ");
 		printf(" %10.2lf MB\n", memusage);
+		printf("Global memory usage: ");
+		printf(" %10.2lf MB\n\n", (memusage * mpi_num_procs));
 		fflush(stdout);
 	}
+	GA_Sync();
         /* Execute davidson procedure. */
         error = pdavidson(pstrings, peospace, pegrps, qstrings, qeospace,
                           qegrps, pq_space_pairs, num_pq, moints1, moints2,
                           ci_aelec, ci_belec, intorb, dtrm_len, nucrep_e,
-                          frzcore_e, printlvl, maxiter, krymin, krymax,
+	                  frzcore_e, printlvl, maxiter, krymin, krymax,
                           nroots, prediag_routine, refdim, restol);
         
-        
+        GA_Sync();
         free(moints1);
         free(moints2);
         return error;

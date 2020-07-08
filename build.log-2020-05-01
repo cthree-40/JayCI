@@ -1,0 +1,68 @@
+Operating system: Linux
+OS Version: 4.12.14-150.47-default
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/timestamp.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/timestamp.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/errorlib.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/errorlib.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/arrayutil.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/arrayutil.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+ftn -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/dlamch_fcn.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/dlamch_fcn.f90 -g -DDEBUGGING -g -traceback -i8 -auto -assume byterecl -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/mathutil.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/mathutil.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3 -Wno-implicit-function-declaration
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/allocate_mem.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/allocate_mem.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+ftn -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readmoints.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readmoints.f90 -g -DDEBUGGING -g -traceback -i8 -auto -assume byterecl -O3
+
+ftn -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readnamelist.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readnamelist.f90 -g -DDEBUGGING -g -traceback -i8 -auto -assume byterecl -O3
+
+ftn -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readmocoef.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readmocoef.f90 -g -DDEBUGGING -g -traceback -i8 -auto -assume byterecl -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/ioutil.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/ioutil.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3 -Wno-implicit-function-declaration
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/mpi_utilities.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/mpi_utilities.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/abecalc.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/abecalc.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/combinatorial.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/combinatorial.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/moindex.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/moindex.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/straddress.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/straddress.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/iminmax.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/iminmax.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/bitutil.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/bitutil.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/binary.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/binary.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/binarystr.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/binarystr.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/citruncate.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/citruncate.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/action_util.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/action_util.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/pdavidson.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/pdavidson.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/execute_pjayci.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/execute_pjayci.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -c -o /global/u2/m/malbon/Workspace/JayCI/mpi_source/pjayci.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/pjayci.c -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+
+
+------------------------------------------------------
+   PJAYCI PROGRAM 
+ Program version:	1.0.0
+ Test program:		/global/u2/m/malbon/Workspace/JayCI/test/test.x
+ BLAS/LAPACK Lib:	
+ COLIB library:		/global/u2/m/malbon/Workspace/JayCI/lib/colib.a
+ Debug flags:		-g -DDEBUGGING -g
+ C Compiler options:	-Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+ F90 Compiler options:	-i8 -auto -assume byterecl -O3
+------------------------------------------------------
+cd /global/u2/m/malbon/Workspace/JayCI/mpi_source; cc -qopenmp -I /global/u2/m/malbon/Workspace/JayCI/mpi_source/include -o /global/u2/m/malbon/Workspace/JayCI/bin/pjayci-1.0.0-Linux-x86_64 /global/u2/m/malbon/Workspace/JayCI/mpi_source/timestamp.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/errorlib.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/arrayutil.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/dlamch_fcn.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/mathutil.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/allocate_mem.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readmoints.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readnamelist.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/readmocoef.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/ioutil.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/mpi_utilities.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/abecalc.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/combinatorial.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/moindex.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/straddress.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/iminmax.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/bitutil.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/binary.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/binarystr.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/citruncate.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/action_util.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/pdavidson.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/execute_pjayci.o /global/u2/m/malbon/Workspace/JayCI/mpi_source/pjayci.o  /global/u2/m/malbon/Workspace/JayCI/lib/colib.a  -g -DDEBUGGING -g -Wall -std=c11 -funroll-all-loops -fomit-frame-pointer -fstrict-aliasing -O3
+------------------------------------------------------
+ Creating symbolic link to new binary
+ln -sf /global/u2/m/malbon/Workspace/JayCI/bin/pjayci-1.0.0-Linux-x86_64 /global/u2/m/malbon/Workspace/JayCI/bin/pjayci
+------------------------------------------------------
+ Finished build.
+

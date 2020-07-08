@@ -82,14 +82,24 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         int ld_ndets[1] = {0};
 
         double totcore_e = 0.0;
-        
+        double memusage = 0.0;  /* Estimated memory usage */
         int error = 0;
         
         totcore_e = nucrep_e + frzcore_e;
         ld_ndets[0] = ndets;
 
         /* Allocate GLOBAL arrays: V, Hv=c, N, R, and D */
-        if (mpi_proc_rank == mpi_root) printf("Creating global arrays...\n");
+        if (mpi_proc_rank == mpi_root) {
+		printf("Creating global arrays...\n");
+		memusage = krymax * ndets * 8 * 2; // C and V
+		memusage += ndets * 8 * 3; // N, R, X, D
+		memusage += ndets * 4 * 3; // W
+		memusage = memusage / 1048576;
+		printf(" Global Arrays memory usage: ");
+		printf("  %10.2lf MB\n", memusage);
+		fflush(stdout);
+	}
+	GA_Sync();
         v_dims[0]  = krymax;
         v_dims[1]  = ndets;
         v_chunk[0] = krymax;
@@ -116,10 +126,17 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         w_hndl = NGA_Create(C_INT, 2, w_dims, "Determinant Triples",w_chunk);
         if (!w_hndl) GA_Error("Create failed: Determinant Triples", 2);
 
-        if (mpi_proc_rank == mpi_root) printf("Global arrays created.\n\n");
-
+        if (mpi_proc_rank == mpi_root) {
+		printf("Global arrays created.\n\n");
+		fflush(stdout);
+	}
+	
         /* Generate wavefunction list */
-        generate_wlist(w_hndl, ndets, pq_space_pairs, num_pq, peospace, pegrps,
+	if (mpi_proc_rank == mpi_root) {
+		printf("Generating wlist...\n");
+		fflush(stdout);
+	}
+	generate_wlist(w_hndl, ndets, pq_space_pairs, num_pq, peospace, pegrps,
                        qeospace, qegrps);
         
         /* Allocate local arrays: d, vhv, hevec, heval */
@@ -136,7 +153,11 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         /* Compute diagonal matrix elements <i|H|i> */
         NGA_Zero(d_hndl);
         NGA_Distribution(d_hndl, mpi_proc_rank, lo, hi);
-        compute_diagonal_matrix_elements(d_local, lo[0], hi[0], moints1, moints2,
+	if (mpi_proc_rank == mpi_root) {
+		printf("Computing diagonal matrix elements...\n");
+		fflush(stdout);
+	}
+	compute_diagonal_matrix_elements(d_local, lo[0], hi[0], moints1, moints2,
                                          aelec, belec, peospace, pegrps,
                                          qeospace, qegrps, pq_space_pairs,
                                          num_pq, pstrings, qstrings, intorb);
@@ -146,27 +167,28 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                 printf("%lf\n", (d_local[0] + totcore_e));
         }
 
-        if (mpi_proc_rank == mpi_root)
-                printf("Beginning Davidson algorithm...\n");
+        if (mpi_proc_rank == mpi_root) {
+                printf("\nBeginning Davidson algorithm...\n");
+		fflush(stdout);
+	}
         
         /* Build initial guess basis vectors. */
         build_init_guess_vectors(prediagr, v_hndl, refdim, krymin, ndets,
                                  pstrings, peospace, pegrps, qstrings,
                                  qeospace, qegrps, pq_space_pairs, num_pq,
                                  moints1, moints2, aelec, belec, intorb, w_hndl);
-        if (mpi_proc_rank == mpi_root)
+        if (mpi_proc_rank == mpi_root) {
                 printf(" Initial guess vectors set.\n");
-
+		fflush(stdout);
+	}
         
         GA_Sync();
-//        print_vector_space(v_hndl, 6, 20);
 
         /* .. MAIN LOOP .. */
         citer = 1; croot = 1; ckdim = krymin; cflag = 0;
         while (citer < maxiter && croot <= nroots) {
 
                 GA_Sync();
-
                 perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
                                      qeospace, qegrps, pq_space_pairs, num_pq,
                                      moints1, moints2, aelec, belec, intorb,
@@ -196,18 +218,21 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                         if (cflag == 2) {
                                 if (mpi_proc_rank == mpi_root) {
                                         printf("\n ** CI CONVERGED! **\n");
-                                }
+					fflush(stdout);
+				}
                                 break;
                         } else if (cflag == 1) {
                                 if (mpi_proc_rank == mpi_root) {
                                         printf(" Root %d converged!\n", croot);
-                                }
+					fflush(stdout);
+				}
                                 croot++;
                                 break;
                         } else {
                                 if (mpi_proc_rank == mpi_root) {
                                         printf(" Root not yet converged.\n");
-                                }
+					fflush(stdout);
+				}
                         }
 
                         GA_Sync();
@@ -219,6 +244,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                         if (mpi_proc_rank == mpi_root) {
                                 printf("\n ||r|| = %12.8lf  ||n|| = %12.8lf\n",
                                        rnorm, nnorm);
+				fflush(stdout);
                         }
 
                         orthonormalize_newvector(v_hndl, ckdim, ndets, n_hndl);
@@ -254,6 +280,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         }
         if (mpi_proc_rank == mpi_root) {
                 printf(" Davidson algorithm finished. \n");
+		fflush(stdout);
         }
         print_gavectors2file_dbl_ufmt(v_hndl, ndets, nroots,"civec");
         if (cflag != 2)
@@ -1435,6 +1462,7 @@ void init_diag_H_subspace( int w_hndl, struct occstr *pstr, struct occstr *qstr,
                rev[0] + total_core_e,
                rev[1] + total_core_e,
                rev[2] + total_core_e);
+	fflush(stdout);
         /* Copy rdata into refspace */
         ii = 0;
         for (i = 0; i < dim; i++) {
@@ -1616,7 +1644,12 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         double alpha[1] = {1.0}; /* Scale factor for c_local into c_global. */
 
         int j, jmax;
-        
+
+	if (mpi_proc_rank == mpi_root) {
+		printf(" Performing Hv=c on initial vector space...\n");
+		fflush(stdout);
+	}
+	
         NGA_Zero(c_hndl);
 
         /* Determine which block of data is locally owned. And get the blocks of
@@ -1725,7 +1758,7 @@ void print_iter_info(double *heval, int ckdim, int croot, double rnorm,
                 }
                 fprintf(stdout,"\n");
         }
-
+	fflush(stdout);
         return;
 }
 
@@ -1753,6 +1786,7 @@ void print_subspace_eigeninfo(double **v, double *e, int kdim, double core_e)
                         printf("\n");
                 }
         }
+	fflush(stdout);
         return;
 }
 
@@ -1771,6 +1805,7 @@ void print_subspacehmat(double **vhv, int d)
                         printf("\n");
                 }
         }
+	fflush(stdout);
         return;
 }
 
@@ -1822,6 +1857,7 @@ void truncate_krylov_space(int v_hndl, int ndets, int krymin, int krymax,
         int i = 0, j = 0;
         if (mpi_proc_rank == mpi_root) {
                 printf(" Truncating krylov space...\n");
+		fflush(stdout);
         }
         NGA_Zero(x_hndl);
         vhi[1] = ndets - 1;
@@ -1846,6 +1882,7 @@ void truncate_krylov_space(int v_hndl, int ndets, int krymin, int krymax,
         GA_Copy(x_hndl, v_hndl);
         if (mpi_proc_rank == mpi_root) {
                 printf(" Completed krylov space truncation.\n");
+		fflush(stdout);
         }
         return;
 }
