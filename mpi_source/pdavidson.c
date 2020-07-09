@@ -853,11 +853,11 @@ void evaluate_hdblock_ij(int pq_start_i, int pstart_i, int qstart_i,
                              peosp, pegrps, qeosp, qegrps);
 
         /* OMP Section */
-#pragma omp parallel                                                               \
-        shared(ndeti,ndetj,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,dtj,d_triplet) \
-        private(deti,detj,i,j,l,hijval)
-        {
-#pragma omp for schedule(runtime)
+//#pragma omp parallel							\
+//        shared(ndeti,ndetj,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,dtj,d_triplet) \
+//        private(deti,detj,i,j,l,hijval)
+//        {
+//#pragma omp for schedule(runtime)
         /* Loop through list of triplets for determinants |i>. */
         for (i = 0; i < ndeti; i++) {
                 deti.astr = pstr[d_triplet[i][0]];
@@ -873,12 +873,12 @@ void evaluate_hdblock_ij(int pq_start_i, int pstart_i, int qstart_i,
                                          aelec, belec, intorb);
                         /* H_ij*v_jl = c_il */
                         for (l = 0; l < vcols; l++) {
-#pragma omp atomic update
+//#pragma omp atomic update
                                 c[l][i] = c[l][i] + hijval * v[l][j];
                         }
                 }
         }
-        } /* End of OMP Section */
+//        } /* End of OMP Section */
         return;
 }
 
@@ -932,11 +932,11 @@ void evaluate_hdblock_ij2(int **wi, int idets, int **wj, int jdets,
         int i, j, l;
         
         /* OMP Section */
-#pragma omp parallel                                                               \
-        shared(idets,jdets,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,wi,wj,vcols) \
-        private(deti,detj,i,j,l,hijval)
-        {
-#pragma omp for schedule(runtime)
+//#pragma omp parallel							\
+//        shared(idets,jdets,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,wi,wj,vcols) \
+//        private(deti,detj,i,j,l,hijval)
+//        {
+//#pragma omp for schedule(runtime)
         /* Loop through list of triplets for determinants |i>. */
         for (i = 0; i < idets; i++) {
                 deti.astr = pstr[wi[i][0]];
@@ -952,12 +952,12 @@ void evaluate_hdblock_ij2(int **wi, int idets, int **wj, int jdets,
                                          aelec, belec, intorb);
                         /* H_ij*v_jl = c_il */
                         for (l = 0; l < vcols; l++) {
-#pragma omp atomic update
+//#pragma omp atomic update
                                 c[l][i] = c[l][i] + hijval * v[l][j];
                         }
                 }
         }
-        } /* End of OMP Section */
+//        } /* End of OMP Section */
         return;
 }
 
@@ -1037,11 +1037,11 @@ void evaluate_hdblock_ij_1d(int pq_start_i, int pstart_i, int qstart_i,
                              peosp, pegrps, qeosp, qegrps);
 
         /* OMP Section */
-#pragma omp parallel                                                               \
-        shared(ndeti,ndetj,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,dtj,d_triplet) \
-        private(deti,detj,i,j,l,hijval)
-        {
-#pragma omp for schedule(runtime)
+//#pragma omp parallel							\
+//        shared(ndeti,ndetj,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,dtj,d_triplet) \
+//        private(deti,detj,i,j,l,hijval)
+//        {
+//#pragma omp for schedule(runtime)
         /* Loop through list of triplets for determinants |i>. */
         for (i = 0; i < ndeti; i++) {
                 deti.astr = pstr[d_triplet[i][0]];
@@ -1056,11 +1056,11 @@ void evaluate_hdblock_ij_1d(int pq_start_i, int pstart_i, int qstart_i,
                         hijval = hmatels(deti, detj, mo1, mo2,
                                          aelec, belec, intorb);
                         /* H_ij*v_j = c_i */
-#pragma omp atomic update
+//#pragma omp atomic update
                         c[i] = c[i] + hijval * v[j];
                 }
         }
-        }
+//        }
         return;
 }
 
@@ -1113,11 +1113,11 @@ void evaluate_hdblock_ij_1d2(int **wi, int idets, int **wj, int jdets,
         int i, j;
         
         /* OMP Section */
-#pragma omp parallel                                                               \
-        shared(idets,jdets,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,wi,wj) \
-        private(deti,detj,i,j,hijval)
-        {
-#pragma omp for schedule(runtime)
+//#pragma omp parallel							\
+//        shared(idets,jdets,mo1,mo2,aelec,belec,intorb,c,v,pstr,qstr,wi,wj) \
+//        private(deti,detj,i,j,hijval)
+//        {
+//#pragma omp for schedule(runtime)
         /* Loop through list of triplets for determinants |i>. */
         for (i = 0; i < idets; i++) {
                 deti.astr = pstr[wi[i][0]];
@@ -1132,11 +1132,11 @@ void evaluate_hdblock_ij_1d2(int **wi, int idets, int **wj, int jdets,
                         hijval = hmatels(deti, detj, mo1, mo2,
                                          aelec, belec, intorb);
                         /* H_ij*v_j = c_i */
-#pragma omp atomic update
+//#pragma omp atomic update
                         c[i] = c[i] + hijval * v[j];
                 }
         }
-        }
+//        }
         return;
 }
 
