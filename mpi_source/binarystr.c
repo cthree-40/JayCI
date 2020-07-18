@@ -197,6 +197,54 @@ int compute_virt_diffs(struct occstr ostri, struct occstr ostrj)
 		return numxv;
 	}
 }
+
+/*
+ * get_string_eospace_info: get electon occupation space information given
+ * a binary electron string.
+ * -------------------------------------------------------------------
+ * Input:
+ *  str      = electron occupation string
+ *  ndocc    = number of docc orbitals
+ *  nactv    = number of CAS  orbtials
+ * Output:
+ *  nde = number of docc electrons
+ *  nce = number of CAS electrons
+ *  nve = number of virtual electrons
+ */
+void get_string_eospace_info(struct occstr str, int ndocc, int nactv, int *nde,
+                             int *nce, int *nve)
+{
+        /* 64-bit byte to check docc and cas occupation */
+        long long int intorb_check = 0x00;
+        /* Scratch 64-bit byte */
+        long long int scr = 0x00;
+        int i;
+        char tmp[65];
+        /* Turn "on" DOCC and ACTV bits in intorb_check */
+        for (i = 0; i < (ndocc + nactv); i++) {
+                intorb_check = intorb_check + pow(2, i);
+        }
+        scr = intorb_check & str.byte1;
+        /* Check DOCC orbitals */
+        *nde = 0;
+        for (i = 0; i < ndocc; i++) {
+                if (scr & 0x01) {
+                        *nde = *nde + 1;
+                }
+                scr = scr >> 1;
+        }
+        *nce = 0;
+        /* Check ACTV orbitals */
+        for (i = 0; i < nactv; i++) {
+                if (scr &0x01) {
+                        *nce = *nce + 1;
+                }
+                scr = scr >> 1;
+        }
+        *nve = str.nvrtx;
+        return;
+}
+
 /* 
  * str2occstr: convert orbital index string -> occstr type
  * -------------------------------------------------------------------

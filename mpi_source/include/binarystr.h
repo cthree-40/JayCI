@@ -4,9 +4,10 @@
 
 /* occstr: determinant alpha/beta string occupation information */
 struct occstr {
-	long long int byte1; /* occupation for DOCC+CAS orbitals 1 -> 64  */
-	int virtx[2];        /* virtual orbital occupations               */
-	int nvrtx;           /* number of virtual orbitals                */
+    long long int byte1; /* occupation for DOCC+CAS orbitals 1 -> 64  */
+    int virtx[2];        /* virtual orbital occupations               */
+    int nvrtx;           /* number of virtual orbitals                */
+    int istr[20];        /* list of occupations */
 };
 
 /* det: determinant composed of alpha and beta occupation strings */
@@ -42,6 +43,21 @@ int comparedets_ncas(struct det deti,
 		     long long int *bxi,
 		     long long int *bxf,
 		     int nactv);
+/*
+ * get_string_eospace_info: get electon occupation space information given
+ * a binary electron string.
+ * -------------------------------------------------------------------
+ * Input:
+ *  str      = electron occupation string
+ *  ndocc    = number of docc orbitals
+ *  nactv    = number of CAS  orbtials
+ * Output:
+ *  nde = number of docc electrons
+ *  nce = number of CAS electrons
+ *  nve = number of virtual electrons
+ */
+void get_string_eospace_info(struct occstr str, int ndocc, int nactv, int *nde,
+                             int *nce, int *nve);
 
 /* str2occstr: convert orbital index string -> occstr type */
 struct occstr str2occstr(int *istr, /* orbital index string */

@@ -4,11 +4,13 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "pjayci_global.h"
 #include "mpi_utilities.h"
 #include "ioutil.h"
 #include "iminmax.h"
 #include "binary.h"
+#include "bitutil.h"
 #include "errorlib.h"
 #include "arrayutil.h"
 #include "allocate_mem.h"
@@ -209,6 +211,61 @@ struct xstrmap **allocate_xmap(int xlvl)
 }
 
 /*
+ * construct_xlist: construct list of X excitations for electron strings
+ */
+int **construct_xlist(struct occstr *strlist, int nstr, int intorb, int x, int *max)
+{
+        int **ptr = NULL;
+        int *data = NULL;
+        int cnt;
+        int numx;
+        int numxv, numxcv, numxc;
+        int samei, samej;
+        long long int diffs, axi, axj;
+        int i, j;
+        *max = 0;
+        for (i = 0; i < nstr; i++) {
+                cnt = 0;
+                for (j = 0; j < nstr; j++) {
+                        numxv = compute_virt_diffs(strlist[i],strlist[j]);
+                        numxcv= abs(strlist[i].nvrtx - strlist[j].nvrtx);
+                        numxc = ndiffbytes(strlist[i].byte1,strlist[j].byte1,
+                                           intorb, &diffs);
+                        samei = nsamebytes(strlist[i].byte1,diffs,intorb,&axi);
+                        samej = nsamebytes(strlist[j].byte1,diffs,intorb,&axj);
+                        numxc = int_min(samei,samej);
+                        numxv = numxv - numxcv;
+                        numx  = numxc + numxcv + numxv;
+                        if (numx != x) continue;
+                        cnt++;
+                }
+                if (cnt > *max) *max = cnt;
+        }
+        *max = *max + 1; /* First slot is for how many strings are in row */
+        data = allocate_mem_int_cont(&ptr, *max, nstr);
+        for (i = 0; i < nstr; i++) {
+                cnt = 1;
+                for (j = 0; j < nstr; j++) {
+                        numxv = compute_virt_diffs(strlist[i],strlist[j]);
+                        numxcv= abs(strlist[i].nvrtx - strlist[j].nvrtx);
+                        numxc = ndiffbytes(strlist[i].byte1,strlist[j].byte1,
+                                           intorb, &diffs);
+                        samei = nsamebytes(strlist[i].byte1,diffs,intorb,&axi);
+                        samej = nsamebytes(strlist[j].byte1,diffs,intorb,&axj);
+                        numxc = int_min(samei,samej);
+                        numxv = numxv - numxcv;
+                        numx  = numxc + numxcv + numxv;
+                        if (numx != x) continue;
+                        ptr[i][cnt] = j;
+                        cnt++;
+                }
+                ptr[i][0] = cnt;
+        }
+
+        return ptr;
+}
+
+/*
  * compute_ci_elecs_and_orbitals: compute number of ci electrons and orbitals
  */
 void compute_ci_elecs_and_orbitals(int aelec, int belec, int orbitals, int nfrzc,
@@ -229,6 +286,7 @@ int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
 {
         int dcnt = 0;    /* Determinant count. */
         int doccmin = 0; /* Minimum determinant DOCC occupations. */
+        int xcnt = 0;
         int i, j;
 
         /* Set min DOCC occupation numbers of alpha + beta strings. The
@@ -248,6 +306,34 @@ int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
                         dcnt = dcnt + peosp[i].nstr * qeosp[j].nstr;
                 }
         }
+
+        /* Generate list of valid space pairings for each electron space
+         * group. */
+        for (i = 0; i < pegrps; i++) {
+            xcnt = 0;
+            for (j = 0; j < (*num_pq); j++) {
+                if (pq_spaces[j][0] == i) {
+                    peosp[i].pairs[xcnt] = pq_spaces[j][1];
+                    xcnt++;
+                }
+            }
+            peosp[i].npairs = xcnt;
+        }
+        for (i = 0; i < qegrps; i++) {
+            xcnt = 0;
+            for (j = 0; j < (*num_pq); j++) {
+                if (pq_spaces[j][1] == i) {
+                    qeosp[i].pairs[xcnt] = pq_spaces[j][0];
+                    xcnt++;
+                }
+            }
+            qeosp[i].npairs = xcnt;
+        }
+#ifdef DEBUGGING
+        for (i = 0; i < (*num_pq); i++) {
+            printf("  %d: %d %d\n", i, pq_spaces[i][0], pq_spaces[i][1]);
+        }
+#endif
         return dcnt;
 }
 
@@ -408,6 +494,9 @@ void generate_binstring_list(struct eostring *str, int nstr, int elec,
 {
         for (int i = 0; i < nstr; i++) {
                 binstr[i] = str2occstr(str[i].string, elec, ndocc, nactv);
+                for (int j = 0; j < elec; j++) {
+                    binstr[i].istr[j] = str[i].string[j] - 1;
+                }
         }
         return;
 }
@@ -499,6 +588,2501 @@ void generate_determinant_list_rtnlist(struct eostring *pstrlist, int npstr,
 }
 
 /*
+ * generate_single_excitations: generate the single excitations in
+ * EOSPACE for an input string.
+ */
+int generate_single_excitations(struct occstr str, struct eospace eosp,
+                                int nelec, int ndocc, int nactv,
+                                int intorb, int vorbs,
+                                int *singlex,
+                                int *elecs, int *orbsx)
+{
+    struct occstr newstr;
+    int n1x = 0;
+    int escr[20] = {0};
+    long long int xbyte = 0x00; /* Possible excitations */
+    long long int ibyte = 0x00; /* Active internal orbitals */
+    long long int nbyte = 0x00; /* Scratch new byte */
+    int nvxo = 0;                /* Number of available virtual orbitals */
+    
+    int num_dx = 0;  /* Number of DOCC excitations possible */
+    int num_cx = 0;  /* Number of ACTV excitations possible */
+    int num_vx = 0;  /* Number of VIRT excitations possible */
+
+    int doccindx = 0; /* Available DOCC orbital index in orbsx */
+    int actvindx = 0; /* Available ACTV orbital index in orbsx */
+    int virtindx = 0; /* Available VIRT orbital index in orbsx */
+
+    int tmp = 0;
+
+    /* str eospace information */
+    int str_docc = 0;
+    int str_actv = 0;
+    int str_virt = 0;
+    
+    int i, j, k, l;
+
+    get_string_eospace_info(str, ndocc, nactv, &str_docc, &str_actv, &str_virt);
+    if (abs(str_docc - eosp.docc) > 1) return n1x;
+    if (abs(str_actv - eosp.actv) > 1) return n1x;
+    if (abs(str_virt - eosp.virt) > 1) return n1x;
+
+    /* Internal excitations */
+    generate_doccx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                   vorbs, nelec, orbsx, singlex, &n1x);
+    generate_actvx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                   vorbs, nelec, orbsx, singlex, &n1x);
+    generate_virtx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                   vorbs, nelec, orbsx, singlex, &n1x);
+    /* External excitations */
+    generate_docc2virtx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                        vorbs, nelec, orbsx, singlex, &n1x);
+    generate_docc2actvx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                        vorbs, nelec, orbsx, singlex, &n1x);
+    generate_actv2virtx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                        vorbs, nelec, orbsx, singlex, &n1x);
+
+    return n1x;
+}
+
+/*
+ * generate_double_excitations: generate the double excitations in
+ * EOSPACE for an input string.
+ */
+int generate_double_excitations(struct occstr str, struct eospace eosp,
+                                int nelec, int ndocc, int nactv,
+                                int intorb, int vorbs,
+                                int *doublex,
+                                int *elecs, int *orbsx)
+{
+    struct occstr newstr;
+    int n2x = 0;
+    int escr[20] = {0};
+    long long int xbyte = 0x00; /* Possible excitations */
+    long long int ibyte = 0x00; /* Active internal orbitals */
+    long long int nbyte = 0x00; /* Scratch new byte */
+    int nvxo = 0;                /* Number of available virtual orbitals */
+    
+    int num_dx = 0;  /* Number of DOCC excitations possible */
+    int num_cx = 0;  /* Number of ACTV excitations possible */
+    int num_vx = 0;  /* Number of VIRT excitations possible */
+
+    int doccindx = 0; /* Available DOCC orbital index in orbsx */
+    int actvindx = 0; /* Available ACTV orbital index in orbsx */
+    int virtindx = 0; /* Available VIRT orbital index in orbsx */
+
+    int tmp = 0;
+
+    /* str eospace information */
+    int str_docc = 0;
+    int str_actv = 0;
+    int str_virt = 0;
+
+    int i, j, k, l;
+
+    get_string_eospace_info(str, ndocc, nactv, &str_docc, &str_actv, &str_virt);
+    if (abs(str_docc - eosp.docc) > 2) return n2x;
+    if (abs(str_actv - eosp.actv) > 2) return n2x;
+    if (abs(str_virt - eosp.virt) > 2) return n2x;
+
+    /* Internal excitations */
+    generate_doccx(2, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                   vorbs, nelec, orbsx, doublex, &n2x);
+    generate_actvx(2, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                   vorbs, nelec, orbsx, doublex, &n2x);
+    generate_virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
+                   vorbs, nelec, orbsx, doublex, &n2x);
+    /* External excitations */
+    generate_docc2virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                        nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_docc2actvx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                        nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_actv2virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                        nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    /* External + External excitations */
+    generate_docc2actvvirtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                            nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_actv2doccvirtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                            nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_virt2doccactvx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                            nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    /* Internal + External excitations */
+    generate_actv2virtx_actv1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_actv2virtx_docc1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_actv2virtx_virt1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_docc2actvx_actv1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_docc2actvx_docc1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_docc2actvx_virt1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_docc2virtx_docc1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_docc2virtx_actv1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_docc2virtx_virt1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    /* Internal + Internal excitations */
+    generate_doccx_actvx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                         nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_doccx_virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                         nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    generate_actvx_virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
+                         nactv, vorbs, nelec, orbsx, doublex, &n2x);
+    return n2x;
+}
+
+
+/*
+ * generate_actvx: generate excitations within the ACTV space given a
+ * string.
+ */
+void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
+                    int str_virt, struct eospace eosp, int ndocc, int nactv,
+                    int nvirt, int elec, int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    long long int ibyte = 0x00; /* Internal orbitals */
+    long long int xbyte = 0x00; /* Excitation orbitals */
+    int intorb;
+    int i, j, k, l;
+    intorb = ndocc + nactv;
+
+    /* Check if excitations within ACTV are possible */
+    if (str_actv < nrep) return;
+    if (str_actv != eosp.actv) return;
+    if (str_actv == nactv) return;
+    if (str_actv == 0) return;
+    if (str_docc != eosp.docc) return;
+    if (str_virt != eosp.virt) return;
+    
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    
+    /* Loop over occupied orbitals */
+    newstr = str;
+    switch (nrep) {
+    case 1: /* Single replacements. Skip DOCC. */
+        for (i = (str_actv + str_docc - 1); i >= str_docc; i--) {
+            for (j = (ndocc - str_docc);
+                 j < (intorb - str_actv - str_docc); j++) {
+                newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv, nvirt,
+                                              elec, elecs);
+                (*numx)++;
+            }
+        }
+        break;
+    case 2: /* Double replacements */
+        if ((nactv - str_actv) < 2) return; /* Can't have 2x */
+        for (i = (str_actv + str_docc - 1); i >= str_docc + 1; i--) {
+            for (j = (ndocc - str_docc);
+                 j < (intorb - str_actv - str_docc) - 1; j++) {
+                for (k = (i - 1); k >= str_docc; k--) {
+                    for (l = (j + 1); l < (intorb - str_actv - str_docc); l++) {
+                        newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                        newstr.byte1 = newstr.byte1 - pow(2, str.istr[k]);
+                        newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                        newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                        xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                      nvirt, elec, elecs);
+                        (*numx)++;
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        printf(" case != {1, 2}.\n");
+        break;
+    }
+    return;
+}
+
+/*
+ * generate_actv2virtx: generate replacements between ACTV and VIRT spaces.
+ */
+void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv,
+                         int str_virt, struct eospace eosp, int ndocc, int nactv,
+                         int nvirt, int elec, int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    int xtype = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int tmp;
+    int nvo = 0;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (abs(str_actv - eosp.actv) != nrep) return;
+    if (abs(str_virt - eosp.virt) != nrep) return;
+    if (str_docc != eosp.docc) return;
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation ACTV -> VIRTX or ACTV <- VIRTX */
+    xtype = str_actv - eosp.actv;
+    if (xtype > 0) {
+        /* ACTV(str) -> VIRT(eosp) */
+        newstr = str;
+        switch (nrep) {
+        case 1: /* Single replacements */
+            /* Loop over occupied ACTV orbitals. Removing them */
+            for (i = (str_docc + str_actv - 1); i >= str_docc; i--) {
+                /* Add new orbital in virtual orbital space */
+                for (j = intorb; j < (nvo + intorb); j++) {
+                    newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                    newstr.virtx[0] = str.virtx[0];
+                    newstr.virtx[1] = str.virtx[1];
+                    newstr.virtx[str.nvrtx] = scr[j];
+                    newstr.nvrtx = str.nvrtx + 1;
+                    if (newstr.virtx[0] > newstr.virtx[1] && newstr.virtx[1] != 0) {
+                        tmp = newstr.virtx[0];
+                        newstr.virtx[0] = newstr.virtx[1];
+                        newstr.virtx[1] = tmp;
+                    }
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                  nvirt, elec, elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        case 2:
+            /* Loop over occupied ACTV orbitals. Removing them. */
+            for (i = (str_docc + str_actv - 1); i >= str_docc + 1; i--) {
+                for (j = (i - 1); j >= str_docc; j--) {
+                    /* Add new orbitals */
+                    for (k = intorb; k < (nvo + intorb - 1); k++) {
+                        for (l = k + 1; l < (nvo + intorb); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            /* If replacing double excitation into virt space,
+                             * then str_virt == 0. */
+                            newstr.virtx[0] = scr[k];
+                            newstr.virtx[1] = scr[l];
+                            newstr.nvrtx = 2;
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                          nvirt, elec, elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* ACTV(str) <- VIRT(eosp) */
+        newstr = str;
+        switch(nrep) {
+        case 1: /* Single replacements */
+            /* Loop over unoccupied ACTV orbitals. Turning them "on" */
+            for (i = (intorb - str_docc - str_actv - 1);
+                 i >= (ndocc - str_docc);
+                 i--){
+                /* Remove one occupied virtual orbital */
+                for (j = 0; j < str_virt; j++) {
+                    newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                    newstr.virtx[0] = str.virtx[0];
+                    newstr.virtx[1] = str.virtx[1];
+                    newstr.virtx[j] = 0;
+                    newstr.nvrtx = str.nvrtx - 1;
+                    /* Make sure virtual orbitals are ordered correctly after
+                     * removal of virtx[j] */
+                    if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                        tmp = newstr.virtx[0];
+                        newstr.virtx[0] = newstr.virtx[1];
+                        newstr.virtx[1] = tmp;
+                    }
+                    if (newstr.virtx[0] > newstr.virtx[1] && newstr.virtx[1] != 0) {
+                        tmp = newstr.virtx[0];
+                        newstr.virtx[0] = newstr.virtx[1];
+                        newstr.virtx[1] = tmp;
+                    }
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                  nvirt, elec, elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        case 2: /* Double replacements */
+            /* Loop over unoccupied ACTV orbitals. Turning them "on" */
+            for (i = (intorb - str_docc - str_actv - 1); i >= (ndocc - str_docc + 1); i--){
+                for (j = (i - 1); j >= (ndocc - str_docc); j--) {
+                    /* Remove occupied virtual orbitals. If double replacement,
+                     * both occupations are removed. */
+                    newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                    newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                    newstr.virtx[0] = 0;
+                    newstr.virtx[1] = 0;
+                    newstr.nvrtx = 0;
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                  nvirt, elec, elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        default:
+            printf("WARNING: Unknown case. nrep != 1, 2\n");
+            break;
+        }
+    }
+    
+    return;
+}
+
+/*
+ * generate_actv2virtx_actv1: generate replacements between ACTV and VIRT spaces.
+ * This is a special case where one replacement occurs within ACTV, in addition
+ * to the ACTV <-> VIRT replacement.
+ */
+void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    int xtype = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int tmp;
+    int nvo = 0;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (str_actv == eosp.actv) return;
+    if (abs(str_virt - eosp.virt) != 1) return;
+    if (str_docc != eosp.docc) return;
+        
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation ACTV -> VIRTX or ACTV <- VIRTX */
+    xtype = str_actv - eosp.actv;
+    if (xtype > 0) {
+        /* ACTV(str) -> VIRT(eosp) + Internal ACTV replacement*/
+        newstr = str;
+        switch (nrep) {
+        case 2:
+            /* Loop over occupied ACTV orbitals. Removing them. */
+            for (i = (str_docc + str_actv - 1); i >= str_docc + 1; i--) {
+                for (j = (i - 1); j >= str_docc; j--) {
+                    /* Add new orbitals */
+                    /* ACTV replacement */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_docc - str_actv);
+                         k++) {
+                        for (l = intorb; l < (nvo + intorb); l++) {
+                            /* Remove */
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            /* Add */
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[str_virt] = scr[l];
+                            newstr.nvrtx = str_virt + 1;
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* ACTV(str) <- VIRT(eosp) */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over unoccupied ACTV orbitals. Turning them "on" */
+            for (i = (intorb - str_docc - str_actv - 1);
+                 i >= (ndocc - str_docc + 1);
+                 i--){
+                for (j = (i - 1); j >= (ndocc - str_docc); j--) {
+                    /* Loop over occupied ACTV orbitals. Turning bits off */
+                    for (k = str_docc; k < str_docc + str_actv; k++) {
+                        /* loop over virtual orbitals, removing them */
+                        for (l = 0; l < str_virt; l++) {
+                            newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[k]);
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[l] = 0;
+                            newstr.nvrtx = str.nvrtx - 1;
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            printf("WARNING: Unknown case. nrep != 1, 2\n");
+            break;
+        }
+    }
+    
+    return;
+}
+
+/*
+ * generate_actv2virtx_virt1: generate replacements between ACTV and VIRT spaces.
+ * This is a special case where one replacement occurs within VIRT, in addition
+ * to the ACTV <-> VIRT replacement.
+ */
+void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    int xtype = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int tmp;
+    int nvo = 0;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (abs(str_actv - eosp.actv) != 1) return;
+    if (abs(str_virt - eosp.virt) != 1) return;
+    if (str_virt == 0 || eosp.virt == 0) return;
+    if (str_virt != 2 && eosp.virt != 2) return;
+    if (str_docc != eosp.docc) return;
+
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation ACTV -> VIRTX + VIRTX or ACTV <- VIRTX + VIRTX */
+    xtype = str_actv - eosp.actv;
+    if (xtype > 0) {
+        /* ACTV(str) -> VIRT(eosp) + Internal VIRT replacement*/
+        newstr = str;
+        switch (nrep) {
+        case 2:
+            /* Loop over occupied ACTV orbitals. Removing 1. */
+            for (i = (str_docc + str_actv - 1); i >= str_docc; i--) {
+                /* VIRT replacement */
+                for (k = intorb; k < (nvo + intorb - 1); k++) {
+                    for (l = (k + 1); l < (nvo + intorb); l++) {
+                        /* Remove */
+                        newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                        /* Replace virtual orbital and add excitation */
+                        newstr.virtx[0] = scr[k];
+                        newstr.virtx[1] = scr[l];
+                        newstr.nvrtx = 2;
+                        /* Automatically ordred. */
+                        xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                      nactv, nvirt, elec,
+                                                      elecs);
+                        (*numx)++;
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* ACTV(str) <- VIRT(eosp)  + VIRT*/
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over unoccupied ACTV orbitals. Turning them "on" */
+            for (i = (intorb - str_docc - str_actv - 1);
+                 i >= (ndocc - str_docc);
+                 i--){
+                /* Loop over unoccupied Virtuals for replacement */
+                for (l = intorb; l < (intorb + nvo); l++) {
+                    newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                    newstr.virtx[0] = scr[l];
+                    newstr.virtx[1] = 0;
+                    newstr.nvrtx = 1;
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                  nactv, nvirt, elec,
+                                                  elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        default:
+            printf("WARNING: Unknown case. nrep != 1, 2\n");
+            break;
+        }
+    }
+    
+    return;
+}
+
+/*
+ * generate_actv2virtx_docc1: generate replacements between DOCC, ACTV and VIRT
+ * spaces. This is a special case where one replacement occurs within DOCC, in addition
+ * to the ACTV <-> VIRT replacement.
+ */
+void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (nrep < 2) return;
+    if (str_docc != eosp.docc) return;
+    if (str_actv == eosp.actv) return;
+    if (str_virt == eosp.virt) return;
+    if (abs(str_virt - eosp.virt) != 1) return;
+
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    /* VIRT */
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation DOCC, ACTV->VIRT or DOCC, ACTV<-VIRT */
+    xtype = str_actv - eosp.actv;
+    if (xtype > 0) {
+        /* DOCC (str) --> (ACTV(eosp), VIRT(eosp)) */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied DOCC orbitals. Removing one */
+            for (i = (str_docc - 1); i >= 0; i--) {
+                /* Loop over occupied ACTV orbitals. Removing one. */
+                for (j = (str_docc + str_actv - 1); j >= str_docc; j--) {
+                    /* Add new occupation to DOCC space */
+                    for (k = 0;
+                         k < (ndocc - str_docc);
+                         k++) {
+                        /* Add new orbital to VIRT space */
+                        for (l = intorb; l < (nvo + intorb); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            /* If adding occupation to VIRT, there must be
+                             * str.nvirt = 0 or 1. */
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[str.nvrtx] = scr[l];
+                            newstr.nvrtx = str.nvrtx + 1;
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str) (ACTV(eosp) <-- VIRT(eosp)) */
+        /* Need to add occupations to ACTV and remove them from VIRT */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied DOCC orbitals. Turning them "off" */
+            for (i = (str_docc - 1); i >= 0; i--) {
+                /* Loop over unoccupied DOCC orbitals. Turning them "on" */
+                for (j = 0; j < (ndocc - str_docc); j++) {
+                    /* Loop over unoccupied ACTV orbitals, turning them "on" */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_docc - str_actv);
+                         k++) {
+                        /* Loop over occupied VIRT orbitals, turning them "off"*/
+                        for (l = 0; l < str_virt; l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (str.istr[k]));
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.nvrtx = str_virt - 1;
+                            newstr.virtx[l] = 0;
+                            /* Make sure virtual orbitals are ordered correctly after
+                             * removal of virtx[j] */
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return;
+
+}
+
+
+/*
+ * generate_actv2doccvirtx: generate replacements between ACTV and (DOCC,VIRT)
+ * spaces.
+ */
+void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
+                             int str_actv, int str_virt, struct eospace eosp,
+                             int ndocc, int nactv, int nvirt, int elec, int *scr,
+                             int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    int xtype = 0;
+    long long ibyte = 0x00;
+    long long xbyte = 0x00;
+    int tmp;
+    int nvo = 0;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (nrep < 2) return;
+    if (str_actv == eosp.actv) return;
+    if (str_docc == eosp.docc) return;
+    if (str_virt == eosp.virt) return;
+    if (abs(str_actv - eosp.actv) != nrep) return;
+
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    /* VIRT */
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation ACTV -> (DOCC, VIRT) or ACTV <- (DOCC, VIRT) */
+    xtype = str_actv - eosp.actv;
+    if (xtype > 0) {
+        /* ACTV -> (DOCC, VIRT) */
+        newstr = str;
+        switch (nrep) {
+        case 2: /* Double replacements */
+            /* Loop over ACTV orbitals, removing them */
+            for (i = (str_docc + str_actv - 1); i >= str_docc + 1; i--) {
+                for (j = (i - 1); j >= str_docc; j--) {
+                    /* Add new orbital to DOCC */
+                    for (k = 0; k < (ndocc - str_docc); k++) {
+                        /* Add new orbital to VIRT */
+                        for (l = intorb; l < (nvo + intorb); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[str.nvrtx] = scr[l];
+                            newstr.nvrtx = str.nvrtx + 1;
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* ACTV <- (DOCC, VIRT) */
+        newstr = str;
+        switch (nrep) {
+        case 2: /* Double replacements */
+            /* Loop over unoccupied ACTV orbitals, adding them */
+            for (i = (intorb - str_docc - str_actv - 1);
+                 i >= (ndocc - str_docc + 1);
+                 i--) {
+                for (j = (i - 1); j >= (ndocc - str_docc); j--) {
+                    /* Loop over occupied DOCC orbitals, removing them */
+                    for (k = 0; k < str_docc; k++) {
+                        /* Loop over occupied VIRT orbitals, removing them */
+                        for (l = 0; l < str_virt; l++) {
+                            newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[k]);
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.nvrtx = str.nvrtx - 1;
+                            newstr.virtx[l] = 0;
+                            /* Make sure virtual orbitals are ordered correctly after
+                             * removal of virtx[j] */
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return;
+}
+
+/*
+ * generate_docc2actvx: generate replacements between DOCC and ACTV spaces.
+ */
+void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv,
+                         int str_virt, struct eospace eosp, int ndocc, int nactv,
+                         int nvirt, int elec, int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    int xtype = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+    /* Check if excitations are possible */
+    if (abs(str_docc - eosp.docc) != nrep) return;
+    if (abs(str_actv - eosp.actv) != nrep) return;
+    if (str_virt != eosp.virt) return;
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+
+    /* Is the excitation DOCC -> ACTV or DOCC <- ACTV */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC(str) -> ACTV(eosp) */
+        /* Need to remove occupations from DOCC, and add to ACTV */
+        newstr = str;
+        switch(nrep) {
+        case 1: /* Single replacements */
+            /* Loop over occupied docc orbitals. Removing them */
+            for (i = (str_docc - 1); i >= 0; i--) {
+                /* Add new orbital in actv space */
+                for (j = (ndocc - str_docc);
+                     j < (intorb - str_actv - str_docc);
+                     j++) {
+                    newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                    newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                  nvirt, elec, elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        case 2: /* Double replacements */
+            /* Loop over occupied docc orbitals. Removing them. */
+            for (i = (str_docc - 1); i >= 1; i--) {
+                for (j = (i - 1); j >= 0; j--) {
+                    /* Add new orbitals to actv space */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_actv - str_docc - 1);
+                         k++){
+                        for (l = (k + 1);
+                             l < (intorb - str_actv - str_docc);
+                             l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str) <- ACTV(eosp) */
+        /* Need to add occupations to DOCC, and remove from ACTV */
+        newstr = str;
+        switch(nrep) {
+        case 1: /* Single replacements */
+            /* Loop over occupied actv orbitals. Removing them */
+            for (i = (str_actv + str_docc - 1); i >= str_docc; i--) {
+                /* Add new orbital in docc space */
+                for (j = 0; j < (ndocc - str_docc); j++) {
+                    newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                    newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                  nvirt, elec, elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        case 2: /* Double replacements */
+            /* Loop over occupied actv orbitals. Removing them */
+            for (i = (str_actv + str_docc - 1); i >= str_docc + 1; i--) {
+                for (j = (i - 1); j >= str_docc; j--) {
+                    /* Loop over unoccupied DOCC orbitals. Turning them on. */
+                    for (k = 0; k < (ndocc - str_docc - 1); k++) {
+                        for (l = (k + 1); l < (ndocc - str_docc); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }   
+    }
+    return;
+}
+
+/*
+ * generate_docc2actvx_actv1: generate excitations from DOCC -> ACTV with
+ * a replacement within the ACTV.
+ */
+void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (abs(str_docc - eosp.docc) != 1) return;
+    if (str_virt != eosp.virt) return;
+    if (str_actv == eosp.actv) return;
+    
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation DOCC -> ACTV or ACTV <- DOCC */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC(str) -> ACTV(eosp) */
+        /* Need to remove 1 occupation from DOCC, and add to ACTV */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied docc orbitals. Removing them. */
+            for (i = (str_docc - 1); i >= 1; i--) {
+                /* Loop over occupied ACTV orbitals. Turning them "off" */
+                for (j = str_docc + str_actv; j >= str_docc; j--) {
+                    /* Add new orbital to actv space */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_actv - str_docc - 1);
+                         k++){
+                        /* Add new ACTV orbital to ACTV space */
+                        for (l = k+1;
+                             l < (intorb - str_actv - str_docc);
+                             l++) {
+                            newstr.nvrtx = str.nvrtx;
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str) <- ACTV(eosp) */
+        /* Need to add occupation to DOCC, and remove from ACTV */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied ACTV orbitals. Removing 2 */
+            for (i = (str_actv + str_docc - 1); i >= str_docc + 1; i--) {
+                for (j = (str_actv + str_docc - 1); j >= str_docc; j--) {
+                    /* Loop over unoccupied ACTV orbitals. Turning 1 on. */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_actv - str_docc);
+                              k++) {
+                             /* Loop over unoccupied DOCC orbitals Turn 1 on */
+                             for (l = 0; l < (ndocc - str_docc); l++) {
+                            newstr.nvrtx = str.nvrtx;
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }   
+    }
+    
+    return;
+}
+
+
+/*
+ * generate_docc2actvx_docc1: generate excitations from DOCC -> ACTV with
+ * a replacement within the DOCC.
+ */
+void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (abs(str_docc - eosp.docc) != 1) return;
+    if (str_virt != eosp.virt) return;
+    if (str_actv == eosp.actv) return;
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation DOCC -> ACTV or ACTV <- DOCC */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC(str) -> ACTV(eosp) */
+        /* Need to remove 1 occupation from DOCC, and add to ACTV */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied docc orbitals. Removing them. */
+            for (i = (str_docc - 1); i >= 1; i--) {
+                for (j = (i - 1); j >= 0; j--) {
+                    /* Add new orbital to actv space */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_actv - str_docc);
+                         k++){
+                        /* Add new DOCC orbital to DOCC space */
+                        for (l = 0;
+                             l < (ndocc - str_docc);
+                             l++) {
+                            newstr.nvrtx = str.nvrtx;
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str) <- ACTV(eosp) */
+        /* Need to add occupation to DOCC, and remove from ACTV */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied actv orbitals. Removing 1 */
+            for (i = (str_actv + str_docc - 1); i >= str_docc; i--) {
+                /* Loop over occupied DOCC orbital. Removing 1 */
+                for (j = (str_docc - 1); j >= 0; j--) {
+                    /* Loop over unoccupied DOCC orbitals. Turning them on. */
+                    for (k = 0; k < (ndocc - str_docc - 1); k++) {
+                        for (l = (k + 1); l < (ndocc - str_docc); l++) {
+                            newstr.nvrtx = str.nvrtx;
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }   
+    }
+    
+    return;
+}
+
+/*
+ * generate_docc2actvx_virt1: generate excitations from DOCC -> ACTV with
+ * a replacement within the VIRT.
+ */
+void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (abs(str_docc - eosp.actv) != 1) return;
+    if (str_virt != eosp.virt) return;
+    if (str_actv == eosp.actv) return;
+    
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation DOCC -> ACTV or ACTV <- DOCC */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC(str) -> ACTV(eosp) */
+        /* Need to remove 1 occupation from DOCC, and add to ACTV */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied docc orbitals. Removing one. */
+            for (i = (str_docc - 1); i >= 0; i--) {
+                /* Loop over virtual orbitals. Swapping one */
+                for (j = 0; j < str_virt; j++) {
+                    /* Add new orbital to actv space */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_actv - str_docc);
+                         k++){
+                        /* Add new virtual orbitual space */
+                        for (l = intorb; l < (intorb + nvo); l++) {
+                            newstr.nvrtx = str.nvrtx;
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[j] = scr[l];
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str) <- ACTV(eosp) */
+        /* Need to add occupation to DOCC, and remove from ACTV */
+        /* And perform VIRT replacement. */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied ACTV orbitals. Removing 1 */
+            for (i = (str_actv + str_docc - 1); i >= str_docc; i--) {
+                /* Loop over occupied VIRT orbital. Swapping orbital */
+                for (j = str_virt; j >= 0; j--) {
+                    /* Loop over unoccupied DOCC orbitals. Turning them on. */
+                    for (k = 0; k < (ndocc - str_docc); k++) {
+                        /* Add new virtual orbital */
+                        for (l = intorb; l < (intorb + nvo); l++) {
+                            newstr.nvrtx = str.nvrtx;
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[j] = scr[l];
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }   
+    }
+    
+    return;
+    
+    return;
+}
+
+/*
+ * generate_docc2virtx_docc1: generate excitations from DOCC -> VIRT with a
+ * replacement within the DOCC space.
+ */
+void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (nrep < 2) return;
+    if (str_docc == eosp.docc) return;
+    if (str_actv != eosp.actv) return;
+    if (str_virt == eosp.virt) return;
+    if (abs(str_virt - eosp.virt) != 1) return;
+
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    /* VIRT */
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation DOCC, DOCC->VIRT or DOCC, DOCC<-VIRT */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC (str) --> VIRT(eosp) */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied DOCC orbitals. Removing two */
+            for (i = (str_docc - 1); i >= 1; i--) {
+                for (j = i-1; j >= 0; j--) {
+                    /* Add new occupation to DOCC space */
+                    for (k = 0; k < (ndocc - str_docc); k++) {
+                        /* Add new orbital to VIRT space */
+                        for (l = intorb; l < (nvo + intorb); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            /* If adding occupation to VIRT, there must be
+                             * str.nvirt = 0 or 1. */
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[str.nvrtx] = scr[l];
+                            newstr.nvrtx = str.nvrtx + 1;
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str,eosp) (DOCC(eosp) <-- VIRT(str)) */
+        /* Need to add occupations to DOCC and remove them from VIRT */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied DOCC orbitals. Turning one "off" */
+            for (i = (str_docc - 1); i >= 0; i--) {
+                /* Loop over unoccupied DOCC orbitals. Turning two "on" */
+                for (j = 0; j < (ndocc - str_docc - 1); j++) {
+                    for (k = (j + 1); k < (ndocc - str_docc); k++) {
+                        /* Loop over occupied VIRT orbitals, turning them "off"*/
+                        for (l = 0; l < str_virt; l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.nvrtx = str_virt - 1;
+                            newstr.virtx[l] = 0;
+                            /* Make sure virtual orbitals are ordered correctly after
+                             * removal of virtx[j] */
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return;
+
+}
+
+/*
+ * generate_docc2virtx_actv1: generate excitations from DOCC -> VIRT with
+ * a replacement within the ACTV.
+ */
+void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+    
+    /* Check if excitations are possible */
+    if (nrep < 2) return;
+    if (str_docc == eosp.docc) return;
+    if (str_actv != eosp.actv) return;
+    if (str_virt == eosp.virt) return;
+    if (abs(str_virt - eosp.virt) != 1) return;
+
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    /* VIRT */
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation ACTV, DOCC->VIRT or ACTV, DOCC<-VIRT */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC (str) --> VIRT(eosp) */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied DOCC orbitals. Removing one */
+            for (i = (str_docc - 1); i >= 1; i--) {
+                /* Loop over occupied ACTV orbitals. Removing one. */
+                for (j = str_docc + str_actv - 1; j >= str_docc; j--) {
+                    /* Add new occupation to ACTV space */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_docc - str_actv); k++) {
+                        /* Add new orbital to VIRT space */
+                        for (l = intorb; l < (nvo + intorb); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            /* If adding occupation to VIRT, there must be
+                             * str.nvirt = 0 or 1. */
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[str.nvrtx] = scr[l];
+                            newstr.nvrtx = str.nvrtx + 1;
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* ACTV, DOCC(eosp) <-- VIRT(str) */
+        /* Need to add occupation to DOCC and remove one from VIRT */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over ACTV occupied  orbitals. Turning one "off" */
+            for (i = (str_docc + str_actv - 1); i >= str_docc; i--) {
+                /* Loop over unoccupied ACTV orbitals. Turning one "on" */
+                for (j = (ndocc - str_docc);
+                     j < (intorb - str_actv - str_docc); j++) {
+                    /* Loop over unoccupied DOCC orbitals. Turning one "on" */
+                    for (k = 0; k < (ndocc - str_docc); k++) {
+                        /* Loop over occupied VIRT orbitals, turning them "off"*/
+                        for (l = 0; l < str_virt; l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.nvrtx = str_virt - 1;
+                            newstr.virtx[l] = 0;
+                            /* Make sure virtual orbitals are ordered correctly after
+                             * removal of virtx[j] */
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return;
+
+}
+
+/*
+ * generate_docc2virtx_actv1: generate excitations from DOCC -> VIRT with
+ * a replacement within the virt.
+ */
+void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
+                               int str_actv, int str_virt, struct eospace eosp,
+                               int ndocc, int nactv, int nvirt, int elec,
+                               int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    int xtype = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int tmp;
+    int nvo = 0;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (abs(str_docc - eosp.docc) != 1) return;
+    if (abs(str_virt - eosp.virt) != 1) return;
+    if (str_virt == 0 || eosp.virt == 0) return;
+    if (str_virt != 2 || eosp.virt != 2) return;
+    if (str_actv != eosp.actv) return;
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation DOCC -> VIRTX + VIRTX or DOCC <- VIRTX + VIRTX */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC(str) -> VIRT(eosp) + Internal VIRT replacement*/
+        newstr = str;
+        switch (nrep) {
+        case 2:
+            /* Loop over occupied DOCC orbitals. Removing 1. */
+            for (i = str_docc - 1; i >= 0; i--) {
+                /* VIRT replacements */
+                for (k = intorb; k < (nvo + intorb - 1); k++) {
+                    for (l = (k + 1); l < (nvo + intorb); l++) {
+                        /* Remove */
+                        newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                        /* Replace virtual orbital and add excitation */
+                        newstr.virtx[0] = scr[k];
+                        newstr.virtx[1] = scr[l];
+                        newstr.nvrtx = 2;
+                        /* Automatically ordred. */
+                        xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                      nactv, nvirt, elec,
+                                                      elecs);
+                        (*numx)++;
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str) <- VIRT(eosp)  + VIRT*/
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over unoccupied DOCC orbitals. Turning them "on" */
+            for (i = (ndocc - str_docc - 1); i >= 0; i--){
+                /* Loop over unoccupied Virtuals for replacement */
+                for (l = intorb; l < (intorb + nvo); l++) {
+                    newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                    newstr.virtx[0] = scr[l];
+                    newstr.virtx[1] = 0;
+                    newstr.nvrtx = 1;
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                  nactv, nvirt, elec,
+                                                  elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        default:
+            printf("WARNING: Unknown case. nrep != 1, 2\n");
+            break;
+        }
+    }
+
+    return;
+    
+}
+
+/*
+ * generate_doccx_actvx: generate replacements  DOCC + ACTV.
+ */
+void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
+                          int str_actv, int str_virt, struct eospace eosp,
+                          int ndocc, int nactv, int nvirt, int elec,
+                          int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+    
+    /* Check if excitations are possible */
+    if (str_docc != eosp.docc) return;
+    if (str_virt != eosp.virt) return;
+    if (str_actv != eosp.actv) return;
+    if (nrep != 2) return;
+    
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+
+    newstr = str;
+    switch(nrep) {
+    case 2: /* Double replacements */
+            /* Loop over occupied docc orbitals. Removing one. */
+        for (i = (str_docc - 1); i >= 0; i--) {
+            /* Loop over occupied actv orbitals. removing one */
+            for (j = (str_docc + str_actv - 1); j >= str_docc; j--) {
+                /* Add new orbital to actv space */
+                for (k = (ndocc - str_docc);
+                     k < (intorb - str_actv - str_docc);
+                     k++){
+                    /* Add new DOCC orbital to DOCC space */
+                    for (l = 0;
+                         l < (ndocc - str_docc);
+                         l++) {
+                        newstr.nvrtx = str.nvrtx;
+                        newstr.virtx[0] = str.virtx[0];
+                        newstr.virtx[1] = str.virtx[1];
+                        newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                        newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                        newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                        newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                        xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                      nactv, nvirt, elec,
+                                                      elecs);
+                        (*numx)++;
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+/*
+ * generate_doccx_virtx: generate replacements  DOCC + VIRT.
+ */
+void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
+                          int str_actv, int str_virt, struct eospace eosp,
+                          int ndocc, int nactv, int nvirt, int elec,
+                          int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+    
+    /* Check if excitations are possible */
+    if (str_docc != eosp.docc) return;
+    if (str_virt != eosp.virt) return;
+    if (str_actv != eosp.actv) return;
+    if (nrep != 2) return;
+    
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    newstr = str;
+    switch(nrep) {
+    case 2: /* Double replacements */
+            /* Loop over occupied docc orbitals. Removing one. */
+        for (i = (str_docc - 1); i >= 0; i--) {
+            /* Loop over unoccupied docc orbitals. Adding one */
+            for (j = 0; j < (ndocc - str_docc); j++) {
+                /* Add swap occupation in virt */
+                for (k = 0; k < str_virt; k++){
+                    /* Add new DOCC orbital to DOCC space */
+                    for (l = intorb; l < (intorb + nvo); l++) {
+                        newstr.nvrtx = str.nvrtx;
+                        newstr.virtx[0] = str.virtx[0];
+                        newstr.virtx[1] = str.virtx[1];
+                        newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                        newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                        newstr.virtx[k] = scr[l]; // Swapped
+                        if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                            tmp = newstr.virtx[0];
+                            newstr.virtx[0] = newstr.virtx[1];
+                            newstr.virtx[1] = tmp;
+                        }
+                        if (newstr.virtx[0] > newstr.virtx[1] &&
+                            newstr.virtx[1] != 0) {
+                            tmp = newstr.virtx[0];
+                            newstr.virtx[0] = newstr.virtx[1];
+                            newstr.virtx[1] = tmp;
+                        }
+                        xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                      nactv, nvirt, elec,
+                                                      elecs);
+                        (*numx)++;
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+/*
+ * generate_actvx_virtx: generate replacements  ACTV + VIRT.
+ */
+void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
+                          int str_actv, int str_virt, struct eospace eosp,
+                          int ndocc, int nactv, int nvirt, int elec,
+                          int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (str_docc != eosp.docc) return;
+    if (str_virt != eosp.virt) return;
+    if (str_actv != eosp.actv) return;
+    if (eosp.virt == 0) return;
+    if (nrep != 2) return;
+    
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    newstr = str;
+    switch(nrep) {
+    case 2: /* Double replacements */
+            /* Loop over occupied actv orbitals. Removing one. */
+        for (i = (str_docc + str_actv - 1); i >= str_docc; i--) {
+            /* Loop over unoccupied actv orbitals. Adding one */
+            for (j = (ndocc - str_docc);
+                 j < (intorb - str_docc - str_actv);
+                 j++) {
+                /* Add swap occupation in virt */
+                for (k = 0; k < str_virt; k++){
+                    for (l = intorb; l < (intorb + nvo); l++) {
+                        newstr.nvrtx = str.nvrtx;
+                        newstr.virtx[0] = str.virtx[0];
+                        newstr.virtx[1] = str.virtx[1];
+                        newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                        newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                        newstr.virtx[k] = scr[l]; // Swapped
+                        if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                            tmp = newstr.virtx[0];
+                            newstr.virtx[0] = newstr.virtx[1];
+                            newstr.virtx[1] = tmp;
+                        }
+                        if (newstr.virtx[0] > newstr.virtx[1] &&
+                            newstr.virtx[1] != 0) {
+                            tmp = newstr.virtx[0];
+                            newstr.virtx[0] = newstr.virtx[1];
+                            newstr.virtx[1] = tmp;
+                        }
+                        xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                      nactv, nvirt, elec,
+                                                      elecs);
+                        (*numx)++;
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+/*
+ * generate_docc2actvvirtx: generate excitations from DOCC -> (ACTV, VIRT)
+ * for a given string.
+ */
+void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
+                             int str_actv, int str_virt, struct eospace eosp,
+                             int ndocc, int nactv, int nvirt, int elec, int *scr,
+                             int *xlist, int *numx)
+{
+    struct occstr newstr; /* New string. */
+    int elecs[20];
+    int xtype = 0;
+    int tmp;
+    int nvo = 0;
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (nrep < 2) return;
+    if (str_docc == eosp.docc) return;
+    if (str_actv == eosp.actv) return;
+    if (str_virt == eosp.virt) return;
+    if (abs(str_docc - eosp.docc) != nrep) return;
+
+
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    /* VIRT */
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is the excitation DOCC -> (ACTV, VIRT) or DOCC <- (ACTV, VIRT) */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC (str) --> (ACTV(eosp), VIRT(eosp)) */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied DOCC orbitals. Removing them */
+            for (i = (str_docc - 1); i >= 1; i--) {
+                for (j = (i - 1); j >= 0; j--) {
+                    /* Add new orbital to ACTV space */
+                    for (k = (ndocc - str_docc);
+                         k < (intorb - str_actv - str_docc);
+                         k++) {
+                        /* Add new orbital to VIRT space */
+                        for (l = intorb; l < (nvo + intorb); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
+                            /* If adding occupation to VIRT, there must be
+                             * str.nvirt = 0 or 1. */
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.virtx[str.nvrtx] = scr[l];
+                            newstr.nvrtx = str.nvrtx + 1;
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str) <-- (ACTV(eosp), VIRT(eosp)) */
+        /* Need to add occupations to DOCC and remove them from ACTV and VIRT */
+        newstr = str;
+        switch(nrep) {
+        case 2: /* Double replacements */
+            /* Loop over unoccupied DOCC orbitals. Turning them "on" */
+            for (i = (ndocc - str_docc - 1); i >= 1; i--) {
+                for (j = (i - 1); j >= 0; j--) {
+                    /* Loop over occupied ACTV orbitals, turning them "off" */
+                    for (k = str_docc; k < (str_docc + str_actv); k++) {
+                        /* Loop over occupied VIRT orbitals, removing them */
+                        for (l = 0; l < str_virt; l++) {
+                            newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                            newstr.byte1 = newstr.byte1 - pow(2, (str.istr[k]));
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.nvrtx = str_virt - 1;
+                            newstr.virtx[l] = 0;
+                            /* Make sure virtual orbitals are ordered correctly after
+                             * removal of virtx[j] */
+                            if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            if (newstr.virtx[0] > newstr.virtx[1] &&
+                                newstr.virtx[1] != 0) {
+                                tmp = newstr.virtx[0];
+                                newstr.virtx[0] = newstr.virtx[1];
+                                newstr.virtx[1] = tmp;
+                            }
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return;
+}
+    
+/*
+ * generate_docc2virtx: generate excitations from DOCC -> VIRT spaces for
+ * a given string.
+ */
+void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv,
+                         int str_virt, struct eospace eosp, int ndocc, int nactv,
+                         int nvirt, int elec, int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    long long int ibyte = 0x00;
+    long long int xbyte = 0x00;
+    int i, j, k, l;
+    int tmp;
+    int nvo = 0;
+    int xtype = 0;
+    int intorb = ndocc + nactv;
+    
+    /* Check if excitations are possible */
+    if (abs(str_docc - eosp.docc) != nrep) return;
+    if (str_actv != eosp.actv) return;
+
+    /* Generate DOCC orbital byte */
+    for (i = 0; i < ndocc; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, ndocc, scr);
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+    /* Is excitation DOCC -> VIRT or DOCC <- VIRT? */
+    xtype = str_docc - eosp.docc;
+    if (xtype > 0) {
+        /* DOCC(str) -> VIRT(eosp) */
+        /* Need to remove occupations from DOCC, and add to VIRT */
+        newstr = str;
+        switch(nrep) {
+        case 1: /* Single replacements */
+            /* Loop over occupied docc orbitals. Removing them */
+            for (i = (str_docc - 1); i >= 0; i--) {
+                /* Add new orbital */
+                for (j = intorb; j < (nvo + intorb); j++) {
+                    newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                    newstr.virtx[0] = str.virtx[0];
+                    newstr.virtx[1] = str.virtx[1];
+                    newstr.virtx[str.nvrtx] = scr[j];
+                    newstr.nvrtx = str.nvrtx + 1;
+                    if (newstr.virtx[0] > newstr.virtx[1] && newstr.virtx[1] != 0) {
+                        tmp = newstr.virtx[0];
+                        newstr.virtx[0] = newstr.virtx[1];
+                        newstr.virtx[1] = tmp;
+                    }
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                  nvirt, elec, elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        case 2: /* Double replacements */
+            /* Loop over occupied docc orbitals, removing them. */
+            for (i = (str_docc - 1); i >= 1; i--) {
+                for (j = (i - 1); j >= 0; j--) {
+                    /* Add new orbitals to VIRT space. If 2 excitations, both
+                     * virtx[] elements are replaced. */
+                    for (k = intorb; k < (nvo + intorb - 1); k++) {
+                        for (l = (k + 1); l < (nvo + intorb); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.virtx[0] = str.virtx[0];
+                            newstr.virtx[1] = str.virtx[1];
+                            newstr.nvrtx = 2;
+                            newstr.virtx[0] = scr[k];
+                            newstr.virtx[1] = scr[l];
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* DOCC(str) <- VIRT(eosp) */
+        /* Need to add occupations to DOCC, and remove from VIRT */
+        newstr = str;
+        switch(nrep) {
+        case 1: /* Single replacements */
+            /* Loop over unoccupied docc orbitals. Adding one. */
+            for (i = (ndocc - str_docc - 1); i >= 0; i--) {
+                /* Remove one occupied virtual orbital */
+                for (j = str_virt - 1; j >= 0; j--) {
+                    newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                    newstr.virtx[0] = str.virtx[0];
+                    newstr.virtx[1] = str.virtx[1];
+                    newstr.virtx[j] = 0;
+                    newstr.nvrtx = str.nvrtx - 1;
+                    /* Make sure virtual orbitals are ordered correctly after
+                     * removal of virtx[j] */
+                    if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
+                        tmp = newstr.virtx[0];
+                        newstr.virtx[0] = newstr.virtx[1];
+                        newstr.virtx[1] = tmp;
+                    }
+                    if (newstr.virtx[0] > newstr.virtx[1] && newstr.virtx[1] != 0) {
+                        tmp = newstr.virtx[0];
+                        newstr.virtx[0] = newstr.virtx[1];
+                        newstr.virtx[1] = tmp;
+                    }
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                  nvirt, elec, elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        case 2: /* Double replacements */
+            /* Loop over unoccupied docc orbitals, adding two */
+            for (i = (ndocc - str_docc - 1); i >= 1; i--) {
+                for (j = (i - 1); j >= 0; j--) {
+                    /* Remove virtual orbitals. This is a double replacement
+                     * so both are removed. */
+                    newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                    newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                    newstr.nvrtx = 0;
+                    newstr.virtx[0] = 0;
+                    newstr.virtx[1] = 0;
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                  nvirt, elec, elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return;
+}
+
+/*
+ * generate_doccx: generate excitations within the DOCC space given a
+ * string.
+ */
+void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
+                    int str_virt, struct eospace eosp, int ndocc, int nactv,
+                    int nvirt, int elec, int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    long long int ibyte = 0x00; /* Internal orbitals */
+    long long int xbyte = 0x00; /* Excitation orbitals */
+    int intorb;
+    int i, j, k ,l;
+    intorb = ndocc + nactv;
+    
+    /* Check if excitations are possible */
+    if (str_docc != eosp.docc) return;
+    if (str_docc == ndocc) return;
+    if (str_actv != eosp.actv) return;
+    if (str_virt != eosp.virt) return;
+
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+
+    /* Loop over occupied orbitals */
+    newstr = str;
+    switch (nrep) {
+    case 1: /* Single replacements */
+        for (i = (str_docc - 1); i >= 0; i--) {
+            for (j = 0; j < (ndocc - str_docc); j++) {
+                newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv, nvirt,
+                                              elec, elecs);
+                (*numx)++;
+            }
+        }
+        break;
+    case 2: /* Double replacements */
+        if ((ndocc - str_docc) != 2) return; /* Can't have 2x */
+        for (i = (str_docc - 1); i >= 1; i--) {
+            for (j = 0; j < (ndocc - str_docc - 1); j++) {
+                for (k = (i - 1); k >= 0; k--) {
+                    for (l = (j + 1); l < (ndocc - str_docc); l++) {
+                        newstr.byte1 = str.byte1 - pow(2, str.istr[k]);
+                        newstr.byte1 = newstr.byte1 - pow(2, str.istr[i]);
+                        newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
+                        newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                        xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                      nactv, nvirt, elec, elecs);
+                        (*numx)++;
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        printf(" case != {1, 2}.\n");
+        break;
+    }
+    return;
+}
+
+/*
+ * generate_virtx: generate excitations within the VIRT space given a
+ * string.
+ */
+void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
+                    int str_virt, struct eospace eosp, int ndocc, int nactv,
+                    int nvirt, int elec, int *scr, int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    int i, j, k, l;
+    int tmp;
+    int nvo = 0;
+    int intorb = ndocc + nactv;
+
+    /* Check if excitations are possible */
+    if (str_virt != eosp.virt) return;
+    if (str_virt == nvirt) return;
+    if (str_virt == 0) return;
+    if (str_actv != eosp.actv) return;
+    if (str_docc != eosp.docc) return;
+    
+    /* Generate possible orbitals for replacement */
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[nvo] = i;
+            nvo++;
+        }
+    }
+    /* Loop over occupied orbitals */
+    newstr = str;
+    switch (nrep) {
+    case 1: /* Single replacements */
+        for (i = str_virt - 1; i >= 0; i--) {
+            for (j = 0; j < nvo; j++) {
+                newstr.virtx[0] = str.virtx[0];
+                newstr.virtx[1] = str.virtx[1];
+                newstr.nvrtx = str.nvrtx;
+                newstr.virtx[i] = scr[j];
+                /* Ensure orbitals are ordered properly */
+                if (newstr.virtx[0] > newstr.virtx[1] && newstr.virtx[1] != 0) {
+                    tmp = newstr.virtx[0];
+                    newstr.virtx[0] = newstr.virtx[1];
+                    newstr.virtx[1] = tmp;
+                }
+                xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv, nvirt,
+                                              elec, elecs);
+                (*numx)++;
+            }
+        }
+        break;
+    case 2: /* Double replacements */
+        if ((nvirt - str_virt) < 2) return; /* Can't have 2x */
+        for (i = str_virt - 1; i >= 1; i--) {
+            for (j = 0; j < (nvo - 1); j++) {
+                for (k = (i - 1); k >= 0; k--) {
+                    for (l = (j + 1); l < nvo; l++) {
+                        newstr.virtx[0] = str.virtx[0];
+                        newstr.virtx[1] = str.virtx[1];
+                        newstr.virtx[i] = scr[j];
+                        newstr.virtx[k] = scr[l];
+                        newstr.nvrtx = str.nvrtx;
+                        /* Ensure orbitals are ordered properly */
+                        if (newstr.virtx[0] > newstr.virtx[1] &&
+                            newstr.virtx[1] != 0) {
+                            tmp = newstr.virtx[0];
+                            newstr.virtx[0] = newstr.virtx[1];
+                            newstr.virtx[1] = tmp;
+                        }
+                        xlist[*numx] = occstr2address(newstr, eosp, ndocc, nactv,
+                                                      nvirt, elec, elecs);
+                        (*numx)++;
+                        return;
+                    }
+                }
+            }
+        }
+        break;
+    default:
+        printf(" nrep != 1 or 2\n");
+        break;
+    }
+    return;
+}
+
+/*
+ * generate_virt2doccactvx: generate replacements between VIRT and (DOCC,ACTV)
+ * spaces.
+ */
+void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
+                             int str_actv, int str_virt, struct eospace eosp,
+                             int ndocc, int nactv, int nvirt, int elec, int *scr,
+                             int *xlist, int *numx)
+{
+    struct occstr newstr;
+    int elecs[20];
+    int xtype = 0;
+    long long ibyte = 0x00;
+    long long xbyte = 0x00;
+    int tmp;
+    int nvo = 0;
+    int i, j, k, l;
+    int intorb = ndocc + nactv;
+    
+    /* Check if excitations are possible */
+    if (nrep < 2) return;
+    if (str_virt == eosp.virt) return;
+    if (str_docc == eosp.docc) return;
+    if (str_actv == eosp.actv) return;
+    if (abs(str_virt - eosp.virt) != nrep) return;
+
+
+    /* Generate internal orbital byte */
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    /* Get possible excitations */
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, scr);
+    /* VIRT */
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            scr[intorb + nvo] = i;
+            nvo++;
+        }
+    }
+
+    /* Is this excitation VIRT -> (DOCC, ACTV) or VIRT <- (DOCC, ACTV)? */
+    xtype = str_virt - eosp.virt;
+    if (xtype > 0) {
+        /* VIRT -> (DOCC, ACTV) */
+        newstr = str;
+        switch (nrep) {
+        case 2: /* Double replacements */
+            /* Loop over unoccupied DOCC orbitals, turning them "on" */
+            for (i = 0; i < (ndocc - str_docc); i++) {
+                /* Loop over unoccupied ACTV orbitals, turning them "on" */
+                for (j = (ndocc - str_docc);
+                     j < (intorb - str_actv - str_docc);
+                     j++) {
+                    newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
+                    newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
+                    newstr.virtx[0] = 0;
+                    newstr.virtx[1] = 0;
+                    newstr.nvrtx = 0;
+                    xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                  nactv, nvirt, elec,
+                                                  elecs);
+                    (*numx)++;
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    } else {
+        /* VIRT <- (DOCC, ACTV) */
+        newstr = str;
+        switch (nrep) {
+        case 2: /* Double replacements */
+            /* Loop over occupied DOCC orbitals, turning them "off" */
+            for (i = 0; i < str_docc; i++) {
+                /* Loop over occupied ACTV orbitals, turning them "off" */
+                for (j = str_docc; j < str_docc + str_actv; j++) {
+                    /* Loop over available VIRT orbitals, adding them */
+                    for (k = intorb; k < (nvo + intorb - 1); k++) {
+                        for (l = (k + 1); l < (nvo + intorb); l++) {
+                            newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
+                            newstr.byte1 = newstr.byte1 - pow(2, str.istr[j]);
+                            newstr.nvrtx = str_virt + 2;
+                            newstr.virtx[0] = scr[k];
+                            newstr.virtx[1] = scr[l];
+                            /* No need to check ordering */
+                            xlist[*numx] = occstr2address(newstr, eosp, ndocc,
+                                                          nactv, nvirt, elec,
+                                                          elecs);
+                            (*numx)++;
+                        }
+                    }
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return;
+}
+
+
+/*
  * generate_string_list: generate full *valid* alpha/beta string lists.
  */
 void generate_string_list(struct eostring *strlist, int nstr, int orbs,
@@ -535,6 +3119,147 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
                 eosp[i].nstr = count - eosp[i].nstr;
         }
         return;
+}
+
+/*
+ * get_string_eospace: get eospace of input string.
+ */
+int get_string_eospace(struct occstr str, int ndocc, int nactv,
+                       struct eospace *esp, int egrps)
+{
+    int spindx = 0; /* Index of eospace for input string */
+    /* str eospace info */
+    int str_docc = 0;
+    int str_actv = 0;
+    int str_virt = 0;
+    int i;
+    get_string_eospace_info(str, ndocc, nactv, &str_docc, &str_actv, &str_virt);
+    for (i = 0; i < egrps; i++) {
+        if (esp[i].docc == str_docc &&
+            esp[i].actv == str_actv &&
+            esp[i].virt == str_virt) {
+            spindx = i;
+            break;
+        }
+    }
+    return spindx;
+}
+    
+/*
+ * occstr2address: compute the string index of given an occupation string.
+ */
+int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
+                   int nvirt, int nelec, int *elecs)
+{
+        int i, j;
+        long long int typ;
+        int dstr = 0, astr = 0, vstr = 0;
+        int daddr = 0, aaddr = 0, vaddr = 0;
+        int addr = 0;
+
+        /* Create electron string necessary for address look up. */
+        nonzerobits(str.byte1, (ndocc + nactv), elecs);
+        for (i = 0; i < str.nvrtx; i++) {
+                elecs[nelec - str.nvrtx + i] = str.virtx[i];
+        }
+        /* Give orbitals in string "relative" values for space */
+        /* DOCC space can be skipped. */
+        for (i = eosp.docc; i < eosp.docc + eosp.actv; i++) {
+            elecs[i] = elecs[i] - ndocc;
+        }
+        for (i = eosp.docc + eosp.actv; i < nelec; i++) {
+            elecs[i] = elecs[i] - ndocc - nactv;
+        }
+
+#ifdef DEBUGGING
+        for (i = 0; i < nelec; i++) {
+            if (elecs[i] <= 0) {
+                printf("Error! ");
+                for (j = 0; j < nelec; j++) {
+                    printf(" %d", elecs[j]);
+                }
+                printf("\n");
+                print_occstring(str, nelec, ndocc, nactv);
+                return -10;
+            }
+        }
+#endif
+
+        if ((eosp.docc * eosp.actv * eosp.virt) != 0) {
+            /* Electrons present in all spaces */
+            dstr = binomial_coef2(ndocc, eosp.docc);
+            astr = binomial_coef2(nactv, eosp.actv);
+            vstr = binomial_coef2(nvirt, eosp.virt);
+
+            daddr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
+            aaddr = str_adrfind(&(elecs[eosp.docc]),eosp.actv,nactv);
+            vaddr = str_adrfind(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
+
+            addr = (daddr - 1) * astr * vstr + (aaddr - 1) * vstr + vaddr;
+
+        } else if (eosp.actv != 0 && eosp.virt != 0) {
+            /* (0, 1, 1) */
+            astr = binomial_coef2(nactv, eosp.actv);
+            vstr = binomial_coef2(nvirt, eosp.virt);
+
+            aaddr = str_adrfind(&(elecs[eosp.docc]),eosp.actv,nactv);
+            vaddr = str_adrfind(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
+
+            addr = (aaddr - 1) * vstr + vaddr;
+
+        } else if (eosp.docc != 0 && eosp.virt != 0) {
+            /* (1, 0, 1) */
+            dstr = binomial_coef2(ndocc, eosp.docc);
+            vstr = binomial_coef2(nvirt, eosp.virt);
+
+            daddr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
+            vaddr = str_adrfind(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
+            
+            addr = (daddr - 1) * vstr + vaddr;
+
+        } else if (eosp.docc != 0 && eosp.actv != 0) {
+            /* (1, 1, 0) */
+            dstr = binomial_coef2(ndocc, eosp.docc);
+            astr = binomial_coef2(nactv, eosp.actv);
+
+            daddr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
+            aaddr = str_adrfind(&(elecs[eosp.docc]),eosp.actv,nactv);
+
+            addr = (daddr - 1) * astr + aaddr;
+
+        } else if (eosp.docc != 0) {
+            /* (1, 0, 0) */
+            dstr = binomial_coef2(ndocc, eosp.docc);
+
+            addr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
+            
+        } else if (eosp.actv != 0) {
+            /* (0, 1, 0) */
+            astr = binomial_coef2(nactv, eosp.actv);
+
+            addr = str_adrfind(&(elecs[eosp.docc]),eosp.actv,nactv);
+
+        } else if (eosp.virt != 0) {
+            /* (0, 0, 1) */
+            vstr = binomial_coef2(nvirt, eosp.virt);
+
+            addr = str_adrfind(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
+
+        }
+
+        addr = addr + eosp.start - 1;
+        if (addr > (eosp.start + eosp.nstr)) {
+            printf("Error! addr = %d, eosp.start = %d, eosp.nstr = %d\n",
+                   addr, eosp.start, eosp.nstr);
+            printf("eosp.docc = %d, eosp.actv = %d, eosp.virt = %d\n",
+                   eosp.docc, eosp.actv, eosp.virt);
+            printf("Relative occupations: ");
+            for (i = 0; i < (eosp.docc + eosp.actv + eosp.virt); i++) {
+                printf(" %d", elecs[i]);
+            }
+            printf("\n");
+        }
+        return addr;
 }
 
 /*
@@ -640,7 +3365,6 @@ void setup_eostrings_compute(int *elecs, int *orbs, int *nstr, int *pegs,
         
         return;
 }
-
 
 
 /*

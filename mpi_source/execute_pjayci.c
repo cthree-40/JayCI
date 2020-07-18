@@ -78,6 +78,13 @@ int execute_pjayci ()
 	double restol = 0.0; /* residual norm converegence tolerance */
         int ga_buffer_len = 0; /* Length of GA buffers. */
 	double memusage = 0.0; /* Estimated memory usage */
+
+        int **p1x = NULL, **p2x = NULL; /* 1 and 2 excitation string lists */
+        int **q1x = NULL, **q2x = NULL; /* 1 and 2 excitation string lists */
+        int nq1x = 0, nq2x = 0;
+        int np1x = 0, np2x = 0;
+        
+
         
         /* Read in the &general namelist. Ensure that the expansion's
          * CAS space is not greater than 64 orbitals. */
@@ -141,6 +148,12 @@ int execute_pjayci ()
         /* Generate pstrings and qstrings. */
         compute_ci_elecs_and_orbitals(aelec, belec, orbitals, nfrzc, nfrzv,
                                       &ci_aelec, &ci_belec, &ci_orbs);
+        if (ci_aelec > 20 || ci_belec > 20) {
+            if (mpi_proc_rank == mpi_root) {
+                printf(" N alpha/beta electrons > 20!\n");
+            }
+            return;
+        }
         pstr_len = compute_stringnum(ci_orbs, ci_aelec, ndocc, nactv, xlvl);
         qstr_len = compute_stringnum(ci_orbs, ci_belec, ndocc, nactv, xlvl);
         pstrings = allocate_occstr_arrays(pstr_len);
@@ -156,17 +169,20 @@ int execute_pjayci ()
                         peospace, pegrps, qeospace, qegrps, &dtrm_len,
                         pq_space_pairs, &num_pq);
         intorb = ndocc + nactv;
+
 	GA_Sync();
         if (printlvl > 0 && mpi_proc_rank == mpi_root) {
                 printf("Determinants   = %15d\n", dtrm_len);
                 printf(" Alpha strings = %15d\n", pstr_len);
                 printf(" Beta  strings = %15d\n", qstr_len);
-		memusage = ((pstr_len + qstr_len) * (8 + 4 + 4 + 4) +
-			    (pegrps * qegrps) * 2 * 4 +
-			    (pegrps + qegrps) * (4 + 4 + 4 + 4 + 4))
+		memusage = ((pstr_len + qstr_len) *
+                            (8 + 4 + 4 + 4 + (20 * 4)) + 
+                            (pegrps * qegrps) * 2 * 4 +
+                            (pegrps + qegrps) *
+                            (4 + 4 + 4 + 4 + 4 + 4 + (20 * 4)))
 			/ 1048576;
 	}
-        
+
         /* Read the molecular orbitals */
         m1len = index1e(orbitals, orbitals);
         m2len = index2e(orbitals, orbitals, orbitals, orbitals);
@@ -202,7 +218,7 @@ int execute_pjayci ()
                           ci_aelec, ci_belec, intorb, dtrm_len, nucrep_e,
 	                  frzcore_e, printlvl, maxiter, krymin, krymax,
                           nroots, prediag_routine, refdim, restol,
-                          ga_buffer_len);
+                          ga_buffer_len, ci_orbs, ndocc, nactv);
         
         GA_Sync();
         free(moints1);

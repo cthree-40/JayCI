@@ -26,7 +26,7 @@
 
 # Release version
 JAYCIVER := 2.0.1
-PJAYCIVER:= 1.0.0
+PJAYCIVER:= 1.2.0
 DYCICALCVER:= 1.0.0
 PDYCICALCVER:= 1.0.0
 
@@ -100,15 +100,15 @@ CPOPS  :=
 # the default value is not recommended. 
 ifeq ($(findstring gfortran,$(FC)),)
 # intel compilers
-	FFLAGS := -i8 -auto -assume byterecl -O3
+	FFLAGS := -i8 -auto -assume byterecl -O0
 	CFLAGS := -Wall -std=c11 -funroll-all-loops \
-		  -fomit-frame-pointer -fstrict-aliasing -O3
+		  -fomit-frame-pointer -fstrict-aliasing -O0
 	VTUNE := -g
 else
 # gnu compilers
-	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
+	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O0
 	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
-	          -fomit-frame-pointer -fstrict-aliasing -O3
+	          -fomit-frame-pointer -fstrict-aliasing -O0
 endif
 
 # Debugging flags

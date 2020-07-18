@@ -12,7 +12,7 @@ int pdavidson (struct occstr *pstrings, struct eospace *peospace, int pegrps,
                int aelec, int belec, int intorb, int ndets, double nucrep_e,
                double frzcore_e, int printlvl, int maxiter, int krymin,
                int krymax, int nroots, int prediagr, int refdim, double restol,
-               int ga_buffer_len);
+               int ga_buffer_len, int nmos, int ndocc, int nactv);
 
 /*
  * add_new_vector: add a new vector to basis space.
@@ -36,6 +36,42 @@ void build_init_guess_vectors(int n, int v, int dim, int kmin, int ndets,
                               struct eospace *qeosp, int qegrps,
                               int **pqs, int num_pq, double *m1, double *m2,
                               int aelec, int belec, int intorb, int w);
+
+/*
+ * compute_cblock_H: compute values for a block from the vectors, C.
+ * Input:
+ *  c      = local c array
+ *  ccols  = columns of c array
+ *  crows  = rows of c array
+ *  wi     = p, q, cas triples for c elements
+ *  w_hndl = GA handle of wavefunction info
+ *  v_hndl = GA handle for vectors, V
+ *  d_hndl = GA handle for diagonal vectors, D
+ *  buflen = length of buffer (set by user during input)
+ *  pstr   = alpha strings
+ *  peosp  = alpha electron occupation spaces
+ *  pegrps = number of alpha electron occupation spaces
+ *  qstr   = beta  strings
+ *  qeosp  = beta  electron occupation spaces
+ *  qegrps = number of beta  electron occupation spaces
+ *  pq     = valid elec-occupation spaces of expansion
+ *  npq    = number of valid elec-occupation spaces of expansion
+ *  m1     = 1-e integrals
+ *  m2     = 2-e integrals
+ *  aelec  = alpha electrons
+ *  belec  = beta  electrons
+ *  intorb = internal orbitals (DOCC + ACTV)
+ *  ndets  = total number of determinants
+ *  nmos   = total number of molecular orbitals
+ *  ndocc  = DOCC orbitals
+ *  nactv  = active orbitals
+ */
+void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
+                      int v_hndl, int d_hndl, int buflen, struct occstr *pstr,
+                      struct eospace *peosp, int pegrps,  struct occstr *qstr,
+                      struct eospace *qeosp, int qegrps, int **pq, int npq,
+                      double *m1, double *m2, int aelec, int belec, int intorb,
+                      int ndets, int nmos, int ndocc, int nactv);
 
 /*
  * compute_cimat_chunks: compute chunksize of bounds of H for evaluation.
@@ -268,6 +304,19 @@ void evaluate_hdblock_ij_1d2(int **wi, int idets, int **wj, int jdets,
                              int belec, int intorb);
 
 /*
+ * evaluate_hij_jindx: evaluate hij given a determinant |i> and a list
+ * of excitations: |r,s> = |p',q>, |p,q'>, |p',q'>, |p",q>, |p,q">
+ */
+void evaluate_hij_pxqxlist(struct det deti, int *pxlist, int npx, int *qxlist,
+                           int nqx, struct occstr *pstr, struct eospace *peosp,
+                           int npe, struct occstr *qstr, struct eospace *qeosp,
+                           int nqe, int **pq, int npq, double *m1, double *m2,
+                           int aelec, int belec, int intorb, double *c,
+                           int vrows, int vcols, int **vindx, int **windx,
+                           int *jindx, double **v, double *v1d,int **w,
+                           int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
  * generate_det_triples: generate list of triplets for each determinant:
  *  |i> = |(pq, p, q)>
  */
@@ -418,6 +467,40 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
                           int c_hndl, int w_hndl, int ga_buffer_len);
 
 /*
+ * peform_hvispacefast: perform Hv=c on basis vectors v_i, i = 1, .., n.
+ * Input:
+ *  pstr  = alpha strings
+ *  peosp = alpha electron spaces
+ *  pegrps= number of alpha electron spaces
+ *  qstr  = beta  strings
+ *  qeosp = beta  electron spaces
+ *  qegrps= number of beta  electron spaces
+ *  pqs   = alpha and beta space pairs
+ *  num_pq= number of alpha and beta space pairs
+ *  m1    = 1-e integrals
+ *  m2    = 2-e integrals
+ *  aelec = alpha electrons
+ *  belec = beta  electrons
+ *  intorb= internal orbitals
+ *  ndets = number of determinants
+ *  core_e= core energy
+ *  dim   = number of basis vectors
+ *  mdim  = maximum size of krylov space
+ *  v_hndl= (GLOBAL ARRAY HANDLE) basis vectors
+ *  d_hndl= (GLOBAL ARRAY HANDLE) diagonal elements <i|H|i>
+ *  w_hndl= (GLOBAL ARRAY HANDLE) wavefunction
+ * Output:
+ *  c_hndl= (GLOBAL ARRAY HANDLE) Hv=c vectors
+ */
+void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps,
+                          struct occstr *qstr, struct eospace *qeosp, int qegrps,
+                          int **pqs, int num_pq, double *m1, double *m2,
+                          int aelec, int belec, int intorb, int ndets,
+                          double core_e, int dim, int mdim, int v_hndl,
+                          int d_hndl, int c_hndl, int w_hndl, int ga_buffer_len,
+                          int nmo, int ndocc, int nactv);
+
+/*
  * print_iter_info: print iteration information.
  */
 void print_iter_info(double *heval, int ckdim, int croot, double rnorm,
@@ -433,6 +516,48 @@ void print_subspace_eigeninfo(double **v, double *e, int kdim, double core_e);
  * print_subspacehmat: print the krylov space hmat, v.Hv
  */
 void print_subspacehmat(double **vhv, int d);
+
+/*
+ * set_ga_det_indexes: set the array of indices to gather from global array.
+ * Input:
+ *  jindx = list of row numbers in vector V
+ *  num   = number of row numbers
+ *  cols  = number of columns of V
+ * Output:
+ *  vindx = indices of global array V to gather
+ */
+void set_ga_det_indexes(int *jindx, int num, int cols, int **vindx);
+
+/*
+ * set_ga_det_indexes_trans: set the array of indices to gather from
+ * global array. Transpose of above.
+ * Input:
+ *  jindx = list of row numbers in vector V
+ *  num   = number of row numbers
+ *  cols  = number of columns of V
+ * Output:
+ *  vindx = indices of global array V to gather
+ */
+void set_ga_det_indexes_trans(int *jindx, int num, int cols, int **vindx);
+
+/*
+ * string_info_to_determinant: compute the determinant index given
+ * the p and q string information.
+ * Input:
+ *  pval    = p string
+ *  qval    = q string
+ *  peosp   = alpha electron orbital spaces
+ *  pegrps  = number of alpha electron orbital spaces
+ *  qeosp   = beta  electron orbital spaces
+ *  qegrps  = number of beta  electron orbital spaces
+ *  pq      = (p,q)-space pairings
+ *  npq     = number of (p,q)-space pairings
+ * Output:
+ *  detindx = determinant index in expansion.
+ */
+int string_info_to_determinant(int pval, int qval, struct eospace *peosp,
+                               int pegrps, struct eospace *qeosp, int qegrps,
+                               int **pq, int npq);
 
 /*
  * test_convergence: test convergence of davidson algorithm. returns

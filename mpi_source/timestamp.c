@@ -17,6 +17,6 @@ void timestamp()
 	strftime(time_buffer, TIME_STAMP_SIZE, "%d %B %Y %I:%M:%S %p", tm);
 
 	fprintf(stdout, "%s\n", time_buffer);
-
+        fflush(stdout);
 	return;
 }
