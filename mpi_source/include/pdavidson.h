@@ -118,6 +118,7 @@ void compute_diagonal_matrix_elements(double *hdgls, int start, int final,
                                       struct occstr *qstrings,
                                       int intorb);
 
+
 /*
  * compute_hv_newvector: compute Hv=c for newest vector in basis space.
  * Input:
@@ -131,6 +132,13 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           int num_pq, double *m1, double *m2, int aelec,
                           int belec, int intorb, int ndets, int kmax, int w_hndl,
                           int ga_buffer_len);
+
+/*
+ * compute_hvc_diagonal_ga: compute <i|H|i>*v(i,j)=c(i,j) using global arrays.
+ * Subscript 1 is column. Subscript 2 is row.
+ */
+void compute_hvc_diagonal_ga(int c_hndl, int v_hndl, int d_hndl, int start,
+                             int final, int ndets);
 
 /*
  * compute_hvnewvecfast: perform Hv=c on basis vector v_n+1.
@@ -162,7 +170,7 @@ void compute_hvnewvecfast(struct occstr *pstr, struct eospace *peosp, int pegrps
                           int **pqs, int num_pq, double *m1, double *m2,
                           int aelec, int belec, int intorb, int ndets,
                           double core_e, int dim, int mdim, int v_hndl,
-                          int c_hndl, int w_hndl, int ga_buffer_len,
+                          int c_hndl, int w_hndl, int d_hndl, int ga_buffer_len,
                           int nmo, int ndocc, int nactv);
 
 /*
@@ -348,6 +356,20 @@ void evaluate_hij_pxqxlist(struct det deti, int *pxlist, int npx, int *qxlist,
                            int vrows, int vcols, int **vindx, int **windx,
                            int *jindx, double **v, double *v1d,int **w,
                            int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
+ * evaluate_hij_jindx_1d: evaluate hij given a determinant |i> and a list
+ * of excitations: |r,s> = |p',q>, |p,q'>, |p',q'>, |p",q>, |p,q">, for
+ * the vector V_i to make the vector C_i.
+ */
+void evaluate_hij_pxqxlist_1d(struct det deti, int *pxlist, int npx, int *qxlist,
+                              int nqx, struct occstr *pstr, struct eospace *peosp,
+                              int npe, struct occstr *qstr, struct eospace *qeosp,
+                              int nqe, int **pq, int npq, double *m1, double *m2,
+                              int aelec, int belec, int intorb, double *c,
+                              int vrows, int vvecx, int **vindx, int **windx,
+                              int *jindx, double *v, int **w,
+                              int *w1d, double *hijval, int w_hndl, int v_hndl);
 
 /*
  * generate_det_triples: generate list of triplets for each determinant:
@@ -560,6 +582,17 @@ void print_subspacehmat(double **vhv, int d);
  *  vindx = indices of global array V to gather
  */
 void set_ga_det_indexes(int *jindx, int num, int cols, int **vindx);
+
+/*
+ * set_ga_det_indexes_1D: set the array of indices to gather from global array.
+ * Input:
+ *  jindx = list of row numbers in vector V
+ *  num   = number of row numbers
+ *  icol  = column of V
+ * Output:
+ *  vindx = indices of global array V to gather
+ */
+void set_ga_det_indexes_1D(int *jindx, int num, int icol, int **vindx);
 
 /*
  * set_ga_det_indexes_trans: set the array of indices to gather from

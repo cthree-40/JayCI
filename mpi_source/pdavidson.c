@@ -273,7 +273,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                                  qeospace, qegrps, pq_space_pairs, num_pq,
                                  moints1, moints2, aelec, belec, intorb,
                                  ndets, totcore_e, ckdim, krymax, v_hndl,
-                                 c_hndl, w_hndl, ga_buffer_len, totalmo,
+                                 c_hndl, w_hndl, d_hndl, ga_buffer_len, totalmo,
                                  ndocc, nactv);
             
             make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
@@ -481,7 +481,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
     wjdata= allocate_mem_int_cont(&wj, 3, buflen);
     
     /* Allocate j index array */
-    jindx = malloc(sizeof(int) * buflen);
+    //jindx = malloc(sizeof(int) * buflen);
 
     /* Allocate <i|H|j> array */
     hijval = malloc(sizeof(double) * buflen);
@@ -525,16 +525,6 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
          * make valid determinants */
         ipspc = get_string_eospace(pstr[ip], ndocc, nactv, peosp, pegrps);
         iqspc = get_string_eospace(qstr[iq], ndocc, nactv, qeosp, qegrps);
-
-        /* <p,q|H|p,q> */
-        evaluate_hij_pxqxlist(deti, &ip, 1, &iq, 1, pstr, peosp, pegrps,
-                              qstr, qeosp, qegrps, pq, npq, m1, m2, aelec,
-                              belec, intorb, cik, buflen, vcols, vindx, windx,
-                              jindx, vlocal, vdata, wj, wjdata, hijval, w_hndl,
-                              v_hndl);
-        for (k = 0; k < ccols; k++) {
-            c[k][i] = c[k][i] + cik[k];
-        }
 
         /* <p,q|H|p',q > */
         /* Find single excitations in p that form valid determinants
@@ -957,6 +947,31 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
 }
 
 /*
+ * compute_hvc_diagonal_ga: compute <i|H|i>*v(i,j)=c(i,j) using global arrays.
+ * Subscript 1 is column. Subscript 2 is row.
+ */
+void compute_hvc_diagonal_ga(int c_hndl, int v_hndl, int d_hndl, int start,
+                             int final, int ndets)
+{
+    int d_lo[1] = {0}, d_hi[1] = {0};
+    int c_lo[2] = {0, 0}, c_hi[2] = {0, 0};
+    int v_lo[2] = {0, 0}, v_hi[2] = {0, 0};
+    int i;
+    d_lo[0] = 0;
+    d_hi[0] = ndets - 1;
+    c_lo[1] = v_lo[1] = 0;
+    c_hi[1] = v_hi[1] = ndets - 1;
+    for (i = start; i <= final; i++) {
+        c_lo[0] = v_lo[0] = i;
+        c_hi[0] = v_hi[0] = i;
+        GA_Elem_multiply_patch(d_hndl, d_lo, d_hi,
+                               v_hndl, v_lo, v_hi,
+                               c_hndl, c_lo, c_hi);
+    }
+    return;
+}
+
+/*
  * compute_hvnewvecfast: perform Hv=c on basis vector v_n+1.
  * Input:
  *  pstr  = alpha strings
@@ -986,9 +1001,12 @@ void compute_hvnewvecfast(struct occstr *pstr, struct eospace *peosp, int pegrps
                           int **pqs, int num_pq, double *m1, double *m2,
                           int aelec, int belec, int intorb, int ndets,
                           double core_e, int dim, int mdim, int v_hndl,
-                          int c_hndl, int w_hndl, int ga_buffer_len,
+                          int c_hndl, int w_hndl, int d_hndl, int ga_buffer_len,
                           int nmo, int ndocc, int nactv)
 {
+
+    
+    compute_hvc_diagonal_ga(c_hndl, v_hndl, d_hndl, (dim - 1), (dim - 1), ndets);
     
     return;
 }
@@ -2185,6 +2203,7 @@ void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps
 
         /* Compute C(i,k) = H(i,j)*V(j,k) for all i in c_lo[1]..c_hi[1] */
         if (mpi_proc_rank == mpi_root) timestamp();
+        compute_hvc_diagonal_ga(c_hndl, v_hndl, d_hndl, 0, (dim - 1), ndets);
         compute_cblock_H(c_local, c_cols, c_rows, wi, w_hndl, v_hndl, d_hndl,
                          ga_buffer_len, pstr, peosp, pegrps, qstr, qeosp, qegrps,
                          pqs, num_pq, m1, m2, aelec, belec, intorb, ndets,

@@ -219,7 +219,7 @@ void get_string_eospace_info(struct occstr str, int ndocc, int nactv, int *nde,
         /* Scratch 64-bit byte */
         long long int scr = 0x00;
         int i;
-        char tmp[65];
+
         /* Turn "on" DOCC and ACTV bits in intorb_check */
         for (i = 0; i < (ndocc + nactv); i++) {
                 intorb_check = intorb_check + pow(2, i);

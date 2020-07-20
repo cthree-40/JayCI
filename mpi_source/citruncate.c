@@ -57,7 +57,6 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
             int **pq_spaces, int *num_pq)
 {
         int error = 0; /* Error flag */
-        int i;
         int ci_orbs;   /* CI orbitals (frozen core/virt removed) */
         int ci_aelec;  /* CI alpha electrons (frozen core removed) */
         int ci_belec;  /* CI beta  electrons (frozen core removed) */
@@ -329,11 +328,7 @@ int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
             }
             qeosp[i].npairs = xcnt;
         }
-#ifdef DEBUGGING
-        for (i = 0; i < (*num_pq); i++) {
-            printf("  %d: %d %d\n", i, pq_spaces[i][0], pq_spaces[i][1]);
-        }
-#endif
+
         return dcnt;
 }
 
@@ -351,8 +346,6 @@ void compute_eostrings(struct eostring *strlist, int *pos, int ci_orbs,
         int virt_orbs;
         int ci_elecs;
         int ptr = 0;
-        int typ = 0; /* 0: normal, 1: No DOCC, 2: No CAS, 3: No Virt,
-                      * 4: No DOCC+CAS, 5: No DOCC+VIRT, 6: No CAS+VIRT */
         int elecs[3]; /* Number of electrons in DOCC, ACTV, VIRT */
         int orbs[3];  /* Number of orbitals in DOCC, ACTV, VIRT */
         int nstr[3];  /* Number of strings in DOCC, ACTV, VIRT */
@@ -449,7 +442,6 @@ int compute_stringnum(int orbs, int elecs, int ndocc, int nactv, int xlvl)
         int max_actv_elecs = 0;
         int min_actv_elecs = 0;
         int vorbs = 0;
-        int count = 0;
         int i, j, k;
 
         vorbs = orbs - ndocc - nactv;
@@ -597,31 +589,13 @@ int generate_single_excitations(struct occstr str, struct eospace eosp,
                                 int *singlex,
                                 int *elecs, int *orbsx)
 {
-    struct occstr newstr;
     int n1x = 0;
-    int escr[20] = {0};
-    long long int xbyte = 0x00; /* Possible excitations */
-    long long int ibyte = 0x00; /* Active internal orbitals */
-    long long int nbyte = 0x00; /* Scratch new byte */
-    int nvxo = 0;                /* Number of available virtual orbitals */
     
-    int num_dx = 0;  /* Number of DOCC excitations possible */
-    int num_cx = 0;  /* Number of ACTV excitations possible */
-    int num_vx = 0;  /* Number of VIRT excitations possible */
-
-    int doccindx = 0; /* Available DOCC orbital index in orbsx */
-    int actvindx = 0; /* Available ACTV orbital index in orbsx */
-    int virtindx = 0; /* Available VIRT orbital index in orbsx */
-
-    int tmp = 0;
-
     /* str eospace information */
     int str_docc = 0;
     int str_actv = 0;
     int str_virt = 0;
     
-    int i, j, k, l;
-
     get_string_eospace_info(str, ndocc, nactv, &str_docc, &str_actv, &str_virt);
     if (abs(str_docc - eosp.docc) > 1) return n1x;
     if (abs(str_actv - eosp.actv) > 1) return n1x;
@@ -655,30 +629,12 @@ int generate_double_excitations(struct occstr str, struct eospace eosp,
                                 int *doublex,
                                 int *elecs, int *orbsx)
 {
-    struct occstr newstr;
     int n2x = 0;
-    int escr[20] = {0};
-    long long int xbyte = 0x00; /* Possible excitations */
-    long long int ibyte = 0x00; /* Active internal orbitals */
-    long long int nbyte = 0x00; /* Scratch new byte */
-    int nvxo = 0;                /* Number of available virtual orbitals */
     
-    int num_dx = 0;  /* Number of DOCC excitations possible */
-    int num_cx = 0;  /* Number of ACTV excitations possible */
-    int num_vx = 0;  /* Number of VIRT excitations possible */
-
-    int doccindx = 0; /* Available DOCC orbital index in orbsx */
-    int actvindx = 0; /* Available ACTV orbital index in orbsx */
-    int virtindx = 0; /* Available VIRT orbital index in orbsx */
-
-    int tmp = 0;
-
     /* str eospace information */
     int str_docc = 0;
     int str_actv = 0;
     int str_virt = 0;
-
-    int i, j, k, l;
 
     get_string_eospace_info(str, ndocc, nactv, &str_docc, &str_actv, &str_virt);
     if (abs(str_docc - eosp.docc) > 2) return n2x;
@@ -1108,8 +1064,7 @@ void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
     int xtype = 0;
     long long int ibyte = 0x00;
     long long int xbyte = 0x00;
-    int i, j, k, l;
-    int tmp;
+    int i, k, l;
     int nvo = 0;
     int intorb = ndocc + nactv;
 
@@ -1598,7 +1553,6 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
-    int tmp;
     int nvo = 0;
     long long int ibyte = 0x00;
     long long int xbyte = 0x00;
@@ -1710,7 +1664,6 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
-    int tmp;
     int nvo = 0;
     long long int ibyte = 0x00;
     long long int xbyte = 0x00;
@@ -3152,7 +3105,6 @@ int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
                    int nvirt, int nelec, int *elecs)
 {
         int i, j;
-        long long int typ;
         int dstr = 0, astr = 0, vstr = 0;
         int daddr = 0, aaddr = 0, vaddr = 0;
         int addr = 0;
@@ -3187,7 +3139,7 @@ int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
 
         if ((eosp.docc * eosp.actv * eosp.virt) != 0) {
             /* Electrons present in all spaces */
-            dstr = binomial_coef2(ndocc, eosp.docc);
+//            dstr = binomial_coef2(ndocc, eosp.docc);
             astr = binomial_coef2(nactv, eosp.actv);
             vstr = binomial_coef2(nvirt, eosp.virt);
 
@@ -3209,7 +3161,7 @@ int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
 
         } else if (eosp.docc != 0 && eosp.virt != 0) {
             /* (1, 0, 1) */
-            dstr = binomial_coef2(ndocc, eosp.docc);
+//            dstr = binomial_coef2(ndocc, eosp.docc);
             vstr = binomial_coef2(nvirt, eosp.virt);
 
             daddr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
@@ -3219,7 +3171,7 @@ int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
 
         } else if (eosp.docc != 0 && eosp.actv != 0) {
             /* (1, 1, 0) */
-            dstr = binomial_coef2(ndocc, eosp.docc);
+//            dstr = binomial_coef2(ndocc, eosp.docc);
             astr = binomial_coef2(nactv, eosp.actv);
 
             daddr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
@@ -3416,7 +3368,6 @@ void write_determinant_strpairs_dtlist(int pstart, int pnstr, int qstart,
 {
         
         int i, j;
-        int array[4];
         
         if (cflag == 1) {
                 for (i = pstart; i < (pstart + pnstr); i++) {
