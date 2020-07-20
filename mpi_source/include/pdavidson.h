@@ -133,6 +133,39 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           int ga_buffer_len);
 
 /*
+ * compute_hvnewvecfast: perform Hv=c on basis vector v_n+1.
+ * Input:
+ *  pstr  = alpha strings
+ *  peosp = alpha electron spaces
+ *  pegrps= number of alpha electron spaces
+ *  qstr  = beta  strings
+ *  qeosp = beta  electron spaces
+ *  qegrps= number of beta  electron spaces
+ *  pqs   = alpha and beta space pairs
+ *  num_pq= number of alpha and beta space pairs
+ *  m1    = 1-e integrals
+ *  m2    = 2-e integrals
+ *  aelec = alpha electrons
+ *  belec = beta  electrons
+ *  intorb= internal orbitals
+ *  ndets = number of determinants
+ *  core_e= core energy
+ *  dim   = number of basis vectors
+ *  mdim  = maximum size of krylov space
+ *  v_hndl= (GLOBAL ARRAY HANDLE) basis vectors
+ *  w_hndl= (GLOBAL ARRAY HANDLE) wavefunction
+ * Output:
+ *  c_hndl= (GLOBAL ARRAY HANDLE) Hv=c vectors
+ */
+void compute_hvnewvecfast(struct occstr *pstr, struct eospace *peosp, int pegrps,
+                          struct occstr *qstr, struct eospace *qeosp, int qegrps,
+                          int **pqs, int num_pq, double *m1, double *m2,
+                          int aelec, int belec, int intorb, int ndets,
+                          double core_e, int dim, int mdim, int v_hndl,
+                          int c_hndl, int w_hndl, int ga_buffer_len,
+                          int nmo, int ndocc, int nactv);
+
+/*
  * compute_GA_norm: compute the norm of a GA vector.
  */
 void compute_GA_norm (int r_hndl,  double *norm);

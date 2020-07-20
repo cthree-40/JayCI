@@ -44,272 +44,265 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
               int krymax, int nroots, int prediagr, int refdim, double restol,
               int ga_buffer_len, int totalmo, int ndocc, int nactv)
 {
-        int v_hndl = 0;           /* GLOBAL basis vectors, V */
-        int v_dims[2]  = {0, 0};  /* GLOBAL basis vectors dimensions */
-        int v_chunk[2] = {0, 0};  /* GLOBAL basis vectors chunk sizes */
-        int c_hndl = 0;           /* GLOBAL Hv=c  vectors, C */
-        int n_hndl = 0;           /* GLOBAL new vector, N */
-        int n_dims[1]  = {0};     /* GLOBAL new vector dimensions */
-        int n_chunk[1] = {0};     /* GLOBAL new vector chunk size */
-        int r_hndl = 0;           /* GLOBAL residual vector, R */
-        int x_hndl = 0;           /* GLOBAL 1-D scratch array */
-        int d_hndl = 0;           /* GLOBAL <i|H|i> vector, D */
-
-        int w_hndl = 0;           /* GLOBAL |i> = |(pq, p, q)> array */
-        int w_dims[2] = {0, 0};   /* GLOBAL |i> = |(pq, p, q)> array */
-        int w_chunk[2] = {0, 0};  /* GLOBAL |i> = |(pq, p, q)> chunk sizes */
+    int v_hndl = 0;           /* GLOBAL basis vectors, V */
+    int v_dims[2]  = {0, 0};  /* GLOBAL basis vectors dimensions */
+    int v_chunk[2] = {0, 0};  /* GLOBAL basis vectors chunk sizes */
+    int c_hndl = 0;           /* GLOBAL Hv=c  vectors, C */
+    int n_hndl = 0;           /* GLOBAL new vector, N */
+    int n_dims[1]  = {0};     /* GLOBAL new vector dimensions */
+    int n_chunk[1] = {0};     /* GLOBAL new vector chunk size */
+    int r_hndl = 0;           /* GLOBAL residual vector, R */
+    int x_hndl = 0;           /* GLOBAL 1-D scratch array */
+    int d_hndl = 0;           /* GLOBAL <i|H|i> vector, D */
+    
+    int w_hndl = 0;           /* GLOBAL |i> = |(pq, p, q)> array */
+    int w_dims[2] = {0, 0};   /* GLOBAL |i> = |(pq, p, q)> array */
+    int w_chunk[2] = {0, 0};  /* GLOBAL |i> = |(pq, p, q)> chunk sizes */
+    
+    double *d_local = NULL;   /* LOCAL <i|H|i> array. */
+    
+    double **vhv = NULL;      /* LOCAL v.Hv array */
+    double *vhv_data = NULL;  /* LOCAL v.Hv memory block */
+    double *vhv_scr  = NULL;  /* LOCAL v.Hv scratch array */
+    
+    double **hevec = NULL;    /* LOCAL v.Hv eigenvectors */
+    double *hevec_data = NULL;/* LOCAL v.Hv eigenvectors memory block */
+    double *heval = NULL;     /* LOCAL v.Hv eigenvalues */
+    double *hevec_scr= NULL;  /* LOCAL v.Hv eigenvector scratch array */
+    
+    double rnorm = 0.0;       /* ||r|| */
+    double nnorm = 0.0;       /* ||n|| */
+    
+    int citer = 0; /* current iteration */
+    int croot = 0; /* current root */
+    int ckdim = 0; /* current dimension of krylo space */
+    int cflag = 0; /* convergence flag */
+    
+    int lo[2] = {0, 0}; 
+    int hi[2] = {0, 0};
+    int ld_ndets[1] = {0};
+    
+    double totcore_e = 0.0;
+    double memusage = 0.0;  /* Estimated memory usage */
+    int error = 0;
+    
+    totcore_e = nucrep_e + frzcore_e;
+    ld_ndets[0] = ndets;
+    
+    /* Allocate GLOBAL arrays: V, Hv=c, N, R, and D */
+    if (mpi_proc_rank == mpi_root) {
+        printf("Creating global arrays...\n");
+        memusage = krymax * ndets * 8 * 2; // C and V
+        memusage += ndets * 8 * 3; // N, R, X, D
+        memusage += ndets * 4 * 3; // W
+        memusage = memusage / 1048576;
+        printf(" Global Arrays memory usage: ");
+        printf("  %10.2lf MB\n", memusage);
+        memusage = ga_buffer_len * krymax * 8;
+        memusage = memusage + ga_buffer_len * 4 * 3;
+        memusage = memusage / 1048576;
+        memusage = memusage * mpi_num_procs;
+        printf(" Local buffer usage: ");
+        printf("  %10.2lf MB\n", memusage);
+        printf("  buflen = %d\n", ga_buffer_len);
+        fflush(stdout);
+    }
+    GA_Sync();
+    v_dims[0]  = krymax;
+    v_dims[1]  = ndets;
+    v_chunk[0] = krymax;
+    v_chunk[1] = -1; // Distribute evenly
+    v_hndl = NGA_Create(C_DBL, 2, v_dims, "Basis vectors", v_chunk);
+    if (!v_hndl) GA_Error("Create failed: Basis vectors", 2);
+    c_hndl = NGA_Duplicate(v_hndl, "Hv=c vectors");
+    if (!c_hndl) GA_Error("Duplicate failed: Hv=c vectors", 2);
+    n_dims[0]  = ndets;
+    n_chunk[0] = -1; // Distribute evenly
+    n_hndl = NGA_Create(C_DBL, 1, n_dims, "New vector", n_chunk);
+    if (!n_hndl) GA_Error("Create failed: New vector", 1);
+    r_hndl = NGA_Duplicate(n_hndl, "Residual vector");
+    if (!r_hndl) GA_Error("Duplicate failed: Residual vector", 1);
+    x_hndl = NGA_Duplicate(n_hndl, "Scratch 1-D vector");
+    if (!x_hndl) GA_Error("Duplicate failed: Scratch 1-D vector", 1);
+    d_hndl = NGA_Duplicate(n_hndl, "Diagonal vector");
+    if (!d_hndl) GA_Error("Duplicate failed: Diagonal vectors", 1);
+    /* Set wavefunction global array */
+    w_dims[0] = ndets;
+    w_dims[1] = 3;
+    w_chunk[0] = -1; // Distribute evenly
+    w_chunk[1] =  3;
+    w_hndl = NGA_Create(C_INT, 2, w_dims, "Determinant Triples",w_chunk);
+    if (!w_hndl) GA_Error("Create failed: Determinant Triples", 2);
+    
+    if (mpi_proc_rank == mpi_root) {
+        printf("Global arrays created.\n\n");
+        fflush(stdout);
+    }
+    
+    /* Generate wavefunction list */
+    if (mpi_proc_rank == mpi_root) {
+        printf("Generating wlist...\n");
+        fflush(stdout);
+    }
+    generate_wlist(w_hndl, ndets, pq_space_pairs, num_pq, peospace, pegrps,
+                   qeospace, qegrps);
+    
+    /* Allocate local arrays: d, vhv, hevec, heval */
+    d_local = malloc(((ndets / mpi_num_procs) + 10) * sizeof(double));
+    vhv_data = allocate_mem_double_cont(&vhv, krymax, krymax);
+    hevec_data = allocate_mem_double_cont(&hevec, krymax, krymax);
+    heval = malloc(sizeof(double) * krymax);
+    /* Allocate 1-d scratch arrays. */
+    vhv_scr = malloc(krymax * krymax * sizeof(double));
+    hevec_scr = malloc(krymax * krymax * sizeof(double));
+    
+    GA_Sync();
+    
+    /* Compute diagonal matrix elements <i|H|i> */
+    NGA_Zero(d_hndl);
+    NGA_Distribution(d_hndl, mpi_proc_rank, lo, hi);
+    if (mpi_proc_rank == mpi_root) {
+        printf("Computing diagonal matrix elements...\n");
+        fflush(stdout);
+    }
+    compute_diagonal_matrix_elements(d_local, lo[0], hi[0], moints1, moints2,
+                                     aelec, belec, peospace, pegrps,
+                                     qeospace, qegrps, pq_space_pairs,
+                                     num_pq, pstrings, qstrings, intorb);
+    NGA_Put(d_hndl, lo, hi, d_local, ld_ndets);
+    if (printlvl > 0 && lo[0] == 0) {
+        printf("<1|H|1> = ");
+        printf("%lf\n", (d_local[0] + totcore_e));
+    }
+    
+    if (mpi_proc_rank == mpi_root) {
+        printf("\nBeginning Davidson algorithm...\n");
+        fflush(stdout);
+    }
+    
+    /* Build initial guess basis vectors. */
+    build_init_guess_vectors(prediagr, v_hndl, refdim, krymin, ndets,
+                             pstrings, peospace, pegrps, qstrings,
+                             qeospace, qegrps, pq_space_pairs, num_pq,
+                             moints1, moints2, aelec, belec, intorb, w_hndl);
+    if (mpi_proc_rank == mpi_root) {
+        printf(" Initial guess vectors set.\n");
+        fflush(stdout);
+    }
+    
+    GA_Sync();
+    
+    /* .. MAIN LOOP .. */
+    citer = 1; croot = 1; ckdim = krymin; cflag = 0;
+    while (citer < maxiter && croot <= nroots) {
         
-        double *d_local = NULL;   /* LOCAL <i|H|i> array. */
-
-        double **vhv = NULL;      /* LOCAL v.Hv array */
-        double *vhv_data = NULL;  /* LOCAL v.Hv memory block */
-        double *vhv_scr  = NULL;  /* LOCAL v.Hv scratch array */
+        perform_hvispacefast(pstrings, peospace, pegrps, qstrings,
+                             qeospace, qegrps, pq_space_pairs, num_pq,
+                             moints1, moints2, aelec, belec, intorb,
+                             ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
+                             c_hndl, w_hndl, ga_buffer_len, totalmo,
+                             ndocc, nactv);
         
-        double **hevec = NULL;    /* LOCAL v.Hv eigenvectors */
-        double *hevec_data = NULL;/* LOCAL v.Hv eigenvectors memory block */
-        double *heval = NULL;     /* LOCAL v.Hv eigenvalues */
-        double *hevec_scr= NULL;  /* LOCAL v.Hv eigenvector scratch array */
-
-        double rnorm = 0.0;       /* ||r|| */
-        double nnorm = 0.0;       /* ||n|| */
-        
-        int citer = 0; /* current iteration */
-        int croot = 0; /* current root */
-        int ckdim = 0; /* current dimension of krylo space */
-        int cflag = 0; /* convergence flag */
-        
-        int lo[2] = {0, 0}; 
-        int hi[2] = {0, 0};
-        int ld_ndets[1] = {0};
-
-        double totcore_e = 0.0;
-        double memusage = 0.0;  /* Estimated memory usage */
-        int error = 0;
-        
-        totcore_e = nucrep_e + frzcore_e;
-        ld_ndets[0] = ndets;
-
-        /* Allocate GLOBAL arrays: V, Hv=c, N, R, and D */
-        if (mpi_proc_rank == mpi_root) {
-		printf("Creating global arrays...\n");
-		memusage = krymax * ndets * 8 * 2; // C and V
-		memusage += ndets * 8 * 3; // N, R, X, D
-		memusage += ndets * 4 * 3; // W
-		memusage = memusage / 1048576;
-		printf(" Global Arrays memory usage: ");
-		printf("  %10.2lf MB\n", memusage);
-		memusage = ga_buffer_len * krymax * 8;
-		memusage = memusage + ga_buffer_len * 4 * 3;
-		memusage = memusage / 1048576;
-		memusage = memusage * mpi_num_procs;
-		printf(" Local buffer usage: ");
-		printf("  %10.2lf MB\n", memusage);
-		printf("  buflen = %d\n", ga_buffer_len);
-		fflush(stdout);
-	}
-	GA_Sync();
-        v_dims[0]  = krymax;
-        v_dims[1]  = ndets;
-        v_chunk[0] = krymax;
-        v_chunk[1] = -1; // Distribute evenly
-        v_hndl = NGA_Create(C_DBL, 2, v_dims, "Basis vectors", v_chunk);
-        if (!v_hndl) GA_Error("Create failed: Basis vectors", 2);
-        c_hndl = NGA_Duplicate(v_hndl, "Hv=c vectors");
-        if (!c_hndl) GA_Error("Duplicate failed: Hv=c vectors", 2);
-        n_dims[0]  = ndets;
-        n_chunk[0] = -1; // Distribute evenly
-        n_hndl = NGA_Create(C_DBL, 1, n_dims, "New vector", n_chunk);
-        if (!n_hndl) GA_Error("Create failed: New vector", 1);
-        r_hndl = NGA_Duplicate(n_hndl, "Residual vector");
-        if (!r_hndl) GA_Error("Duplicate failed: Residual vector", 1);
-        x_hndl = NGA_Duplicate(n_hndl, "Scratch 1-D vector");
-        if (!x_hndl) GA_Error("Duplicate failed: Scratch 1-D vector", 1);
-        d_hndl = NGA_Duplicate(n_hndl, "Diagonal vector");
-        if (!d_hndl) GA_Error("Duplicate failed: Diagonal vectors", 1);
-        /* Set wavefunction global array */
-        w_dims[0] = ndets;
-        w_dims[1] = 3;
-        w_chunk[0] = -1; // Distribute evenly
-        w_chunk[1] =  3;
-        w_hndl = NGA_Create(C_INT, 2, w_dims, "Determinant Triples",w_chunk);
-        if (!w_hndl) GA_Error("Create failed: Determinant Triples", 2);
-
-        if (mpi_proc_rank == mpi_root) {
-		printf("Global arrays created.\n\n");
-		fflush(stdout);
-	}
-	
-        /* Generate wavefunction list */
-	if (mpi_proc_rank == mpi_root) {
-		printf("Generating wlist...\n");
-		fflush(stdout);
-	}
-	generate_wlist(w_hndl, ndets, pq_space_pairs, num_pq, peospace, pegrps,
-                       qeospace, qegrps);
-        
-        /* Allocate local arrays: d, vhv, hevec, heval */
-        d_local = malloc(((ndets / mpi_num_procs) + 10) * sizeof(double));
-        vhv_data = allocate_mem_double_cont(&vhv, krymax, krymax);
-        hevec_data = allocate_mem_double_cont(&hevec, krymax, krymax);
-        heval = malloc(sizeof(double) * krymax);
-        /* Allocate 1-d scratch arrays. */
-        vhv_scr = malloc(krymax * krymax * sizeof(double));
-        hevec_scr = malloc(krymax * krymax * sizeof(double));
+        make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
+        print_subspacehmat(vhv, ckdim);
+        error = diag_subspacehmat(vhv, hevec, heval, ckdim, krymax,
+                                  vhv_scr, hevec_scr);
+        if (error != 0)  return error;
+        print_subspace_eigeninfo(hevec, heval, ckdim, totcore_e);
         
         GA_Sync();
         
-        /* Compute diagonal matrix elements <i|H|i> */
-        NGA_Zero(d_hndl);
-        NGA_Distribution(d_hndl, mpi_proc_rank, lo, hi);
-	if (mpi_proc_rank == mpi_root) {
-		printf("Computing diagonal matrix elements...\n");
-		fflush(stdout);
-	}
-	compute_diagonal_matrix_elements(d_local, lo[0], hi[0], moints1, moints2,
-                                         aelec, belec, peospace, pegrps,
-                                         qeospace, qegrps, pq_space_pairs,
-                                         num_pq, pstrings, qstrings, intorb);
-        NGA_Put(d_hndl, lo, hi, d_local, ld_ndets);
-        if (printlvl > 0 && lo[0] == 0) {
-                printf("<1|H|1> = ");
-                printf("%lf\n", (d_local[0] + totcore_e));
-        }
-
-        if (mpi_proc_rank == mpi_root) {
-                printf("\nBeginning Davidson algorithm...\n");
-		fflush(stdout);
-	}
-        
-        /* Build initial guess basis vectors. */
-        build_init_guess_vectors(prediagr, v_hndl, refdim, krymin, ndets,
-                                 pstrings, peospace, pegrps, qstrings,
+        while (ckdim < krymax) {
+            
+            GA_Sync();
+            
+            generate_residual(v_hndl, c_hndl, r_hndl, hevec, heval,
+                              ndets, ckdim, croot, x_hndl);
+            compute_GA_norm(r_hndl, &rnorm);
+            print_iter_info(heval, ckdim, croot, rnorm, totcore_e);
+            
+            GA_Sync();
+            
+            cflag = test_convergence(rnorm, restol, croot, nroots);
+            if (cflag == 2) {
+                if (mpi_proc_rank == mpi_root) {
+                    printf("\n ** CI CONVERGED! **\n");
+                    fflush(stdout);
+                }
+                break;
+            } else if (cflag == 1) {
+                if (mpi_proc_rank == mpi_root) {
+                    printf(" Root %d converged!\n", croot);
+                    fflush(stdout);
+                }
+                croot++;
+                break;
+            } else {
+                if (mpi_proc_rank == mpi_root) {
+                    printf(" Root not yet converged.\n");
+                    fflush(stdout);
+                }
+            }
+            
+            GA_Sync();
+            
+            generate_newvector(r_hndl, d_hndl, heval[croot - 1],
+                               ndets, n_hndl, x_hndl);
+            
+            compute_GA_norm(n_hndl, &nnorm);
+            if (mpi_proc_rank == mpi_root) {
+                printf("\n ||r|| = %12.8lf  ||n|| = %12.8lf\n",
+                       rnorm, nnorm);
+                fflush(stdout);
+            }
+            
+            orthonormalize_newvector(v_hndl, ckdim, ndets, n_hndl);
+            
+            /* Increase current krylov space dimension */
+            ckdim++;
+            
+            add_new_vector(v_hndl, ckdim, ndets, n_hndl);
+            //compute_hv_newvector(v_hndl, c_hndl, ckdim, pstrings,
+            //                     peospace, pegrps, qstrings,
+            //                     qeospace, qegrps, pq_space_pairs,
+            //                     num_pq, moints1, moints2, aelec,
+            //                     belec, intorb, ndets, krymax,
+            //                     w_hndl, ga_buffer_len);
+            
+            compute_hvnewvecfast(pstrings, peospace, pegrps, qstrings,
                                  qeospace, qegrps, pq_space_pairs, num_pq,
-                                 moints1, moints2, aelec, belec, intorb, w_hndl);
-        if (mpi_proc_rank == mpi_root) {
-                printf(" Initial guess vectors set.\n");
-		fflush(stdout);
-	}
-        
-        GA_Sync();
-
-        /* .. MAIN LOOP .. */
-        citer = 1; croot = 1; ckdim = krymin; cflag = 0;
-        while (citer < maxiter && croot <= nroots) {
-
-                GA_Sync();
-//                perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
-//                                     qeospace, qegrps, pq_space_pairs, num_pq,
-//                                     moints1, moints2, aelec, belec, intorb,
-//                                     ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
-//                                     c_hndl, w_hndl, ga_buffer_len);
-//#ifdef DEBUGGING
-//                print_vector_space(c_hndl, 10, ndets);
-//                NGA_Zero(c_hndl);
-//#endif
-               
-                perform_hvispacefast(pstrings, peospace, pegrps, qstrings,
-                                     qeospace, qegrps, pq_space_pairs, num_pq,
-                                     moints1, moints2, aelec, belec, intorb,
-                                     ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
-                                     c_hndl, w_hndl, ga_buffer_len, totalmo,
-                                     ndocc, nactv);
-
-//#ifdef DEBUGGING
-//                print_vector_space(c_hndl, 10, ndets);
-//                return;
-//#endif
-                make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
-                print_subspacehmat(vhv, ckdim);
-                error = diag_subspacehmat(vhv, hevec, heval, ckdim, krymax,
-                                          vhv_scr, hevec_scr);
-                if (error != 0)  return error;
-                print_subspace_eigeninfo(hevec, heval, ckdim, totcore_e);
-
-                GA_Sync();
-
-                while (ckdim < krymax) {
-
-                        GA_Sync();
-
-                        generate_residual(v_hndl, c_hndl, r_hndl, hevec, heval,
-                                          ndets, ckdim, croot, x_hndl);
-                        compute_GA_norm(r_hndl, &rnorm);
-                        print_iter_info(heval, ckdim, croot, rnorm, totcore_e);
-                        
-                        GA_Sync();
-                        
-                        cflag = test_convergence(rnorm, restol, croot, nroots);
-                        if (cflag == 2) {
-                                if (mpi_proc_rank == mpi_root) {
-                                        printf("\n ** CI CONVERGED! **\n");
-					fflush(stdout);
-				}
-                                break;
-                        } else if (cflag == 1) {
-                                if (mpi_proc_rank == mpi_root) {
-                                        printf(" Root %d converged!\n", croot);
-					fflush(stdout);
-				}
-                                croot++;
-                                break;
-                        } else {
-                                if (mpi_proc_rank == mpi_root) {
-                                        printf(" Root not yet converged.\n");
-					fflush(stdout);
-				}
-                        }
-
-                        GA_Sync();
-                        
-                        generate_newvector(r_hndl, d_hndl, heval[croot - 1],
-                                           ndets, n_hndl, x_hndl);
-
-                        compute_GA_norm(n_hndl, &nnorm);
-                        if (mpi_proc_rank == mpi_root) {
-                                printf("\n ||r|| = %12.8lf  ||n|| = %12.8lf\n",
-                                       rnorm, nnorm);
-				fflush(stdout);
-                        }
-
-                        orthonormalize_newvector(v_hndl, ckdim, ndets, n_hndl);
-
-                        /* Increase current krylov space dimension */
-                        ckdim++;
-
-                        add_new_vector(v_hndl, ckdim, ndets, n_hndl);
-                        compute_hv_newvector(v_hndl, c_hndl, ckdim, pstrings,
-                                             peospace, pegrps, qstrings,
-                                             qeospace, qegrps, pq_space_pairs,
-                                             num_pq, moints1, moints2, aelec,
-                                             belec, intorb, ndets, krymax,
-                                             w_hndl, ga_buffer_len);
-                        make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
-                        print_subspacehmat(vhv, ckdim);
-                        error = diag_subspacehmat(vhv, hevec, heval, ckdim,
-                                                  krymax, vhv_scr, hevec_scr);
-                        if (error != 0)  return error;
-                        print_subspace_eigeninfo(hevec, heval, ckdim, totcore_e);
-                        citer++;
-                }
-                /* truncate the krylov space. Note: the Hv=c array is used
-                 * as a scratch buffer for this routine. */
-                truncate_krylov_space(v_hndl, ndets, krymin, krymax, croot,
-                                      hevec, c_hndl);
-                ckdim = krymin;
-                GA_Zero(c_hndl);
-                /* Check if CI has converged. If it has, leave loop. */
-                if (cflag == 2) {
-                        break;
-                }
+                                 moints1, moints2, aelec, belec, intorb,
+                                 ndets, totcore_e, ckdim, krymax, v_hndl,
+                                 c_hndl, w_hndl, ga_buffer_len, totalmo,
+                                 ndocc, nactv);
+            
+            make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
+            print_subspacehmat(vhv, ckdim);
+            error = diag_subspacehmat(vhv, hevec, heval, ckdim,
+                                      krymax, vhv_scr, hevec_scr);
+            if (error != 0)  return error;
+            print_subspace_eigeninfo(hevec, heval, ckdim, totcore_e);
+            citer++;
         }
-        if (mpi_proc_rank == mpi_root) {
-                printf(" Davidson algorithm finished. \n");
-		fflush(stdout);
+        /* truncate the krylov space. Note: the Hv=c array is used
+         * as a scratch buffer for this routine. */
+        truncate_krylov_space(v_hndl, ndets, krymin, krymax, croot,
+                              hevec, c_hndl);
+        ckdim = krymin;
+        GA_Zero(c_hndl);
+        /* Check if CI has converged. If it has, leave loop. */
+        if (cflag == 2) {
+            break;
         }
-        print_gavectors2file_dbl_ufmt(v_hndl, ndets, nroots,"civec");
-        if (cflag != 2)
-                print_gavectors2file_dbl_ufmt(c_hndl, ndets, nroots, "hvvec");
-        return error;
+    }
+    if (mpi_proc_rank == mpi_root) {
+        printf(" Davidson algorithm finished. \n");
+        fflush(stdout);
+    }
+    print_gavectors2file_dbl_ufmt(v_hndl, ndets, nroots,"civec");
+    if (cflag != 2)
+        print_gavectors2file_dbl_ufmt(c_hndl, ndets, nroots, "hvvec");
+    return error;
 }
 
 /*
@@ -379,14 +372,6 @@ void build_init_guess_vectors(int n, int v, int dim, int kmin, int ndets,
                 for (i = 0; i < dim; i++) {
                         refspace[i][i] = 1.0;
                 }
-#ifdef DEBUGGING
-                //refspace[0][0] = 0.0;
-                //refspace[0][536 - 1] = 1.0;
-                //refspace[1][1] = 0.0;
-                //refspace[1][2620 - 1] = 1.0;
-                //refspace[2][2] = 0.0;
-                //refspace[2][2596 - 1] = 1.0;
-#endif
         }
 
         if (mpi_proc_rank == mpi_root) {
@@ -601,7 +586,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
             npx = generate_single_excitations(pstr[ip], peosp[pq[j][0]], aelec,
                                               ndocc, nactv, intorb, vorbs,
                                               pxlist,
-                                                elecscr, orbscr);
+                                              elecscr, orbscr);
             nqx = generate_single_excitations(qstr[iq], qeosp[pq[j][1]], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecscr, orbscr);
@@ -971,6 +956,42 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
         return;
 }
 
+/*
+ * compute_hvnewvecfast: perform Hv=c on basis vector v_n+1.
+ * Input:
+ *  pstr  = alpha strings
+ *  peosp = alpha electron spaces
+ *  pegrps= number of alpha electron spaces
+ *  qstr  = beta  strings
+ *  qeosp = beta  electron spaces
+ *  qegrps= number of beta  electron spaces
+ *  pqs   = alpha and beta space pairs
+ *  num_pq= number of alpha and beta space pairs
+ *  m1    = 1-e integrals
+ *  m2    = 2-e integrals
+ *  aelec = alpha electrons
+ *  belec = beta  electrons
+ *  intorb= internal orbitals
+ *  ndets = number of determinants
+ *  core_e= core energy
+ *  dim   = number of basis vectors
+ *  mdim  = maximum size of krylov space
+ *  v_hndl= (GLOBAL ARRAY HANDLE) basis vectors
+ *  w_hndl= (GLOBAL ARRAY HANDLE) wavefunction
+ * Output:
+ *  c_hndl= (GLOBAL ARRAY HANDLE) Hv=c vectors
+ */
+void compute_hvnewvecfast(struct occstr *pstr, struct eospace *peosp, int pegrps,
+                          struct occstr *qstr, struct eospace *qeosp, int qegrps,
+                          int **pqs, int num_pq, double *m1, double *m2,
+                          int aelec, int belec, int intorb, int ndets,
+                          double core_e, int dim, int mdim, int v_hndl,
+                          int c_hndl, int w_hndl, int ga_buffer_len,
+                          int nmo, int ndocc, int nactv)
+{
+    
+    return;
+}
 
 /*
  * compute_GA_norm: compute the norm of a global-array vector.

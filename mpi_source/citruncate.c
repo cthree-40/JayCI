@@ -1221,7 +1221,7 @@ void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
     if (str_actv == eosp.actv) return;
     if (str_virt == eosp.virt) return;
     if (abs(str_virt - eosp.virt) != 1) return;
-
+    
     /* Generate internal orbital byte */
     for (i = 0; i < intorb; i++) {
         ibyte = ibyte + pow(2, i);
@@ -1299,7 +1299,7 @@ void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
                         for (l = 0; l < str_virt; l++) {
                             newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
                             newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
-                            newstr.byte1 = newstr.byte1 + pow(2, (str.istr[k]));
+                            newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
                             newstr.virtx[0] = str.virtx[0];
                             newstr.virtx[1] = str.virtx[1];
                             newstr.nvrtx = str_virt - 1;
@@ -1483,6 +1483,7 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
     if (abs(str_docc - eosp.docc) != nrep) return;
     if (abs(str_actv - eosp.actv) != nrep) return;
     if (str_virt != eosp.virt) return;
+    
     /* Generate internal orbital byte */
     for (i = 0; i < intorb; i++) {
         ibyte = ibyte + pow(2, i);
@@ -1623,7 +1624,7 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
         }
     }
 
-    /* Is the excitation DOCC -> ACTV or ACTV <- DOCC */
+    /* Is the excitation DOCC -> ACTV or ACTV -> DOCC */
     xtype = str_docc - eosp.docc;
     if (xtype > 0) {
         /* DOCC(str) -> ACTV(eosp) */
@@ -1632,16 +1633,15 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
         switch(nrep) {
         case 2: /* Double replacements */
             /* Loop over occupied docc orbitals. Removing them. */
-            for (i = (str_docc - 1); i >= 1; i--) {
+            for (i = (str_docc - 1); i >= 0; i--) {
                 /* Loop over occupied ACTV orbitals. Turning them "off" */
-                for (j = str_docc + str_actv; j >= str_docc; j--) {
+                for (j = str_docc + str_actv - 1; j >= str_docc; j--) {
                     /* Add new orbital to actv space */
                     for (k = (ndocc - str_docc);
                          k < (intorb - str_actv - str_docc - 1);
                          k++){
                         /* Add new ACTV orbital to ACTV space */
-                        for (l = k+1;
-                             l < (intorb - str_actv - str_docc);
+                        for (l = k+1; l < (intorb - str_actv - str_docc);
                              l++) {
                             newstr.nvrtx = str.nvrtx;
                             newstr.byte1 = str.byte1 - pow(2, str.istr[i]);
@@ -1668,7 +1668,7 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
         case 2: /* Double replacements */
             /* Loop over occupied ACTV orbitals. Removing 2 */
             for (i = (str_actv + str_docc - 1); i >= str_docc + 1; i--) {
-                for (j = (str_actv + str_docc - 1); j >= str_docc; j--) {
+                for (j = (i - 1); j >= str_docc; j--) {
                     /* Loop over unoccupied ACTV orbitals. Turning 1 on. */
                     for (k = (ndocc - str_docc);
                          k < (intorb - str_actv - str_docc);
@@ -1826,10 +1826,10 @@ void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
     int intorb = ndocc + nactv;
 
     /* Check if excitations are possible */
-    if (abs(str_docc - eosp.actv) != 1) return;
+    if (abs(str_docc - eosp.docc) != 1) return;
     if (str_virt != eosp.virt) return;
     if (str_actv == eosp.actv) return;
-    
+
     /* Generate internal orbital byte */
     for (i = 0; i < intorb; i++) {
         ibyte = ibyte + pow(2, i);
@@ -1901,7 +1901,7 @@ void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
             /* Loop over occupied ACTV orbitals. Removing 1 */
             for (i = (str_actv + str_docc - 1); i >= str_docc; i--) {
                 /* Loop over occupied VIRT orbital. Swapping orbital */
-                for (j = str_virt; j >= 0; j--) {
+                for (j = (str_virt - 1); j >= 0; j--) {
                     /* Loop over unoccupied DOCC orbitals. Turning them on. */
                     for (k = 0; k < (ndocc - str_docc); k++) {
                         /* Add new virtual orbital */
@@ -2123,7 +2123,7 @@ void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
         switch(nrep) {
         case 2: /* Double replacements */
             /* Loop over occupied DOCC orbitals. Removing one */
-            for (i = (str_docc - 1); i >= 1; i--) {
+            for (i = (str_docc - 1); i >= 0; i--) {
                 /* Loop over occupied ACTV orbitals. Removing one. */
                 for (j = str_docc + str_actv - 1; j >= str_docc; j--) {
                     /* Add new occupation to ACTV space */
@@ -2233,7 +2233,7 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
     if (abs(str_docc - eosp.docc) != 1) return;
     if (abs(str_virt - eosp.virt) != 1) return;
     if (str_virt == 0 || eosp.virt == 0) return;
-    if (str_virt != 2 || eosp.virt != 2) return;
+    if (str_virt != 2 && eosp.virt != 2) return;
     if (str_actv != eosp.actv) return;
     /* Generate internal orbital byte */
     for (i = 0; i < intorb; i++) {
