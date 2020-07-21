@@ -262,19 +262,19 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
             ckdim++;
             
             add_new_vector(v_hndl, ckdim, ndets, n_hndl);
-            //compute_hv_newvector(v_hndl, c_hndl, ckdim, pstrings,
-            //                     peospace, pegrps, qstrings,
-            //                     qeospace, qegrps, pq_space_pairs,
-            //                     num_pq, moints1, moints2, aelec,
-            //                     belec, intorb, ndets, krymax,
-            //                     w_hndl, ga_buffer_len);
+            compute_hv_newvector(v_hndl, c_hndl, ckdim, pstrings,
+                                 peospace, pegrps, qstrings,
+                                 qeospace, qegrps, pq_space_pairs,
+                                 num_pq, moints1, moints2, aelec,
+                                 belec, intorb, ndets, krymax,
+                                 w_hndl, ga_buffer_len);
             
-            compute_hvnewvecfast(pstrings, peospace, pegrps, qstrings,
-                                 qeospace, qegrps, pq_space_pairs, num_pq,
-                                 moints1, moints2, aelec, belec, intorb,
-                                 ndets, totcore_e, ckdim, krymax, v_hndl,
-                                 c_hndl, w_hndl, d_hndl, ga_buffer_len, totalmo,
-                                 ndocc, nactv);
+            //compute_hvnewvecfast(pstrings, peospace, pegrps, qstrings,
+            //                     qeospace, qegrps, pq_space_pairs, num_pq,
+            //                     moints1, moints2, aelec, belec, intorb,
+            //                     ndets, totcore_e, ckdim, krymax, v_hndl,
+            //                     c_hndl, w_hndl, d_hndl, ga_buffer_len, totalmo,
+            //                     ndocc, nactv);
             
             make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
             print_subspacehmat(vhv, ckdim);
@@ -481,7 +481,6 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
     wjdata= allocate_mem_int_cont(&wj, 3, buflen);
     
     /* Allocate j index array */
-    //jindx = malloc(sizeof(int) * buflen);
 
     /* Allocate <i|H|j> array */
     hijval = malloc(sizeof(double) * buflen);
@@ -502,7 +501,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
     qxlist  = malloc(sizeof(int) * xlistmax);
 
     /* j determinant buffer list */
-    jindx = malloc(sizeof(int) * (xlistmax * xlistmax));
+    jindx = malloc(sizeof(int) * buflen);
 
     /* Allocate GLOBAL ARRAYS index list for V and W*/
     vrows = buflen;
@@ -1485,6 +1484,8 @@ void evaluate_hij_pxqxlist(struct det deti, int *pxlist, int npx, int *qxlist,
     int jmax, jmin;
     int k, l;
 
+    init_dbl_array_0(c, vcols);
+    
     /* Loop over r and s combinations */
     njx = 0;
     for (r = 0; r < npx; r++) {
@@ -1492,33 +1493,57 @@ void evaluate_hij_pxqxlist(struct det deti, int *pxlist, int npx, int *qxlist,
             jindx[njx] = string_info_to_determinant(pxlist[r], qxlist[s],peosp,
                                                     npe, qeosp, nqe, pq, npq);
             njx++;
+
+            /* Test if buffer is reached, or end of strings. */
+            if (njx == buflen || r == (npx - 1) && s == (nqx - 1)) {
+                /* Set GA indexes */
+                set_ga_det_indexes(jindx, njx, vcols, vindx);
+                set_ga_det_indexes_trans(jindx, njx, 3, windx);
+                /* Get data from GLOBAL ARRAYS */
+                NGA_Gather(v_hndl, v1d, vindx, (njx * vcols));
+                NGA_Gather(w_hndl, w1d, windx, (njx * 3));
+                /* Evaluate <i|H|j> for j = 0, ... , njx */
+                for (k = 0; k < njx; k++) {
+                    detj.astr = pstr[w[k][0]];
+                    detj.bstr = qstr[w[k][1]];
+                    detj.cas  = w[k][2];
+                    hijval[k] = hmatels(deti, detj, m1, m2, aelec, belec, intorb);
+                }
+                for (k = 0; k < vcols; k++) {
+                    for (l = 0; l < njx; l++) {
+                        c[k] = c[k] + hijval[l]*v1d[k * njx + l];
+                    }
+                }
+                /* Reset njx and continue*/
+                njx = 0;
+            }
+            
         }
     }
-    init_dbl_array_0(c, vcols);
     
     /* Loop through |r,s> = |j> determinants, filling a buffer */
-    for (j = 0; j < njx; j+=vrows) {
-        jmax = int_min((j + vrows - 1), (njx - 1));
-        buflen = jmax - j + 1;
-        /* Set GA indexes. Start = j, Finish = jmax = j + buflen. */
-        set_ga_det_indexes      (&(jindx[j]), buflen, vcols, vindx);
-        set_ga_det_indexes_trans(&(jindx[j]), buflen,     3, windx);
-        /* Get data from GLOBAL ARRAYS */
-        NGA_Gather(v_hndl, v1d, vindx, (buflen * vcols));
-        NGA_Gather(w_hndl, w1d, windx, (buflen * 3));
-        /* Evaluate <i|H|j> for j = 0, ... , buflen */
-        for (k = 0; k < buflen; k++) {
-            detj.astr = pstr[w[k][0]];
-            detj.bstr = qstr[w[k][1]];
-            detj.cas  = w[k][2];
-            hijval[k] = hmatels(deti, detj, m1, m2, aelec, belec, intorb);
-        }
-        for (k = 0; k < vcols; k++) {
-            for (l = 0; l < buflen; l++) {
-                c[k] = c[k] + hijval[l]*v1d[k * buflen + l];
-            }
-        }
-    }
+//    for (j = 0; j < njx; j+=vrows) {
+//        jmax = int_min((j + vrows - 1), (njx - 1));
+//        buflen = jmax - j + 1;
+//        /* Set GA indexes. Start = j, Finish = jmax = j + buflen. */
+//        set_ga_det_indexes      (&(jindx[j]), buflen, vcols, vindx);
+//        set_ga_det_indexes_trans(&(jindx[j]), buflen,     3, windx);
+//        /* Get data from GLOBAL ARRAYS */
+//        NGA_Gather(v_hndl, v1d, vindx, (buflen * vcols));
+//        NGA_Gather(w_hndl, w1d, windx, (buflen * 3));
+//        /* Evaluate <i|H|j> for j = 0, ... , buflen */
+//        for (k = 0; k < buflen; k++) {
+//            detj.astr = pstr[w[k][0]];
+//            detj.bstr = qstr[w[k][1]];
+//            detj.cas  = w[k][2];
+//            hijval[k] = hmatels(deti, detj, m1, m2, aelec, belec, intorb);
+//        }
+//        for (k = 0; k < vcols; k++) {
+//            for (l = 0; l < buflen; l++) {
+//                c[k] = c[k] + hijval[l]*v1d[k * buflen + l];
+//           }
+//        }/
+//    }
     return;
 }
 
