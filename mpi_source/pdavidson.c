@@ -532,9 +532,9 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
             /* Index for p eospaces that pair with q */
             jpspc = qeosp[iqspc].pairs[j];
             npx = generate_single_excitations(pstr[ip], peosp[jpspc], aelec,
-                                              ndocc, nactv, intorb, vorbs,
-                                              pxlist,
-                                              elecscr, orbscr);
+                                               ndocc, nactv, intorb, vorbs,
+                                               pxlist,
+                                               elecscr, orbscr);
             if (npx == 0) continue;
 
             /** Evaluate contribution. **/
@@ -553,8 +553,8 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
             /* Index for q eospaces that pair with p */
             jqspc = peosp[ipspc].pairs[j];
             nqx = generate_single_excitations(qstr[iq], qeosp[jqspc], belec,
-                                              ndocc, nactv, intorb, vorbs,
-                                              qxlist, elecscr, orbscr);
+                                               ndocc, nactv, intorb, vorbs,
+                                               qxlist, elecscr, orbscr);
             if (nqx == 0) continue;
 
             /** Evaluate contribution. **/
@@ -573,12 +573,12 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
         /* Loop over valid space combinations */
         for (j = 0; j < npq; j++) {
             npx = generate_single_excitations(pstr[ip], peosp[pq[j][0]], aelec,
-                                              ndocc, nactv, intorb, vorbs,
-                                              pxlist,
-                                              elecscr, orbscr);
+                                               ndocc, nactv, intorb, vorbs,
+                                               pxlist,
+                                               elecscr, orbscr);
             nqx = generate_single_excitations(qstr[iq], qeosp[pq[j][1]], belec,
-                                              ndocc, nactv, intorb, vorbs,
-                                              qxlist, elecscr, orbscr);
+                                               ndocc, nactv, intorb, vorbs,
+                                               qxlist, elecscr, orbscr);
             if (nqx == 0 || npx == 0) continue;
 
             /** Evaluate contribution. **/
@@ -1477,15 +1477,14 @@ void evaluate_hij_pxqxlist(struct det deti, int *pxlist, int npx, int *qxlist,
                            int *w1d, double *hijval, int w_hndl, int v_hndl)
 {
     struct det detj;
-    int buflen;      /* Buffer length. Somewhat different from its use elsewhere,
-                      * this value is variable. (see 2nd line of loop below) */
+    int buflen;      /* max length of buffer. equal to vrows. */
     int njx;         /* Number of |j> = |r,s> excitations */
     int j, r, s;
     int jmax, jmin;
     int k, l;
 
     init_dbl_array_0(c, vcols);
-    
+    buflen = vrows;
     /* Loop over r and s combinations */
     njx = 0;
     for (r = 0; r < npx; r++) {
@@ -1495,7 +1494,7 @@ void evaluate_hij_pxqxlist(struct det deti, int *pxlist, int npx, int *qxlist,
             njx++;
 
             /* Test if buffer is reached, or end of strings. */
-            if (njx == buflen || r == (npx - 1) && s == (nqx - 1)) {
+            if (njx == buflen || (r == (npx - 1) && s == (nqx - 1))) {
                 /* Set GA indexes */
                 set_ga_det_indexes(jindx, njx, vcols, vindx);
                 set_ga_det_indexes_trans(jindx, njx, 3, windx);
