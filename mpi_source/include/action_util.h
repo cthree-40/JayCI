@@ -307,6 +307,24 @@ double hmatels(
 	int belec,
 	int ninto);      /* internal orbitals */
 
+/*
+ * hmatels_1x: compute single replacement matrix elements.
+ */
+double hmatels_1x(struct occstr str1, int *io, int *fo, int pi, int ne1,
+                  struct occstr str2, int ne2, double *m1, double *m2);
+
+/*
+ * hmatels_2xaa: compute double replacements in one string matrix elements.
+ */
+double hmatels_2xaa(int *aio, int *afo, int api, double *m2);
+
+/*
+ * hmatels_2xab: compute single replacements in both strings  matrix elements.
+ */
+double hmatels_2xab(int *aio, int *afo, int api, int *bio, int *bfo, int bpi,
+                    double *m2);
+
+
 void make_orbital_strings_virt(
 	struct occstr ostr1,
 	int *eostr1,

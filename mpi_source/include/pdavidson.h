@@ -345,10 +345,77 @@ void evaluate_hdblock_ij_1d2(int **wi, int idets, int **wj, int jdets,
                              int belec, int intorb);
 
 /*
+ * evaluate_hij_pxlist1x: evaluate hij for single replacements in alpha strings.
+ */
+void evaluate_hij_pxlist1x(struct det deti, struct xstr *pxlist, int npx,
+                           int qindx,
+                           int nqx, struct occstr *pstr, struct eospace *peosp,
+                           int npe, struct occstr *qstr, struct eospace *qeosp,
+                           int nqe, int **pq, int npq, double *m1, double *m2,
+                           int aelec, int belec, int intorb, double *c,
+                           int vrows, int vcols, int **vindx, int **windx,
+                           int *jindx, double **v, double *v1d, int **w,
+                           int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
+ * evaluate_hij_pxlist2x: evaluate hij for double replacements in alpha strings.
+ */
+void evaluate_hij_pxlist2x(struct det deti, struct xstr *pxlist, int npx,
+                           int qindx,
+                           int nqx, struct occstr *pstr, struct eospace *peosp,
+                           int npe, struct occstr *qstr, struct eospace *qeosp,
+                           int nqe, int **pq, int npq, double *m1, double *m2,
+                           int aelec, int belec, int intorb, double *c,
+                           int vrows, int vcols, int **vindx, int **windx,
+                           int *jindx, double **v, double *v1d, int **w,
+                           int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
+ * evaluate_hij_pxqxlist2x: evaluate hij for single replacements in alpha
+ * and beta strings.
+ */
+void evaluate_hij_pxqxlist2x(struct det deti, struct xstr *pxlist, int npx,
+                             struct xstr *qxlist,
+                             int nqx, struct occstr *pstr, struct eospace *peosp,
+                             int npe, struct occstr *qstr, struct eospace *qeosp,
+                             int nqe, int **pq, int npq, double *m1, double *m2,
+                             int aelec, int belec, int intorb, double *c,
+                             int vrows, int vcols, int **vindx, int **windx,
+                             int *jindx, double **v, double *v1d, int **w,
+                             int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
+ * evaluate_hij_qxlist1x: evaluate hij for single replacements in alpha strings.
+ */
+void evaluate_hij_qxlist1x(struct det deti, int pindx, int npx,
+                           struct xstr *qxlist,
+                           int nqx, struct occstr *pstr, struct eospace *peosp,
+                           int npe, struct occstr *qstr, struct eospace *qeosp,
+                           int nqe, int **pq, int npq, double *m1, double *m2,
+                           int aelec, int belec, int intorb, double *c,
+                           int vrows, int vcols, int **vindx, int **windx,
+                           int *jindx, double **v, double *v1d, int **w,
+                           int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
+ * evaluate_hij_qxlist2x: evaluate hij for double replacements in beta strings.
+ */
+void evaluate_hij_qxlist2x(struct det deti, int pindx, int npx,
+                           struct xstr *qxlist,
+                           int nqx, struct occstr *pstr, struct eospace *peosp,
+                           int npe, struct occstr *qstr, struct eospace *qeosp,
+                           int nqe, int **pq, int npq, double *m1, double *m2,
+                           int aelec, int belec, int intorb, double *c,
+                           int vrows, int vcols, int **vindx, int **windx,
+                           int *jindx, double **v, double *v1d, int **w,
+                           int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
  * evaluate_hij_jindx: evaluate hij given a determinant |i> and a list
  * of excitations: |r,s> = |p',q>, |p,q'>, |p',q'>, |p",q>, |p,q">
  */
-void evaluate_hij_pxqxlist(struct det deti, int *pxlist, int npx, int *qxlist,
+void evaluate_hij_pxqxlist(struct det deti, struct xstr *pxlist, int npx,
+                           struct xstr *qxlist,
                            int nqx, struct occstr *pstr, struct eospace *peosp,
                            int npe, struct occstr *qstr, struct eospace *qeosp,
                            int nqe, int **pq, int npq, double *m1, double *m2,

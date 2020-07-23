@@ -161,6 +161,60 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 	
 }
 
+/*
+ * hmatels_1x: compute single replacement matrix elements.
+ */
+double hmatels_1x(struct occstr str1, int *io, int *fo, int pi, int ne1,
+                  struct occstr str2, int ne2, double *m1, double *m2)
+{
+    double val = 0.0;
+    int i1, i2;
+    int i;
+    /* 1-e contribution */
+    i1 = index1e(io[0], fo[0]);
+    val = pi * m1[i1 - 1];
+    /* 2-e contribution */
+    for (i = 0; i < ne1; i++) {
+        if (str1.istr[i] != io[0]) {
+            i1 = index2e(str1.istr[i], str1.istr[i], io[0], fo[0]);
+            i2 = index2e(str1.istr[i], io[0], str1.istr[i], fo[0]);
+            val = val + pi * (m2[i1 - 1] - m2[i2 - 1]);
+        }
+    }
+    for (i = 0; i < ne2; i++) {
+        i1 = index2e(str2.istr[i], str2.istr[i], io[0], fo[0]);
+        val = val + pi * m2[i1 - 1];
+    }
+    return val;
+}
+
+/*
+ * hmatels_2xaa: compute double replacements in one string matrix elements.
+ */
+double hmatels_2xaa(int *aio, int *afo, int api, double *m2)
+{
+    double val = 0.0;
+    int i1, i2;
+    i1 = index2e(aio[0], afo[0], aio[1], afo[1]);
+    i2 = index2e(aio[0], afo[1], aio[1], afo[0]);
+    val = api * (m2[i1 - 1] - m2[i2 - 1]);
+    return val;
+}
+
+/*
+ * hmatels_2xab: compute single replacements in both strings  matrix elements.
+ */
+double hmatels_2xab(int *aio, int *afo, int api, int *bio, int *bfo, int bpi,
+                    double *m2)
+{
+    double val = 0.0;
+    int i1;
+    i1 = index2e(aio[0], afo[0], bio[0], bfo[0]);
+    val = api * bpi * m2[i1 - 1];
+    return val;
+}
+  
+
 /* 
  * evaluate_dets_cas: evaluate matrix element <i|H|j>.
  *
