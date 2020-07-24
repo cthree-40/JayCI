@@ -20,13 +20,13 @@
 # PJAYCI ---------------
 # Date          Version
 # -----------   -------
-# 
+# 2020-07-24:     2.0.0
 # ----------------------
 ######################################################################
 
 # Release version
 JAYCIVER := 2.0.1
-PJAYCIVER:= 1.2.0
+PJAYCIVER:= 2.0.0
 DYCICALCVER:= 1.0.0
 PDYCICALCVER:= 1.0.0
 
@@ -106,9 +106,9 @@ ifeq ($(findstring gfortran,$(FC)),)
 	VTUNE := -g
 else
 # gnu compilers
-	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O0
+	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
 	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
-	          -fomit-frame-pointer -fstrict-aliasing -O0
+	          -fomit-frame-pointer -fstrict-aliasing -O3
 endif
 
 # Debugging flags
@@ -118,7 +118,7 @@ ifeq ($(findstring gfortran,$(FC)),)
 	FDEBUG := -traceback
 else
 # gnu compilers
-	DEBUG  := -g -DDEBUGGING
+	DEBUG  := -g #-DDEBUGGING
 	FDEBUG := -fbacktrace
 endif
 

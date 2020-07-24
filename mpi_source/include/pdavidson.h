@@ -109,6 +109,41 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
                           int cstep);
 
 /*
+ * compute_cblock_Hfast: compute values for a block from the vectors, C.
+ * Input:
+ *  c      = local c array
+ *  ccols  = columns of c array
+ *  crows  = rows of c array
+ *  wi     = p, q, cas triples for c elements
+ *  w_hndl = GA handle of wavefunction info
+ *  v_hndl = GA handle for vectors, V
+ *  d_hndl = GA handle for diagonal vectors, D
+ *  buflen = length of buffer (set by user during input)
+ *  pstr   = alpha strings
+ *  peosp  = alpha electron occupation spaces
+ *  pegrps = number of alpha electron occupation spaces
+ *  qstr   = beta  strings
+ *  qeosp  = beta  electron occupation spaces
+ *  qegrps = number of beta  electron occupation spaces
+ *  pq     = valid elec-occupation spaces of expansion
+ *  npq    = number of valid elec-occupation spaces of expansion
+ *  m1     = 1-e integrals
+ *  m2     = 2-e integrals
+ *  aelec  = alpha electrons
+ *  belec  = beta  electrons
+ *  intorb = internal orbitals (DOCC + ACTV)
+ *  ndets  = total number of determinants
+ *  nmos   = total number of molecular orbitals
+ */
+void compute_cblock_Hfaster(double **c, int ccols, int crows, int **wi, int w_hndl,
+                          int v_hndl, int d_hndl, int buflen,struct occstr *pstr,
+                          struct eospace *peosp, int pegrps, struct occstr *qstr,
+                          struct eospace *qeosp, int qegrps, int **pq, int npq,
+                          double *m1, double *m2, int aelec,int belec,int intorb,
+                          int ndets, int nmos, int ndocc, int nactv, int c_hndl,
+                          int cstep);
+
+/*
  * compute_cimat_chunks: compute chunksize of bounds of H for evaluation.
  * Input:
  *  dlen = number of determinants
