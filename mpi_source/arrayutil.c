@@ -200,6 +200,38 @@ int ndiffs_array(int *ar1, int *ar2, int ard1, int ard2)
 }
 
 /*
+ * remove_leq_int: remove values from array less than or equal to input val
+ * On output, *nelem = new number of values.
+ * Input:
+ *   val   = value to compare
+ *   list  = list of (int)
+ *   nelem = number of elemetns in list (changed on output)
+ *   scr   = scratch array to hold values
+ */
+void remove_leq_int(int val, int *list, int *nelem, int *scr)
+{
+    int len = *nelem;
+    int num = 0; /* Number of elements > val */
+    int i;
+    for (i = 0; i < len; i++) {
+        /* If greater than add to scr */
+        if (list[i] > val) {
+            scr[num] = list[i];
+            num++;
+        }
+        /* Zero out list as you go */
+        list[i] = 0;
+    }
+    /* Copy over elements */
+    for (i = 0; i < num; i++) {
+        list[i] = scr[i];
+    }
+    /* Reset nelem to reflect new list */
+    *nelem = num;
+    return;
+}
+
+/*
  * sort_array: sort ordered (except for first or last element) array.
  */
 int sort_array(int updown, int *list, int list_len, int *new_loc)

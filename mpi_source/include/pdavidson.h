@@ -74,6 +74,41 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
                       int ndets, int nmos, int ndocc, int nactv);
 
 /*
+ * compute_cblock_Hfast: compute values for a block from the vectors, C.
+ * Input:
+ *  c      = local c array
+ *  ccols  = columns of c array
+ *  crows  = rows of c array
+ *  wi     = p, q, cas triples for c elements
+ *  w_hndl = GA handle of wavefunction info
+ *  v_hndl = GA handle for vectors, V
+ *  d_hndl = GA handle for diagonal vectors, D
+ *  buflen = length of buffer (set by user during input)
+ *  pstr   = alpha strings
+ *  peosp  = alpha electron occupation spaces
+ *  pegrps = number of alpha electron occupation spaces
+ *  qstr   = beta  strings
+ *  qeosp  = beta  electron occupation spaces
+ *  qegrps = number of beta  electron occupation spaces
+ *  pq     = valid elec-occupation spaces of expansion
+ *  npq    = number of valid elec-occupation spaces of expansion
+ *  m1     = 1-e integrals
+ *  m2     = 2-e integrals
+ *  aelec  = alpha electrons
+ *  belec  = beta  electrons
+ *  intorb = internal orbitals (DOCC + ACTV)
+ *  ndets  = total number of determinants
+ *  nmos   = total number of molecular orbitals
+ */
+void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl,
+                          int v_hndl, int d_hndl, int buflen,struct occstr *pstr,
+                          struct eospace *peosp, int pegrps, struct occstr *qstr,
+                          struct eospace *qeosp, int qegrps, int **pq, int npq,
+                          double *m1, double *m2, int aelec,int belec,int intorb,
+                          int ndets, int nmos, int ndocc, int nactv, int c_hndl,
+                          int cstep);
+
+/*
  * compute_cimat_chunks: compute chunksize of bounds of H for evaluation.
  * Input:
  *  dlen = number of determinants
@@ -356,6 +391,21 @@ void evaluate_hij_pxlist1x(struct det deti, struct xstr *pxlist, int npx,
                            int vrows, int vcols, int **vindx, int **windx,
                            int *jindx, double **v, double *v1d, int **w,
                            int *w1d, double *hijval, int w_hndl, int v_hndl);
+/*
+ * evaluate_hij_pxlist1x_ut: evaluate hij for single replacements in alpha
+ * strings. Only upper triangle is computed.
+ */
+void evaluate_hij_pxlist1x_ut(struct det deti, struct xstr *pxlist, int npx,
+                              int qindx,
+                              int nqx, struct occstr *pstr, struct eospace *peosp,
+                              int npe, struct occstr *qstr, struct eospace *qeosp,
+                              int nqe, int **pq, int npq, double *m1, double *m2,
+                              int aelec, int belec, int intorb, double *c,
+                              int vrows, int vcols, int **vindx, int **windx,
+                              int *jindx, double **v, double *v1d, int **w,
+                              int *w1d, double *hijval, int w_hndl, int v_hndl,
+                              int c_hndl, int cindx, double *vik, double *cjk,
+                              int **vx2);
 
 /*
  * evaluate_hij_pxlist2x: evaluate hij for double replacements in alpha strings.
@@ -369,6 +419,22 @@ void evaluate_hij_pxlist2x(struct det deti, struct xstr *pxlist, int npx,
                            int vrows, int vcols, int **vindx, int **windx,
                            int *jindx, double **v, double *v1d, int **w,
                            int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
+ * evaluate_hij_pxlist2x_ut: evaluate hij for double replacements in alpha
+ * strings. Only upper triangle is computed.
+ */
+void evaluate_hij_pxlist2x_ut(struct det deti, struct xstr *pxlist, int npx,
+                              int qindx,
+                              int nqx, struct occstr *pstr, struct eospace *peosp,
+                              int npe, struct occstr *qstr, struct eospace *qeosp,
+                              int nqe, int **pq, int npq, double *m1, double *m2,
+                              int aelec, int belec, int intorb, double *c,
+                              int vrows, int vcols, int **vindx, int **windx,
+                              int *jindx, double **v, double *v1d, int **w,
+                              int *w1d, double *hijval, int w_hndl, int v_hndl,
+                              int c_hndl, int cindx, double *vik, double *cjk,
+                              int **vx2);
 
 /*
  * evaluate_hij_pxqxlist2x: evaluate hij for single replacements in alpha
@@ -385,6 +451,22 @@ void evaluate_hij_pxqxlist2x(struct det deti, struct xstr *pxlist, int npx,
                              int *w1d, double *hijval, int w_hndl, int v_hndl);
 
 /*
+ * evaluate_hij_pxqxlist2x_ut: evaluate hij for single replacements in alpha
+ * and beta strings. Upper triangle only.
+ */
+void evaluate_hij_pxqxlist2x_ut(struct det deti, struct xstr *pxlist, int npx,
+                                struct xstr *qxlist,
+                                int nqx, struct occstr *pstr, struct eospace *peosp,
+                                int npe, struct occstr *qstr, struct eospace *qeosp,
+                                int nqe, int **pq, int npq, double *m1, double *m2,
+                                int aelec, int belec, int intorb, double *c,
+                                int vrows, int vcols, int **vindx, int **windx,
+                                int *jindx, double **v, double *v1d, int **w,
+                                int *w1d, double *hijval, int w_hndl, int v_hndl,
+                                int c_hndl, int cindx, double *vik, double *cjk,
+                                int **vx2);
+
+/*
  * evaluate_hij_qxlist1x: evaluate hij for single replacements in alpha strings.
  */
 void evaluate_hij_qxlist1x(struct det deti, int pindx, int npx,
@@ -398,6 +480,22 @@ void evaluate_hij_qxlist1x(struct det deti, int pindx, int npx,
                            int *w1d, double *hijval, int w_hndl, int v_hndl);
 
 /*
+ * evaluate_hij_qxlist1x_ut: evaluate hij for single replacements in alpha
+ * strings. Only upper triangle is computed.
+ */
+void evaluate_hij_qxlist1x_ut(struct det deti, int pindx, int npx,
+                              struct xstr *qxlist,
+                              int nqx, struct occstr *pstr, struct eospace *peosp,
+                              int npe, struct occstr *qstr, struct eospace *qeosp,
+                              int nqe, int **pq, int npq, double *m1, double *m2,
+                              int aelec, int belec, int intorb, double *c,
+                              int vrows, int vcols, int **vindx, int **windx,
+                              int *jindx, double **v, double *v1d, int **w,
+                              int *w1d, double *hijval, int w_hndl, int v_hndl,
+                              int c_hndl, int cindx, double *vik, double *cjk,
+                              int **vx2);
+
+/*
  * evaluate_hij_qxlist2x: evaluate hij for double replacements in beta strings.
  */
 void evaluate_hij_qxlist2x(struct det deti, int pindx, int npx,
@@ -409,6 +507,22 @@ void evaluate_hij_qxlist2x(struct det deti, int pindx, int npx,
                            int vrows, int vcols, int **vindx, int **windx,
                            int *jindx, double **v, double *v1d, int **w,
                            int *w1d, double *hijval, int w_hndl, int v_hndl);
+
+/*
+ * evaluate_hij_qxlist2x_ut: evaluate hij for double replacements in alpha
+ * strings. Only upper triangle is computed.
+ */
+void evaluate_hij_qxlist2x_ut(struct det deti, int pindx, int npx,
+                              struct xstr *qxlist,
+                              int nqx, struct occstr *pstr, struct eospace *peosp,
+                              int npe, struct occstr *qstr, struct eospace *qeosp,
+                              int nqe, int **pq, int npq, double *m1, double *m2,
+                              int aelec, int belec, int intorb, double *c,
+                              int vrows, int vcols, int **vindx, int **windx,
+                              int *jindx, double **v, double *v1d, int **w,
+                              int *w1d, double *hijval, int w_hndl, int v_hndl,
+                              int c_hndl, int cindx, double *vik, double *cjk,
+                              int **vx2);
 
 /*
  * evaluate_hij_jindx: evaluate hij given a determinant |i> and a list
