@@ -1073,7 +1073,9 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
     vindx1d= allocate_mem_int_cont(&vindx, 2, (buflen * ccols));
     windx1d= allocate_mem_int_cont(&windx, 2, (buflen * 3));
     vindx21d = allocate_mem_int_cont(&vindx2, 2, ccols);
-                     
+
+    /* Allocate Scat/Gat buffers */
+    NGA_Alloc_gatscat_buf(buflen * ccols * 2);
     /* Loop over rows of C and compute p', q', p'q', p", and q" */
     for (i = 0; i < crows; i++) {
         ip = wi[i][0];
@@ -1227,7 +1229,8 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
     free(elecx);
     free(orbsx);
     free(jindx);
-
+    /* Free gatscat buffers */
+    NGA_Free_gatscat_buf();
     return;
 }
 
@@ -3648,7 +3651,7 @@ void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps
 //                             pqs, num_pq, m1, m2, aelec, belec, intorb, ndets,
 //                             nmo, ndocc, nactv, c_hndl, c_lo[1]);
     NGA_Acc(c_hndl, c_lo, c_hi, cdata, c_ld, alpha);
-    
+    GA_Sync();
     if (mpi_proc_rank == mpi_root) timestamp();
     
     deallocate_mem_cont(&c_local, cdata);
