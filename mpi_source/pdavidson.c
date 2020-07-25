@@ -1571,7 +1571,7 @@ void compute_hv_newvectorfaster(struct occstr *pstr, struct eospace *peosp, int 
     int wi_hi[2]   = {0, 0};
     int wi_ld[1]   = {0};      /* Leading dimensions of Wi local buffer */
 
-    int *cindx[1] = {0};       /* Column v_i and c_i index i */
+    int cindx[1] = {0};       /* Column v_i and c_i index i */
     
     double alpha[1] = {1.0};
     
