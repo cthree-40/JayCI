@@ -109,7 +109,7 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
                           int cstep);
 
 /*
- * compute_cblock_Hfast: compute values for a block from the vectors, C.
+ * compute_cblock_Hfaster: compute values for a block from the vectors, C.
  * Input:
  *  c      = local c array
  *  ccols  = columns of c array
@@ -135,13 +135,13 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
  *  ndets  = total number of determinants
  *  nmos   = total number of molecular orbitals
  */
-void compute_cblock_Hfaster(double **c, int ccols, int crows, int **wi, int w_hndl,
+void compute_cblock_Hfaster(double *c, int ccols, int crows, int **wi, int w_hndl,
                           int v_hndl, int d_hndl, int buflen,struct occstr *pstr,
                           struct eospace *peosp, int pegrps, struct occstr *qstr,
                           struct eospace *qeosp, int qegrps, int **pq, int npq,
                           double *m1, double *m2, int aelec,int belec,int intorb,
                           int ndets, int nmos, int ndocc, int nactv, int c_hndl,
-                          int cstep);
+                            int cstep, int *colnums);
 
 /*
  * compute_cimat_chunks: compute chunksize of bounds of H for evaluation.
@@ -202,6 +202,22 @@ void compute_hv_newvector(int v_hndl, int c_hndl, int ckdim, struct occstr *pstr
                           int num_pq, double *m1, double *m2, int aelec,
                           int belec, int intorb, int ndets, int kmax, int w_hndl,
                           int ga_buffer_len);
+
+/*
+ * compute_hv_newvectorfaster: compute Hv=c for newest vector in basis space.
+ * Input:
+ *  v_hndl = GA handle for basis vectors (ckdim is new vector)
+ *  c_hndl = GA handle for Hv=c vectors
+ *  ckdim  = current dimension of space
+ *  w_hndl = wavefunction list (deteriminant triplets)
+ */
+void compute_hv_newvectorfaster(struct occstr *pstr, struct eospace *peosp, int pegrps,
+                                struct occstr *qstr, struct eospace *qeosp, int qegrps,
+                                int **pqs, int num_pq, double *m1, double *m2,
+                                int aelec, int belec, int intorb, int ndets,
+                                double core_e, int ckdim, int mdim, int v_hndl,
+                                int d_hndl, int c_hndl, int w_hndl, int ga_buffer_len,
+                                int nmo, int ndocc, int nactv);
 
 /*
  * compute_hvc_diagonal_ga: compute <i|H|i>*v(i,j)=c(i,j) using global arrays.
@@ -440,7 +456,7 @@ void evaluate_hij_pxlist1x_ut(struct det deti, struct xstr *pxlist, int npx,
                               int *jindx, double **v, double *v1d, int **w,
                               int *w1d, double *hijval, int w_hndl, int v_hndl,
                               int c_hndl, int cindx, double *vik, double *cjk,
-                              int **vx2);
+                              int **vx2, int *cnums);
 
 /*
  * evaluate_hij_pxlist2x: evaluate hij for double replacements in alpha strings.
@@ -469,7 +485,7 @@ void evaluate_hij_pxlist2x_ut(struct det deti, struct xstr *pxlist, int npx,
                               int *jindx, double **v, double *v1d, int **w,
                               int *w1d, double *hijval, int w_hndl, int v_hndl,
                               int c_hndl, int cindx, double *vik, double *cjk,
-                              int **vx2);
+                              int **vx2, int *cnums);
 
 /*
  * evaluate_hij_pxqxlist2x: evaluate hij for single replacements in alpha
@@ -499,7 +515,7 @@ void evaluate_hij_pxqxlist2x_ut(struct det deti, struct xstr *pxlist, int npx,
                                 int *jindx, double **v, double *v1d, int **w,
                                 int *w1d, double *hijval, int w_hndl, int v_hndl,
                                 int c_hndl, int cindx, double *vik, double *cjk,
-                                int **vx2);
+                                int **vx2, int *cnums);
 
 /*
  * evaluate_hij_qxlist1x: evaluate hij for single replacements in alpha strings.
@@ -528,7 +544,7 @@ void evaluate_hij_qxlist1x_ut(struct det deti, int pindx, int npx,
                               int *jindx, double **v, double *v1d, int **w,
                               int *w1d, double *hijval, int w_hndl, int v_hndl,
                               int c_hndl, int cindx, double *vik, double *cjk,
-                              int **vx2);
+                              int **vx2, int *cnums);
 
 /*
  * evaluate_hij_qxlist2x: evaluate hij for double replacements in beta strings.
@@ -557,7 +573,7 @@ void evaluate_hij_qxlist2x_ut(struct det deti, int pindx, int npx,
                               int *jindx, double **v, double *v1d, int **w,
                               int *w1d, double *hijval, int w_hndl, int v_hndl,
                               int c_hndl, int cindx, double *vik, double *cjk,
-                              int **vx2);
+                              int **vx2, int *cnums);
 
 /*
  * evaluate_hij_jindx: evaluate hij given a determinant |i> and a list
@@ -798,6 +814,19 @@ void print_subspacehmat(double **vhv, int d);
  *  vindx = indices of global array V to gather
  */
 void set_ga_det_indexes(int *jindx, int num, int cols, int **vindx);
+
+/*
+ * set_ga_det_indexes: set the array of indices to gather from global array.
+ * Input:
+ *  jindx   = list of row numbers in vector V
+ *  num     = number of row numbers
+ *  cols    = number of columns of V
+ *  colindx = column indices
+ * Output:
+ *  vindx   = indices of global array V to gather
+ */
+void set_ga_det_indexes_spec(int *jindx, int num, int cols, int *colindx,
+                             int **vindx);
 
 /*
  * set_ga_det_indexes_1D: set the array of indices to gather from global array.
