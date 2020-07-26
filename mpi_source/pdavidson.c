@@ -80,14 +80,14 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
     
     int lo[2] = {0, 0}; 
     int hi[2] = {0, 0};
-    int ld_ndets[1] = {0};
+    int ld_1d[1] = {0};
     
     double totcore_e = 0.0;
     double memusage = 0.0;  /* Estimated memory usage */
     int error = 0;
     
     totcore_e = nucrep_e + frzcore_e;
-    ld_ndets[0] = ndets;
+    ld_1d[0] = 1;
     
     /* Allocate GLOBAL arrays: V, Hv=c, N, R, and D */
     if (mpi_proc_rank == mpi_root) {
@@ -138,7 +138,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         printf("Global arrays created.\n\n");
         fflush(stdout);
     }
-    
+
     /* Generate wavefunction list */
     if (mpi_proc_rank == mpi_root) {
         printf("Generating wlist...\n");
@@ -146,7 +146,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
     }
     generate_wlist(w_hndl, ndets, pq_space_pairs, num_pq, peospace, pegrps,
                    qeospace, qegrps);
-    
+
     /* Allocate local arrays: d, vhv, hevec, heval */
     d_local = malloc(((ndets / mpi_num_procs) + 10) * sizeof(double));
     vhv_data = allocate_mem_double_cont(&vhv, krymax, krymax);
@@ -165,16 +165,15 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         printf("Computing diagonal matrix elements...\n");
         fflush(stdout);
     }
-    compute_diagonal_matrix_elements(d_local, lo[0], hi[0], moints1, moints2,
-                                     aelec, belec, peospace, pegrps,
-                                     qeospace, qegrps, pq_space_pairs,
-                                     num_pq, pstrings, qstrings, intorb);
-    NGA_Put(d_hndl, lo, hi, d_local, ld_ndets);
+    compute_diagonal_iHi(d_local, lo[0], hi[0], moints1, moints2, aelec,
+			 belec, intorb, w_hndl, pstrings, qstrings);
+    NGA_Put(d_hndl, lo, hi, d_local, ld_1d);
     if (printlvl > 0 && lo[0] == 0) {
         printf("<1|H|1> = ");
         printf("%lf\n", (d_local[0] + totcore_e));
+	fflush(stdout);
     }
-    
+
     if (mpi_proc_rank == mpi_root) {
         printf("\nBeginning Davidson algorithm...\n");
         fflush(stdout);
@@ -191,7 +190,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
     }
     
     GA_Sync();
-    
+
     /* .. MAIN LOOP .. */
     citer = 1; croot = 1; ckdim = krymin; cflag = 0;
     while (citer < maxiter && croot <= nroots) {
@@ -229,6 +228,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                              ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
                              c_hndl, w_hndl, ga_buffer_len, totalmo,
                              ndocc, nactv);
+	return 0;    
 #ifdef DEBUGGING
         FILE *fptr2;
         fptr2 = fopen("c.new", "w");
@@ -1242,21 +1242,24 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
  */
 void compute_cimat_chunks (int dlen, int *chunk, int *lwrbnd, int *uppbnd)
 {
-        int tmp;
-        *chunk = get_upptri_size(dlen);
-        *chunk = *chunk / mpi_num_procs;
-        tmp = mpi_proc_rank * (*chunk);
-        *lwrbnd = get_upptri_element_rownumber(tmp, dlen);
-        tmp = (mpi_proc_rank + 1) * (*chunk);
-        *uppbnd = get_upptri_element_rownumber(tmp, dlen) - 1;
-        /* Upper bound of last chunk should be last row. Because we compute
-         * diagonal elements separately, the last row computed is actually
-         * the n-1 row, if n is the size of the matrix; so the index for the
-         * upperbound is n-2.*/
-        if (mpi_proc_rank == (mpi_num_procs - 1)) {
-                *uppbnd = dlen - 2;
-        }
-        return;
+    long long int utsize  = 0; /* Upper triangle size in elements */
+    long long int utchunk = 0; /* Even split of UT elements */
+    long long int tmp = 0;
+    int i = 0;
+    
+    utsize = get_upptri_size(dlen);
+    utchunk= utsize / mpi_num_procs;
+    *lwrbnd = get_upptri_element_rownumber((mpi_proc_rank * utchunk), dlen);
+    *uppbnd = get_upptri_element_rownumber(((mpi_proc_rank + 1) * utchunk), dlen);
+    /* Upper bound of last chunk should be last row. Because we compute
+     * diagonal elements separately, the last row computed is actually
+     * the n-1 row, if n is the size of the matrix; so the index for the
+     * upperbound is n-2.*/
+    if (mpi_proc_rank == (mpi_num_procs - 1)) {
+	*uppbnd = dlen - 2;
+    }
+    *chunk = *uppbnd - *lwrbnd + 1;
+    return;
 }
 
 /*
@@ -1398,6 +1401,57 @@ void compute_diagonal_matrix_elements(double *hdgls, int start, int final,
         }
         return;
 }
+
+/*
+ * compute_diagonal_iHi: compute <i|H|i> elements.
+ * Input:
+ *  hdgls   = digonal elements <i|H|i> for (i = start,...,final)
+ *  start   = starting determinant index
+ *  final   = final determinant index
+ *  mo1     = 1-e integrals
+ *  mo2     = 2-e integrals
+ *  aelec   = CI alpha electrons
+ *  belec   = CI beta  electrons
+ *  intorb  = internal orbitals (DOCC + CAS)
+ *  w_hndl  = global array handle for wavefunction
+ */
+void compute_diagonal_iHi(double *hdgls, int start, int final,
+			  double *mo1, double *mo2, int aelec,
+			  int belec, int intorb, int w_hndl,
+			  struct occstr *pstr, struct occstr *qstr)
+{
+    struct det deti;
+    int **w   = NULL;    /* Wavefunction elements */
+    int *wdata = NULL;   /* Memory block for w */
+    int w_lo[2]= {0, 0}; /* Beginning block of W */
+    int w_hi[2]= {0, 0}; /* Ending block of W */
+    int w_ld[1]= {0};    /* Leading dimension of local W */
+    int i;
+    
+    /* Set starting and ending indices for W in global array and
+     * grab these determinants. */
+    w_lo[0] = start;
+    w_lo[1] = 0;
+    w_hi[0] = final;
+    w_hi[1] = 2;
+    w_ld[0] = 3;
+    wdata = allocate_mem_int_cont(&w, 3, (final - start + 1));
+    if (wdata == NULL) printf("Error! Could not allocate wdata!\n");
+    NGA_Get(w_hndl, w_lo, w_hi, wdata, w_ld);
+    
+    /* Loop over these determinants */
+    for (i = 0; i <= (final - start); i++) {
+	deti.astr = pstr[w[i][0]];
+	deti.bstr = qstr[w[i][1]];
+	deti.cas  = w[i][2];
+	hdgls[i] = hmatels(deti, deti, mo1, mo2, aelec, belec, intorb);
+    }
+    
+    /* Free memory */
+    deallocate_mem_cont_int(&w, wdata);
+    return;
+}
+
 
 /*
  * compute_hv_newvector: compute Hv=c for newest vector in basis space.
@@ -3189,25 +3243,31 @@ void get_upptri_element_position (int element, int n, int *i, int *j)
  * get_upptri_element_rownumber: get row number of upper triangle
  * matrix list element.
  */
-int get_upptri_element_rownumber (int element, int n)
+int get_upptri_element_rownumber (long long int element, int n)
 {
-        int row = 0;
-        int i = 0;
-        for (i = 0; i <= n; i++) {
-                if (get_upptri_element_index(i, i, n) > element) break;
-        }
-        row = i - 1;
-        return row;
+    int row = 0;
+    long long int tmp = 0;
+    int i = 0;
+    for (i = 1; i <= n; i++) {
+	tmp = pow(i, 2);
+	if (tmp > element) break;
+    }
+    row = i - 1;
+    return row;
 }
 
 /*
  * get_upptri_size: compute the size of H matrix upper triangle.
  */
-int get_upptri_size (int n)
+long long int get_upptri_size (int n)
 {
-        int result = 0;
-        result = (n * (n + 1)) / 2;
-        return result;
+    long long int result = 0;
+    for (int i = 0; i < n; i++) {
+	for (int j = i + 1; j < n; j++) {
+	    result++;
+	}
+    } 
+    return result;
 }
 
 /*
@@ -3606,12 +3666,6 @@ void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps
     }
     NGA_Zero(c_hndl);
     compute_cimat_chunks(ndets, &cchunk, &lwrbnd, &uprbnd);
-#ifdef DEBUGGING
-    printf("%d: chunk = %d, lwrbnd = %d, uprbnd = %d\n",
-           mpi_proc_rank, cchunk, lwrbnd, uprbnd);
-    fflush(stdout);
-#endif
-    GA_Sync();
     /* Determine which block of data is locally owned. And get the blocks of
      * V that are required to compute c. */
     NGA_Distribution(c_hndl, mpi_proc_rank, c_lo, c_hi);
@@ -3624,10 +3678,22 @@ void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps
     c_ld[0] = c_rows;
     /* Allocate local array and get C data */
     cdata = allocate_mem_double_cont(&c_local, c_rows, c_cols);
+    if (cdata == NULL) {
+	printf(" cdata could not be allocated!");
+	fflush(stdout);
+	GA_Sync();
+	return;
+    }
     NGA_Get(c_hndl, c_lo, c_hi, cdata, c_ld);
     
     /* Allocate local Wi array and get W data */
     widata = allocate_mem_int_cont(&wi, 3, c_rows);
+    if (widata == NULL) {
+	printf("Can not allocate widata!\n");
+	fflush(stdout);
+	GA_Sync();
+	return;
+    }
     wi_lo[0] = c_lo[1];
     wi_lo[1] = 0;
     wi_hi[0] = c_hi[1];

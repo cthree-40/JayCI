@@ -212,6 +212,7 @@ int execute_pjayci ()
 		fflush(stdout);
 	}
 	GA_Sync();
+
         /* Execute davidson procedure. */
         error = pdavidson(pstrings, peospace, pegrps, qstrings, qeospace,
                           qegrps, pq_space_pairs, num_pq, moints1, moints2,

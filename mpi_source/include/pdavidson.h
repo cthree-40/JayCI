@@ -188,6 +188,24 @@ void compute_diagonal_matrix_elements(double *hdgls, int start, int final,
                                       struct occstr *qstrings,
                                       int intorb);
 
+/*
+ * compute_diagonal_iHi: compute <i|H|i> elements.
+ * Input:
+ *  hdgls   = digonal elements <i|H|i> for (i = start,...,final)
+ *  start   = starting determinant index
+ *  final   = final determinant index
+ *  mo1     = 1-e integrals
+ *  mo2     = 2-e integrals
+ *  aelec   = CI alpha electrons
+ *  belec   = CI beta  electrons
+ *  intorb  = internal orbitals (DOCC + CAS)
+ *  w_hndl  = global array handle for wavefunction
+ */
+void compute_diagonal_iHi(double *hdgls, int start, int final,
+			  double *mo1, double *mo2, int aelec,
+			  int belec, int intorb, int w_hndl,
+			  struct occstr *pstr, struct occstr *qstr);
+
 
 /*
  * compute_hv_newvector: compute Hv=c for newest vector in basis space.
@@ -677,12 +695,12 @@ void get_upptri_element_position (int element, int n, int *i, int *j);
  * get_upptri_element_rownumber: get row number of upper triangle
  * matrix list element.
  */
-int get_upptri_element_rownumber (int element, int n);
+int get_upptri_element_rownumber (long long int element, int n);
 
 /*
  * get_upptri_size: compute the size of H matrix upper triangle.
  */
-int get_upptri_size (int n);
+long long int get_upptri_size (int n);
 
 /*
  * init_diag_H_subspace: generate reference vectors from diagonalization

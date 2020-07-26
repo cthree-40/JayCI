@@ -38,7 +38,8 @@ int main (int argc, char **argv)
         if (! MA_init(C_DBL, stack, heap)) GA_Error("MA_init failed",stack+heap);
 
         set_ga_process_number_and_rank();
-
+	printf("Greetings from process: %d\n", mpi_proc_rank);
+	fflush(stdout);
         error = execute_pjayci();
 
         GA_Terminate();
