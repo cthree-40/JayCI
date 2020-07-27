@@ -1292,7 +1292,7 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
 
     /* Allocate buffers */
     vdata = malloc(sizeof(double) * buflen * ccols);
-    cjdata= malloc(sizeof(double) * buflen);
+    cjdata= malloc(sizeof(double) * buflen * ccols);
     v_ld[0] = buflen;
     
     /* Loop over determinants via eosp pairings */
