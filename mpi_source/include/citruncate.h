@@ -396,6 +396,12 @@ int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
                    int nvirt, int nelec, int *elecs);
 
 /*
+ * remove_grt_xstr: remove replacements with indices greater than
+ * val. (Modification of remove_leq_int in arrayutil.c)
+ */
+void remove_grt_xstr(int val, struct xstr *list, int *nx, struct xstr *scr);
+
+/*
  * remove_leq_xstr: remove replacements with indices less than, or equal to
  * val. (Modification of remove_leq_int in arrayutil.c)
  */

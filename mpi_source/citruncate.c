@@ -3740,6 +3740,31 @@ int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
 }
 
 /*
+ * remove_grt_xstr: remove replacements with indices greater than
+ * val. (Modification of remove_leq_int in arrayutil.c)
+ */
+void remove_grt_xstr(int val, struct xstr *list, int *nx, struct xstr *scr)
+{
+    int num = 0;
+    int i;
+    if (*nx == 0) return;
+    for (i = 0; i < *nx; i++) {
+        /* If index is less than or equal to val add to scr */
+        if (list[i].index <= val) {
+            scr[num] = list[i];
+            num++;
+        }
+    }
+    /* Copy over elements */
+    for (i = 0; i < num; i++) {
+        list[i] = scr[i];
+    }
+    /* Reset *nx to refelect new list */
+    *nx = num;
+    return;
+}
+
+/*
  * remove_leq_xstr: remove replacements with indices less than, or equal to
  * val. (Modification of remove_leq_int in arrayutil.c)
  */

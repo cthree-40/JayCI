@@ -85,6 +85,18 @@ int ndiffs_array(
 	int *ar2,
 	int ard1,
 	int ard2);
+
+/*
+ * remove_grt_int: remove values from array greater than input val
+ * On output, *nelem = new number of values.
+ * Input:
+ *   val   = value to compare
+ *   list  = list of (int)
+ *   nelem = number of elemetns in list (changed on output)
+ *   scr   = scratch array to hold values
+ */
+void remove_leq_int(int val, int *list, int *nelem, int *scr);
+
 /*
  * remove_leq_int: remove values from array less than or equal to input val
  * On output, *nelem = new number of values.
