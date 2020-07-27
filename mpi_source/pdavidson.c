@@ -1296,6 +1296,9 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     int jmax = 0;
     int *wjscr = 0;
     int w_lo[2] = {0, 0}, w_hi[2] = {0, 0}, w_ld[1] = {0};
+
+    int ipspace = 0, iqspace = 0;
+    int pqstart = 0;
     
     double alpha[1] = {1.0};
     
@@ -1316,8 +1319,15 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     vi_hi[1] = cmax;
     NGA_Get(v_hndl, vi_lo, vi_hi, vidata, vi_ld);
 
+    /* Get pq pairing of first determinant i */
+    ipspace = get_string_eospace(pstr[wi[0][0]], ndocc, nactv, peosp, pegrps);
+    iqspace = get_string_eospace(qstr[wi[0][1]], ndocc, nactv, qeosp, qegrps);
+    for (pqstart = 0; pqstart < npq; pqstart++) {
+	if (ipspace == pq[pqstart][0] && iqspace == pq[pqstart][1]) break;
+    }
+    
     /* Loop over determinants via eosp pairings */
-    for (i = 0; i < npq; i++) {
+    for (i = pqstart; i < npq; i++) {
         get_eospace_detrange(pq, npq, i, peosp, pegrps, qeosp, qegrps,
                              &jstartdet, &jfinaldet);
         for (j = jstartdet; j < jfinaldet; j += buflen) {
@@ -1841,12 +1851,9 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
     buflen = jmax - jstart + 1;
     
     /* Set xlistmax for *xlist arrays */
-    for (i = 0; i < pegrps; i++) {
-        if (peosp[i].nstr > xlistmax) xlistmax = peosp[i].nstr;
-    }
-    for (i = 0; i < qegrps; i++) {
-        if (qeosp[i].nstr > xlistmax) xlistmax = qeosp[i].nstr;
-    }
+    xlistmax = peosp[jpair[0]].nstr;
+    xlistmax = qeosp[jpair[1]].nstr;
+
 
     /* BEGIN OMP SECTION */
 #pragma omp parallel \
@@ -1885,13 +1892,10 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                               pxlist, elecx, orbsx);
             /* upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
-            /* Only in this buffer */
-            remove_leq_xstr(jstartp, pxlist, &npx, xstrscr);
-            remove_grt_xstr(jfinalp, pxlist, &npx, xstrscr);
             
             /* Evaluate <pq|H|p'q> */
             if (iqspace == jpair[1] && npx != 0) {
-
+		
             }
 
             /* Generate single replacements in q' and pair with p' */
@@ -1909,9 +1913,6 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                               pxlist, elecx, orbsx);
             /* upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
-            /* Only in this buffer */
-            remove_leq_xstr(jstartp, pxlist, &npx, xstrscr);
-            remove_grt_xstr(jfinalp, pxlist, &npx, xstrscr);
             
             /* Evaluate <pq|H|p"q> */
             if (iqspace == jpair[1] && npx != 0) {
@@ -1925,7 +1926,6 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
 
             /* upper triangle only */
             remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
-            /* Only in this buffer */
             
             /* Evaluate <pq|H|pq'> */
             if (ipspace == jpair[0] && nqx != 0) {
@@ -1938,7 +1938,6 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                               qxlist, elecx, orbsx);
             /* upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
-            /* Only in this buffer */
 
             /* Evaluate <pq|H|pq"> */
             if (ipspace == jpair[0]) {
