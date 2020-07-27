@@ -3583,6 +3583,23 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
 }
 
 /*
+ * get_eospace_detrange: get starting and final determinant indexes
+ * for an eospace pairing.
+ */
+void get_eospace_detrange(int **pq, int npq, int pair, struct eospace *peosp,
+                          int pegrps, struct eospace *qeosp, int qegrps,
+                          int *start, int *final)
+{
+    int i, j;
+    *start = 0;
+    *final = 0;
+    for (i = 0; i < pair; i++) {
+        *start = *start + peosp[pq[i][0]].nstr * qeosp[pq[i][1]].nstr;
+    }
+    *final = *start + peosp[pq[i][0]].nstr * qeosp[pq[i][1]].nstr;
+    return;
+}
+/*
  * get_string_eospace: get eospace of input string.
  */
 int get_string_eospace(struct occstr str, int ndocc, int nactv,
