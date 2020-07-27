@@ -1237,7 +1237,6 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
 /*
  * compute_cblock_Hfastest: compute values for a block from the vectors, C.
  * Computes upper diagonal.
- * Uses OpenMP.
  * Input:
  *  c      = local c array
  *  ccols  = columns of c array
@@ -1276,166 +1275,46 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
                             int ndets, int nmos, int ndocc, int nactv, int c_hndl,
                             int cstep, int *colnums)
 {
-    struct det deti;              /* Determinant <i| */
-    int ip, iq;                   /* <i| = <p,q| indices */
-    int ipspace, iqspace;         /* Electron-occupation space for ip and iq */
+    /* GA V buffer and indices */
+    double *vdata = NULL;
+    int v_lo[2] = {0, 0}, v_hi[2] = {0, 0}, v_ld[1] = {0};
 
-    int jpstart, jqstart;
-    int jpfinal, jqfinal;
-    int jpspace, jqspace;         /* Electron-occupation space for jp and jq */
+    /* GA C(j) buffer */
+    double *cjdata = NULL;
     
-    int vrows = 0;                /* Rows of local V vectors */
-    int vcols = 0;                /* Columns of local V vectors */
-
-    double **vlocal = NULL;       /* Local V array */
-    double *vdata   = NULL;       /* Local V array data */
-    int *v_lo = NULL;
-    int *v_hi = NULL;
-    int v_ld[1] = {0};
-    
-    int *jindx  = NULL;           /* |j> indices for <i|H|j> */
-    int **vindx = NULL;           /* |j> indices in GLOBAL array V */
-    int *vindx1d= NULL;           
-    int **vindx2= NULL;           /* |i> indices in GLOBAL array V */
-    int *vindx21d=NULL;           /* data */
-    int **windx = NULL;           /* Wavefunction indices of |j> */
-    int *windx1d= NULL;
-    
-    double *hijval = NULL;        /* <i|H|j> buffer for all j */
-    double *cik    = NULL;        /* c_ik=H_ij*v_jk values */
-    double *cjk    = NULL;        /* c_jk=H_ij*v_ik buffer */
-    double *vik    = NULL;        /* v_ik buffer */
-    
-    struct xstr *pxlist = NULL;   /* p string excitation list */
-    struct xstr *qxlist = NULL;   /* q string excitation list */
-    struct xstr *xstrscr= NULL;   /* Scratch array */
-    int xlistmax = 0;             /* Maximum size of *xlist */
-    int *elecx = NULL;            /* Scratch electron occupation array */
-    int *orbsx = NULL;            /* Scratch available orbital array */
-    int vorbs = 0;                /* Number of virtual orbitals */
-    int npx = 0, nqx = 0;         /* Number of excitations */
-
-    int startdet = 0;
-    int finaldet = 0;
-    int jjmax = 0;
-    
-    int doccmin = 0;
-    int virtmax = 0;
-    
-    int i, j, k, jj;
+    /* Starting, ending determinant indices for determinants |j> */
+    int jstartdet = 0, jfinaldet = 0;
+    int jmax = 0;
 
     double alpha[1] = {1.0};
     
-    /* Set doccmin and virtmax. Assuming xlvl = 2 */
-    doccmin = 2 * (ndocc - int_min(ndocc, 2));
-    virtmax = 2;
-    
-    /* Set dimensins of local V. Allocate local V and index array */
-    vrows = buflen;
-    vcols = ccols;
-    
-    /* Number of virtual orbitals */
-    vorbs = nmos - intorb;
-    /* Set xlistmax for *xlist arrays */
-    for (i = 0; i < pegrps; i++) {
-        if (peosp[i].nstr > xlistmax) xlistmax = peosp[i].nstr;
-    }
-    for (i = 0; i < qegrps; i++) {
-        if (qeosp[i].nstr > xlistmax) xlistmax = qeosp[i].nstr;
-    }
+    int i, j;
 
-#pragma omp parallel                                                  \
-    shared(wi,pstr,qstr,ndocc,nactv,peosp,pegrps,qeosp,qegrps,pq,npq,   \
-           xlistmax,vrows,vcols,buflen,ccols,nmos,aelec,belec,crows, \
-           v_hndl,c_hndl,v_ld)                                      \
-    private(vdata,vlocal,v_lo,v_hi,pxlist,qxlist,xstrscr, \
-            hijval,cik,cjk,vik,elecx,orbsx,jindx,ip,iq,deti,i,j,jj,     \
-            jjmax,startdet,finaldet,ipspace,iqspace,jpstart,jpfinal, \
-            jqstart,jqfinal) 
-    {
-    /* Allocate arrays*/
-    vdata  = allocate_mem_double_cont(&vlocal, buflen, ccols);
-    v_lo = malloc(sizeof(int) * 2);
-    v_hi = malloc(sizeof(int) * 2);
+    /* Allocate buffers */
+    vdata = malloc(sizeof(double) * buflen * ccols);
+    cjdata= malloc(sizeof(double) * buflen);
     v_ld[0] = buflen;
-    pxlist = malloc(sizeof(struct xstr) * xlistmax);
-    qxlist = malloc(sizeof(struct xstr) * xlistmax);
-    xstrscr= malloc(sizeof(struct xstr) * xlistmax);
-    hijval = malloc(sizeof(double) * buflen);
-    cik    = malloc(sizeof(double) * ccols);
-    cjk    = malloc(sizeof(double) * buflen * ccols);
-    vik    = malloc(sizeof(double) * ccols);
-    elecx  = malloc(sizeof(int) * int_max(aelec, belec));
-    orbsx  = malloc(sizeof(int) * nmos);
-    jindx  = malloc(sizeof(int) * buflen);
+    
+    /* Loop over determinants via eosp pairings */
+    for (i = 0; i < npq; i++) {
+        get_eospace_detrange(pq, npq, i, peosp, pegrps, qeosp, qegrps,
+                             &jstartdet, &jfinaldet);
+        for (j = jstartdet; j < jfinaldet; j += buflen) {
+            jmax = int_min((j + buflen - 1), (jfinaldet - 1));
+            v_lo[0] = 0;
+            v_lo[1] = j;
+            v_hi[0] = ccols - 1;
+            v_hi[1] = jmax;
+            NGA_Get(v_hndl, v_lo, v_hi, vdata, v_ld);
 
-#pragma omp for schedule(runtime)
-    /* Loop over rows of C and compute p', q', p'q', p", and q" */
-    for (i = 0; i < crows; i++) {
-        ip = wi[i][0];
-        iq = wi[i][1];
-
-        /* Set determinant <i| = <p,q| information */
-        deti.astr = pstr[ip];
-        deti.bstr = qstr[iq];
-        deti.cas  = wi[i][2];
-        /* Get space information for ip and iq */
-        ipspace = get_string_eospace(pstr[ip], ndocc, nactv, peosp, pegrps);
-        iqspace = get_string_eospace(qstr[iq], ndocc, nactv, qeosp, qegrps);
-        
-        /* Loop over j of <i|H|j>. To do this we loop over valid determinant
-         * combinations, contained in the electron spaces in **pq */
-        for (j = 0; j < npq; j++) {
-            get_eospace_detrange(pq, npq, j, peosp, pegrps, qeosp, qegrps,
-                                 &startdet, &finaldet);
-            startdet = int_max((i + 1), startdet);
-            for (jj = startdet; jj < finaldet; jj+=buflen) {
-
-                jjmax = int_min((jj + buflen - 1), (finaldet - 1));
-                v_lo[0] = 0;
-                v_lo[1] = jj;
-                v_hi[0] = ccols - 1;
-                v_hi[1] = jjmax;
-                NGA_Get(v_hndl, v_lo, v_hi, vdata, v_ld);
-
-                jpstart = 0;
-                jpfinal = 0;
-                jqstart = 0;
-                jqfinal = 0;
-                
-                /* p' */
-                if (iqspace == pq[j][1]) {
-                };
-                /* p'q' */
-                /* p" */
-                if (iqspace == pq[j][1]) {
-                };
-                /* q' */
-                if (ipspace == pq[j][0]) {
-                };
-                /* q" */
-                if (ipspace == pq[j][1]) {
-                };
-
-                /* Put lower triangle */
-                NGA_Acc(c_hndl, v_lo, v_hi, cjk, v_ld, alpha);
-            }
+            compute_hij_eosp(c1d, ccols, crows, wi, pstr, peosp, pegrps,
+                             qstr, qeosp, qegrps, m1, m2, aelec, belec,
+                             intorb, nmos, ndocc, nactv, cstep, colnums,
+                             jstartdet, jmax, pq[i], cjdata);
+            
+            NGA_Acc(c_hndl, v_lo, v_hi, cjdata, v_ld, alpha);
         }
     }
-
-    /* Deallocate arrays */
-    free(pxlist);
-    free(qxlist);
-    free(xstrscr);
-    free(hijval);
-    free(cik);
-    free(cjk);
-    free(vik);
-    free(elecx);
-    free(orbsx);
-    free(jindx);
-    }
-
     return;
 }
 
@@ -1884,7 +1763,41 @@ void compute_hv_newvectorfaster(struct occstr *pstr, struct eospace *peosp, int 
     return;
 }
 
+/*
+ * compute_hij_eosp: compute hij for an electron-occupation space.
+ * Uses OpenMP.
+ * Compute only upper triangle.
+ */
+void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
+                      struct occstr *pstr, struct eospace *peosp, int pegrps,
+                      struct occstr *qstr, struct eospace *qeosp, int qegrps,
+                      double *m1, double *m2, int aelec, int belec, int intorb,
+                      int nmos, int ndocc, int nactv, int cstep, int *cnums,
+                      int jstart, int jmax, int *jpair, double *cj)
+{
+    /* |i> determinant information */
+    struct det deti;
+    int ip, iq;
+    
+    int numj;
+    int i, j;
 
+    /* BEGIN OMP SECTION */
+#pragma omp parallel \
+    shared(wi,crows) \
+    private(deti,ip,iq)
+    {
+#pragma omp for schedule(runtime)
+        /* Compute <i|H|j> */
+        for (i = 0; i < crows; i++) {
+            ip = wi[i][0];
+            iq = wi[i][1];
+        }
+    }
+    /* END OMP SECTION */
+    return;
+}
+    
 /*
  * compute_hvc_diagonal_ga: compute <i|H|i>*v(i,j)=c(i,j) using global arrays.
  * Subscript 1 is column. Subscript 2 is row.

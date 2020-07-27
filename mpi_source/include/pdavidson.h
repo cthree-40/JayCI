@@ -238,6 +238,16 @@ void compute_hv_newvectorfaster(struct occstr *pstr, struct eospace *peosp, int 
                                 int nmo, int ndocc, int nactv);
 
 /*
+ * compute_hij_eosp: compute hij for an electron-occupation space.
+ */
+void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
+                      struct occstr *pstr, struct eospace *peosp, int pegrps,
+                      struct occstr *qstr, struct eospace *qeosp, int qegrps,
+                      double *m1, double *m2, int aelec, int belec, int intorb,
+                      int nmos, int ndocc, int nactv, int cstep, int *cnums,
+                      int jstart, int jmax, int *jpair, double *cj);
+
+/*
  * compute_hvc_diagonal_ga: compute <i|H|i>*v(i,j)=c(i,j) using global arrays.
  * Subscript 1 is column. Subscript 2 is row.
  */
