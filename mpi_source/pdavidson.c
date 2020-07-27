@@ -1851,8 +1851,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
     buflen = jmax - jstart + 1;
     
     /* Set xlistmax for *xlist arrays */
-    xlistmax = peosp[jpair[0]].nstr;
-    xlistmax = qeosp[jpair[1]].nstr;
+    xlistmax = int_max(peosp[jpair[0]].nstr, qeosp[jpair[1]].nstr);
 
 
     /* BEGIN OMP SECTION */
