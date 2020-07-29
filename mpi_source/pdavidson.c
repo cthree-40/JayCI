@@ -1341,7 +1341,7 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     for (pqstart = 0; pqstart < npq; pqstart++) {
 	if (ipspace == pq[pqstart][0] && iqspace == pq[pqstart][1]) break;
     }
-    
+
     /* Loop over determinants via eosp pairings */
     for (i = pqstart; i < npq; i++) {
         get_eospace_detrange(pq, npq, i, peosp, pegrps, qeosp, qegrps,
@@ -1893,14 +1893,15 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
     
     /* BEGIN OMP SECTION */
 #pragma omp parallel \
-    shared(wi, crows, ccols, jpair, vj, vik,                \
-           ndocc, nactv, vorbs, intorb, aelec, belec, pstr, \
-           peosp, pegrps, qstr, qeosp, qegrps, \
-           buflen, xlistmax)                            \
+    default(none) \
+    shared(wi, crows, ccols, jpair, vj, vik, ci,			\
+           ndocc, nactv, vorbs, intorb, nmos, aelec, belec, pstr,	\
+           peosp, pegrps, qstr, qeosp, qegrps, pq, npq, m1, m2,		\
+           buflen, xlistmax, jstart)		       \
     private(deti, ip, iq, ipspace, iqspace, \
             qxlist, pxlist, xstrscr, elecx, orbsx,        \
             cik, cjk, hijval, jindx, npx, nqx,		  \
-            i, j)
+            i, j, k)
     {
         /* Allocate replacement lists */
         pxlist = malloc(sizeof(struct xstr) * xlistmax);
@@ -1942,7 +1943,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                      ci[k * crows + i] = ci[k * crows] + cik[k];
                 }
             }
-
+	    continue;
             /* Generate single replacements in q' and pair with p' */
             nqx = generate_single_excitations(qstr[iq], qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
