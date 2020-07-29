@@ -285,15 +285,18 @@ void compute_hv_newvectorfaster(struct occstr *pstr, struct eospace *peosp, int 
 
 /*
  * compute_hij_eosp: compute hij for an electron-occupation space.
+ * Uses OpenMP.
+ * Compute only upper triangle.
  */
 void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                       struct occstr *pstr, struct eospace *peosp, int pegrps,
                       struct occstr *qstr, struct eospace *qeosp, int qegrps,
-                      double *m1, double *m2, int aelec, int belec, int intorb,
+                      int **pq, int npq, double *m1, double *m2, int aelec,
+                      int belec, int intorb,
                       int nmos, int ndocc, int nactv, int cstep, int *cnums,
                       int jstart, int jmax, int jstartp, int jstartq,
-                      int jfinalp, int jfinalq, int *jpair, double *vi,
-                      double *vj, double *cj);
+                      int jfinalp, int jfinalq, int *jpair, double *vj,
+                      double *vi, double *cj);
 
 /*
  * compute_hvc_diagonal_ga: compute <i|H|i>*v(i,j)=c(i,j) using global arrays.
@@ -533,6 +536,47 @@ void evaluate_hij_pxlist1x_ut(struct det deti, struct xstr *pxlist, int npx,
                               int *w1d, double *hijval, int w_hndl, int v_hndl,
                               int c_hndl, int cindx, double *vik, double *cjk,
                               int **vx2, int *cnums);
+
+/*
+ * evaluate_hij_pxlist1x_ut2: evaluate hij for single replacements in alpha
+ * strings.
+ * Input:
+ *  deti   = <i| determinant
+ *  pxlist = list of single replacements
+ *  npx    = number of single replacments
+ *  qindx  = index of beta string of |j>
+ *  nqx    = always 1
+ *  pstr   = alpha occupation strings
+ *  peosp  = alpha electron occupation spaces
+ *  npe    = number of alpha electron occupation spaces
+ *  qstr   = beta  occupation strings
+ *  qeosp  = beta  electron occupation spaces
+ *  nqe    = number of beta  electron occupation spaces
+ *  pq     = p,q space pairings
+ *  npq    = number of p,q space pairings
+ *  m1     = 1-e integrals
+ *  m2     = 2-e integrals
+ *  aelec  = alpha electrons
+ *  belec  = beta  electrons
+ *  intorb = internal orbitals
+ *  vrows  = number of rows j
+ *  vcols  = number of columns k
+ *  jstep  = index in wavefunction of first determinant in this buffer j
+ *  cik    = C(i,k)
+ *  vjk    = V(j,k)
+ *  vik    = V(i,k)
+ *  cjk    = C(j,k)
+ *  hijval = <i|H|j> values
+ *  jindx  = array for determinant indices
+ */
+void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
+                               int qindx, int nqx,
+                               struct occstr *pstr, struct eospace *peosp, int npe,
+                               struct occstr *qstr, struct eospace *qeosp, int nqe,
+                               int **pq, int npq, double *m1, double *m2, int aelec,
+                               int belec, int intorb, int vrows, int vcols,
+                               int jstep, double *cik, double *vjk, double *vik,
+                               double *cjk, double *hijval, int *jindx);
 
 /*
  * evaluate_hij_pxlist2x: evaluate hij for double replacements in alpha strings.

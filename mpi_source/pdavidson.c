@@ -335,6 +335,13 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
     print_gavectors2file_dbl_ufmt(v_hndl, ndets, nroots,"civec");
     if (cflag != 2)
         print_gavectors2file_dbl_ufmt(c_hndl, ndets, nroots, "hvvec");
+    /* Deallocate arrays */
+    free(d_local);
+    free(heval);
+    free(vhv_scr);
+    free(hevec_scr);
+    deallocate_mem_cont(&vhv, vhv_data);
+    deallocate_mem_cont(&hevec, hevec_data);
     return error;
 }
 
@@ -1283,7 +1290,7 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     /* GA V(j) buffer and indices */
     double *vjdata = NULL;
     int vj_lo[2] = {0, 0}, vj_hi[2] = {0, 0}, vj_ld[1] = {0};
-
+    
     /* GA C(j) buffer */
     double *cjdata = NULL;
     /* GA V(i) buffer */
@@ -1294,6 +1301,7 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     int jstartdet = 0, jfinaldet = 0;
     int jstartp = 0, jstartq = 0, jfinalp = 0, jfinalq = 0;
     int jmax = 0;
+    int maxbuf = 0;
     int *wjscr = 0;
     int w_lo[2] = {0, 0}, w_hi[2] = {0, 0}, w_ld[1] = {0};
 
@@ -1301,8 +1309,16 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     int pqstart = 0;
     
     double alpha[1] = {1.0};
-    
     int i, j;
+
+    /* Reset buflen to be the largest possible necessary */
+    buflen = -1; /* Force this */
+    if (buflen <= 0) {
+        for (i = 0; i < npq; i++) {
+            maxbuf = peosp[pq[i][0]].nstr * qeosp[pq[i][1]].nstr;
+            if (maxbuf > buflen) buflen = maxbuf;
+        }
+    }
 
     /* Allocate buffers */
     vjdata = malloc(sizeof(double) * buflen * ccols);
@@ -1353,7 +1369,8 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
             jfinalq = wjscr[1];
             
             compute_hij_eosp(c1d, ccols, crows, wi, pstr, peosp, pegrps,
-                             qstr, qeosp, qegrps, m1, m2, aelec, belec,
+                             qstr, qeosp, qegrps, pq, npq, m1, m2, aelec,
+                             belec,
                              intorb, nmos, ndocc, nactv, cstep, colnums,
                              jstartdet, jmax, jstartp, jstartq, jfinalp,
                              jfinalq, pq[i], vjdata, vidata, cjdata);
@@ -1361,6 +1378,11 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
             NGA_Acc(c_hndl, vj_lo, vj_hi, cjdata, vj_ld, alpha);
         }
     }
+    /* Deallocate buffers */
+    free(wjscr);
+    free(vjdata);
+    free(cjdata);
+    free(vidata);
     return;
 }
 
@@ -1817,29 +1839,36 @@ void compute_hv_newvectorfaster(struct occstr *pstr, struct eospace *peosp, int 
 void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                       struct occstr *pstr, struct eospace *peosp, int pegrps,
                       struct occstr *qstr, struct eospace *qeosp, int qegrps,
-                      double *m1, double *m2, int aelec, int belec, int intorb,
+                      int **pq, int npq, double *m1, double *m2, int aelec,
+                      int belec, int intorb,
                       int nmos, int ndocc, int nactv, int cstep, int *cnums,
                       int jstart, int jmax, int jstartp, int jstartq,
-                      int jfinalp, int jfinalq, int *jpair, double *vi,
-                      double *vj, double *cj)
+                      int jfinalp, int jfinalq, int *jpair, double *vj,
+                      double *vi, double *cj)
 {
     /* |i> determinant information */
     struct det deti;
     int ip = 0, iq = 0;
     int ipspace = 0, iqspace = 0;
 
+    /* |j> determinant information */
+    int *jindx = NULL;
+    
     /* replacement information and lists */
     int xlistmax = 0;
     int npx = 0, nqx = 0;
     struct xstr *pxlist, *qxlist, *xstrscr;
-
+    
     /* Replacement generation variables */
     int vorbs = 0;
     int *elecx = NULL, *orbsx = NULL;
 
     /* c(i,k) array */
     double *cik = NULL;
-
+    /* c(j,k) array */
+    double *cjk = NULL;
+    /* v(i,k) array */
+    double *vik = NULL;
     /* h(i,j) values */
     double *hijval = NULL;
 
@@ -1852,17 +1881,25 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
     
     /* Set xlistmax for *xlist arrays */
     xlistmax = int_max(peosp[jpair[0]].nstr, qeosp[jpair[1]].nstr);
-
-
+    
+    /* Set vik. All threads will share this, but each uses one row (i) */
+    vik = malloc(sizeof(double) * ccols * crows);
+    for (i = 0; i < crows; i++) {
+        for (k = 0; k < ccols; k++) {
+            /* vik[i][k] = vi[k][i] */
+            vik[i * ccols + k] = vi[k * crows + i];
+        }
+    }
+    
     /* BEGIN OMP SECTION */
 #pragma omp parallel \
-    shared(wi,crows,ccols,jpair,                      \
-           ndocc,nactv,vorbs,intorb,aelec,belec,pstr, \
-           peosp,pegrps,qstr,qeosp,qegrps, \
-           buflen)                         \
-    private(deti,ip,iq,ipspace,iqspace, \
-            qxlist,pxlist,xstrscr, elecx, orbsx,        \
-            cik, hijval,                                \
+    shared(wi, crows, ccols, jpair, vj, vik,                \
+           ndocc, nactv, vorbs, intorb, aelec, belec, pstr, \
+           peosp, pegrps, qstr, qeosp, qegrps, \
+           buflen, xlistmax)                            \
+    private(deti, ip, iq, ipspace, iqspace, \
+            qxlist, pxlist, xstrscr, elecx, orbsx,        \
+            cik, cjk, hijval, jindx,               \
             i, j)
     {
         /* Allocate replacement lists */
@@ -1872,6 +1909,8 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
         elecx  = malloc(sizeof(int) * int_max(aelec, belec));
         orbsx  = malloc(sizeof(int) * nmos);
         cik    = malloc(sizeof(double) * ccols);
+        cjk    = malloc(sizeof(double) * ccols * buflen);
+        jindx  = malloc(sizeof(int) * xlistmax * xlistmax);
         hijval = malloc(sizeof(double) * buflen);
         
 #pragma omp for schedule(runtime)
@@ -1894,7 +1933,14 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             
             /* Evaluate <pq|H|p'q> */
             if (iqspace == jpair[1] && npx != 0) {
-		
+                evaluate_hij_pxlist1x_ut2(deti, pxlist, npx, iq, 1, pstr, peosp,
+                                          pegrps, qstr, qeosp, qegrps, pq, npq,
+                                          m1, m2, aelec, belec, intorb, buflen,
+                                          ccols, jstart, cik, vj, &(vik[i*ccols]),
+                                          cjk, hijval, jindx);
+                for (k = 0; k < ccols; k++) {
+                     ci[k * crows + i] = ci[k * crows] + cik[k];
+                }
             }
 
             /* Generate single replacements in q' and pair with p' */
@@ -1932,17 +1978,18 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             }
 
             /* Generate double replacements in q for the pq-pair jpair */
-            nqx = generate_double_excitations(qstr[ip], qeosp[jpair[0]], belec,
+            nqx = generate_double_excitations(qstr[iq], qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx);
             /* upper triangle only */
-            remove_leq_xstr(ip, pxlist, &npx, xstrscr);
+            remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
 
             /* Evaluate <pq|H|pq"> */
             if (ipspace == jpair[0]) {
             }
             
         }
+        /* Deallocate private OMP arrays */
         free(pxlist);
         free(qxlist);
         free(xstrscr);
@@ -1953,6 +2000,8 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
         
     }
     /* END OMP SECTION */
+    /* Deallocate arrays shared by OMP */
+    free(vik);
     return;
 }
     
@@ -2701,7 +2750,73 @@ void evaluate_hij_pxlist1x_ut(struct det deti, struct xstr *pxlist, int npx,
     return;
 }
 
-
+/*
+ * evaluate_hij_pxlist1x_ut2: evaluate hij for single replacements in alpha
+ * strings.
+ * Input:
+ *  deti   = <i| determinant
+ *  pxlist = list of single replacements
+ *  npx    = number of single replacments
+ *  qindx  = index of beta string of |j>
+ *  nqx    = always 1
+ *  pstr   = alpha occupation strings
+ *  peosp  = alpha electron occupation spaces
+ *  npe    = number of alpha electron occupation spaces
+ *  qstr   = beta  occupation strings
+ *  qeosp  = beta  electron occupation spaces
+ *  nqe    = number of beta  electron occupation spaces
+ *  pq     = p,q space pairings
+ *  npq    = number of p,q space pairings
+ *  m1     = 1-e integrals
+ *  m2     = 2-e integrals
+ *  aelec  = alpha electrons
+ *  belec  = beta  electrons
+ *  intorb = internal orbitals
+ *  vrows  = number of rows j
+ *  vcols  = number of columns k
+ *  jstep  = index in wavefunction of first determinant in this buffer j
+ *  cik    = C(i,k)
+ *  vjk    = V(j,k)
+ *  vik    = V(i,k)
+ *  cjk    = C(j,k)
+ *  hijval = <i|H|j> values
+ *  jindx  = array for determinant indices
+ */
+void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
+                               int qindx, int nqx,
+                               struct occstr *pstr, struct eospace *peosp, int npe,
+                               struct occstr *qstr, struct eospace *qeosp, int nqe,
+                               int **pq, int npq, double *m1, double *m2, int aelec,
+                               int belec, int intorb, int vrows, int vcols,
+                               int jstep, double *cik, double *vjk, double *vik,
+                               double *cjk, double *hijval, int *jindx)
+{
+    int j = 0, k = 0;
+    int r = 0;
+    /* Check if number of q strings is correct */
+    if (nqx != 1) return;
+    init_dbl_array_0(cik, vcols);
+    for (r = 0; r < npx; r++) {
+        jindx[r] = string_info_to_determinant(pxlist[r].index, qindx, peosp,
+                                              npe, qeosp, nqe, pq, npq);
+        /* Adjust index to our buffer arrays */
+        jindx[r] = jindx[r] - jstep;
+    }
+    /* Evaluate <i|H|j> for j = 0, ... , njx */
+    for (j = 0; j < npx; j++) {
+        hijval[jindx[j]] = hmatels_1x(deti.astr, pxlist[j].io, pxlist[j].fo,
+                                      pxlist[j].permx, aelec, deti.bstr, belec,
+                                      m1, m2);
+    }
+    for (k = 0; k < vcols; k++) {
+        for (j = 0; j < npx; j++) {
+            cik[k] = cik[k] + hijval[j]*vjk[k * vrows + j];
+            cjk[k * vrows + j] = cjk[k * vrows + j] + hijval[j]*vik[k];
+        }
+    }
+    return;
+}
+    
 /*
  * evaluate_hij_pxlist2x: evaluate hij for double replacements in alpha strings.
  */

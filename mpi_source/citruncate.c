@@ -3557,16 +3557,20 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
         int *virt = NULL, *virtscr = NULL;
         int max_space_size = 20;
         int i;
-        docc = (int *) malloc(sizeof(int) * max_space_size);
-        doccscr = (int *) malloc(sizeof(int) * max_space_size);
+        //docc = (int *) malloc(sizeof(int) * max_space_size);
+        //doccscr = (int *) malloc(sizeof(int) * max_space_size);
+        docc =  malloc(sizeof(int) * max_space_size);
+        doccscr =  malloc(sizeof(int) * max_space_size);
         init_int_array_0(docc, max_space_size);
         init_int_array_0(doccscr, max_space_size);
-        actv = (int *) malloc(sizeof(int) * max_space_size);
-        actvscr = (int *) malloc(sizeof(int) * max_space_size);
+        //actv = (int *) malloc(sizeof(int) * max_space_size);
+        //actvscr = (int *) malloc(sizeof(int) * max_space_size);
+        actv =  malloc(sizeof(int) * max_space_size);
+        actvscr =  malloc(sizeof(int) * max_space_size);
         init_int_array_0(actv, max_space_size);
         init_int_array_0(actvscr, max_space_size);
-        virt = (int *) malloc(sizeof(int) * max_space_size);
-        virtscr = (int *) malloc(sizeof(int) * max_space_size);
+        virt =  malloc(sizeof(int) * max_space_size);
+        virtscr = malloc(sizeof(int) * max_space_size);
         init_int_array_0(virt, max_space_size);
         init_int_array_0(virtscr, max_space_size);
 
@@ -3579,6 +3583,12 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
                                   docc, actv, virt, doccscr, actvscr, virtscr);
                 eosp[i].nstr = count - eosp[i].nstr;
         }
+        free(actv);
+        free(actvscr);
+        free(virt);
+        free(virtscr);
+        free(docc);
+        free(doccscr);
         return;
 }
 
