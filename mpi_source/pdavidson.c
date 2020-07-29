@@ -1899,7 +1899,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
            buflen, xlistmax)                            \
     private(deti, ip, iq, ipspace, iqspace, \
             qxlist, pxlist, xstrscr, elecx, orbsx,        \
-            cik, cjk, hijval, jindx,               \
+            cik, cjk, hijval, jindx, npx, nqx,		  \
             i, j)
     {
         /* Allocate replacement lists */
@@ -1932,7 +1932,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
             
             /* Evaluate <pq|H|p'q> */
-            if (iqspace == jpair[1] && npx != 0) {
+	    if ((iqspace == jpair[1]) && (npx != 0)) {
                 evaluate_hij_pxlist1x_ut2(deti, pxlist, npx, iq, 1, pstr, peosp,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
@@ -4070,22 +4070,10 @@ void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps
     c_ld[0] = c_rows;
     /* Allocate local array and get C data */
     cdata = allocate_mem_double_cont(&c_local, c_rows, c_cols);
-    if (cdata == NULL) {
-	printf(" cdata could not be allocated!");
-	fflush(stdout);
-	GA_Sync();
-	return;
-    }
     NGA_Get(c_hndl, c_lo, c_hi, cdata, c_ld);
     
     /* Allocate local Wi array and get W data */
     widata = allocate_mem_int_cont(&wi, 3, c_rows);
-    if (widata == NULL) {
-	printf("Can not allocate widata!\n");
-	fflush(stdout);
-	GA_Sync();
-	return;
-    }
     wi_lo[0] = c_lo[1];
     wi_lo[1] = 0;
     wi_hi[0] = c_hi[1];
