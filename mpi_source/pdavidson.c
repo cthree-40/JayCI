@@ -1935,7 +1935,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
             
             /* Evaluate <pq|H|p'q> */
-	    if ((iqspace == jpair[1]) && (npx != 0)) {
+	    if (iqspace == jpair[1] && npx != 0) {
                 evaluate_hij_pxlist1x_ut2(deti, pxlist, npx, iq, 1, pstr, peosp,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
@@ -1972,7 +1972,14 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             
             /* Evaluate <pq|H|p"q> */
             if (iqspace == jpair[1] && npx != 0) {
-
+                evaluate_hij_pxlist2x_ut2(deti, pxlist, npx, iq, 1, pstr, peosp,
+                                          pegrps, qstr, qeosp, qegrps, pq, npq,
+                                          m1, m2, aelec, belec, intorb, buflen,
+                                          ccols, jstart, cik, vj, &(vik[i*ccols]),
+                                          cjk, hijval, jindx);
+                for (k = 0; k < ccols; k++) {
+                    ci[k * crows + i] = ci[k * crows] + cik[k];
+                }
             }
 
             /* Generate single replacements in q for the pq-pair jpair */
@@ -1985,7 +1992,14 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             
             /* Evaluate <pq|H|pq'> */
             if (ipspace == jpair[0] && nqx != 0) {
-                
+                evaluate_hij_qxlist1x_ut2(deti, ip, 1, qxlist, nqx, pstr, peosp,
+                                          pegrps, qstr, qeosp, qegrps, pq, npq,
+                                          m1, m2, aelec, belec, intorb, buflen,
+                                          ccols, jstart, cik, vj, &(vik[i*ccols]),
+                                          cjk, hijval, jindx);
+                for (k = 0; k < ccols; k++) {
+                    ci[k * crows + i] = ci[k * crows] + cik[k];
+                }
             }
 
             /* Generate double replacements in q for the pq-pair jpair */
@@ -1996,7 +2010,15 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
 
             /* Evaluate <pq|H|pq"> */
-            if (ipspace == jpair[0]) {
+            if (ipspace == jpair[0] && nqx != 0) {
+                evaluate_hij_qxlist2x_ut2(deti, ip, 1, qxlist, nqx, pstr, peosp,
+                                          pegrps, qstr, qeosp, qegrps, pq, npq,
+                                          m1, m2, aelec, belec, intorb, buflen,
+                                          ccols, jstart, cik, vj, &(vik[i*ccols]),
+                                          cjk, hijval, jindx);
+                for (k = 0; k < ccols; k++) {
+                    ci[k * crows + i] = ci[k * crows] + cik[k];
+                }
             }
             
         }
@@ -2968,6 +2990,44 @@ void evaluate_hij_pxlist2x_ut(struct det deti, struct xstr *pxlist, int npx,
     return;
 }
 
+/*
+ * evaluate_hij_pxlist2x_ut2: evaluate hij for double replacements in alpha
+ * strings. Only upper triangle is computed.
+ */
+void evaluate_hij_pxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
+                               int qindx, int nqx,
+                               struct occstr *pstr, struct eospace *peosp, int npe,
+                               struct occstr *qstr, struct eospace *qeosp, int nqe,
+                               int **pq, int npq, double *m1, double *m2, int aelec,
+                               int belec, int intorb, int vrows, int vcols,
+                               int jstep, double *cik, double *vjk, double *vik,
+                               double *cjk, double *hijval, int *jindx)
+{
+    int j = 0, k = 0;
+    int r = 0;
+    /* Check if number of q strings is correct */
+    if (nqx != 1) return;
+    init_dbl_array_0(cik, vcols);
+    for (r = 0; r < npx; r++) {
+        jindx[r] = string_info_to_determinant(pxlist[r].index, qindx, peosp,
+                                              npe, qeosp, nqe, pq, npq);
+        /* Adjust index to our buffer arrays */
+        jindx[r] = jindx[r] - jstep;
+    }
+    /* Evaluate <i|H|j> for j = 0, ... , njx */
+    for (j = 0; j < npx; j++) {
+        hijval[jindx[j]] = hmatels_2xaa(pxlist[j].io, pxlist[j].fo,
+                                        pxlist[j].permx,m2);
+    }
+    for (k = 0; k < vcols; k++) {
+        for (j = 0; j < npx; j++) {
+            cik[k] = cik[k] + hijval[jindx[j]]*vjk[k * vrows + jindx[j]];
+            cjk[k * vrows + jindx[j]] = cjk[k * vrows + jindx[j]]
+                + hijval[jindx[j]]*vik[k];
+        }
+    }
+    return;
+}
 
 /*
  * evaluate_hij_pxqxlist2x: evaluate hij for single replacements in alpha
@@ -3313,6 +3373,74 @@ void evaluate_hij_qxlist1x_ut(struct det deti, int pindx, int npx,
     return;
 }
 
+/*
+ * evaluate_hij_qxlist1x_ut2: evaluate hij for single replacements in beta
+ * strings.
+ * Input:
+ *  deti   = <i| determinant
+ *  pxlist = list of single replacements
+ *  npx    = number of single replacments
+ *  qindx  = index of beta string of |j>
+ *  nqx    = always 1
+ *  pstr   = alpha occupation strings
+ *  peosp  = alpha electron occupation spaces
+ *  npe    = number of alpha electron occupation spaces
+ *  qstr   = beta  occupation strings
+ *  qeosp  = beta  electron occupation spaces
+ *  nqe    = number of beta  electron occupation spaces
+ *  pq     = p,q space pairings
+ *  npq    = number of p,q space pairings
+ *  m1     = 1-e integrals
+ *  m2     = 2-e integrals
+ *  aelec  = alpha electrons
+ *  belec  = beta  electrons
+ *  intorb = internal orbitals
+ *  vrows  = number of rows j
+ *  vcols  = number of columns k
+ *  jstep  = index in wavefunction of first determinant in this buffer j
+ *  cik    = C(i,k)
+ *  vjk    = V(j,k)
+ *  vik    = V(i,k)
+ *  cjk    = C(j,k)
+ *  hijval = <i|H|j> values
+ *  jindx  = array for determinant indices
+ */
+void evaluate_hij_qxlist1x_ut2(struct det deti, int pindx, int npx,
+                               struct xstr *qxlist, int nqx,
+                               struct occstr *pstr, struct eospace *peosp, int npe,
+                               struct occstr *qstr, struct eospace *qeosp, int nqe,
+                               int **pq, int npq, double *m1, double *m2, int aelec,
+                               int belec, int intorb, int vrows, int vcols,
+                               int jstep, double *cik, double *vjk, double *vik,
+                               double *cjk, double *hijval, int *jindx)
+{
+    int j = 0, k = 0;
+    int s = 0;
+    /* Check if number of q strings is correct */
+    if (npx != 1) return;
+    init_dbl_array_0(cik, vcols);
+    for (s = 0; s < nqx; s++) {
+        jindx[s] = string_info_to_determinant(pindx, qxlist[s].index, peosp,
+                                              npe, qeosp, nqe, pq, npq);
+        /* Adjust index to our buffer arrays */
+        jindx[s] = jindx[s] - jstep;
+    }
+    /* Evaluate <i|H|j> for j = 0, ... , njx */
+    for (j = 0; j < nqx; j++) {
+        hijval[jindx[j]] = hmatels_1x(deti.bstr, qxlist[j].io, qxlist[j].fo,
+                                      qxlist[j].permx, belec, deti.astr, aelec,
+                                      m1, m2);
+    }
+    for (k = 0; k < vcols; k++) {
+        for (j = 0; j < nqx; j++) {
+            cik[k] = cik[k] + hijval[jindx[j]]*vjk[k * vrows + jindx[j]];
+            cjk[k * vrows + jindx[j]] = cjk[k * vrows + jindx[j]]
+                + hijval[jindx[j]]*vik[k];
+        }
+    }
+    return;
+}
+
 
 /*
  * evaluate_hij_qxlist2x: evaluate hij for double replacements in beta strings.
@@ -3451,6 +3579,46 @@ void evaluate_hij_qxlist2x_ut(struct det deti, int pindx, int npx,
     
     return;
 }
+
+/*
+ * evaluate_hij_qxlist2x_ut2: evaluate hij for double replacements in alpha
+ * strings. Only upper triangle is computed.
+ */
+void evaluate_hij_qxlist2x_ut2(struct det deti, int pindx, int npx,
+                               struct xstr *qxlist, int nqx,
+                               struct occstr *pstr, struct eospace *peosp, int npe,
+                               struct occstr *qstr, struct eospace *qeosp, int nqe,
+                               int **pq, int npq, double *m1, double *m2, int aelec,
+                               int belec, int intorb, int vrows, int vcols,
+                               int jstep, double *cik, double *vjk, double *vik,
+                               double *cjk, double *hijval, int *jindx)
+{
+    int j = 0, k = 0;
+    int s = 0;
+    /* Check if number of q strings is correct */
+    if (npx != 1) return;
+    init_dbl_array_0(cik, vcols);
+    for (s = 0; s < nqx; s++) {
+        jindx[s] = string_info_to_determinant(pindx, qxlist[s].index, peosp,
+                                              npe, qeosp, nqe, pq, npq);
+        /* Adjust index to our buffer arrays */
+        jindx[s] = jindx[s] - jstep;
+    }
+    /* Evaluate <i|H|j> for j = 0, ... , njx */
+    for (j = 0; j < nqx; j++) {
+        hijval[jindx[j]] = hmatels_2xaa(qxlist[j].io, qxlist[j].fo,
+                                        qxlist[j].permx,m2);
+    }
+    for (k = 0; k < vcols; k++) {
+        for (j = 0; j < nqx; j++) {
+            cik[k] = cik[k] + hijval[jindx[j]]*vjk[k * vrows + jindx[j]];
+            cjk[k * vrows + jindx[j]] = cjk[k * vrows + jindx[j]]
+                + hijval[jindx[j]]*vik[k];
+        }
+    }
+    return;
+}
+
 
 /*
  * generate_det_triples: generate list of triplets for each determinant:
