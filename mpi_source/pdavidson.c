@@ -1914,6 +1914,8 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
         jindx  = malloc(sizeof(int) * xlistmax * xlistmax);
         hijval = malloc(sizeof(double) * buflen);
         
+        init_dbl_array_0(cjk, (ccols * buflen));
+
 #pragma omp for schedule(runtime)
         /* Compute <i|H|j> */
         for (i = 0; i < crows; i++) {
@@ -1943,14 +1945,22 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                      ci[k * crows + i] = ci[k * crows] + cik[k];
                 }
             }
-	    continue;
+
             /* Generate single replacements in q' and pair with p' */
             nqx = generate_single_excitations(qstr[iq], qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx);
             /* Evaluate <pq|H|p'q'> */
             if (npx != 0 && nqx != 0) {
-
+                evaluate_hij_pxqxlist2x_ut2(deti, pxlist, npx, qxlist, nqx,
+                                            pstr, peosp, pegrps, qstr, qeosp,
+                                            qegrps, pq, npq, m1, m2, aelec,
+                                            belec, intorb, buflen, ccols, jstart,
+                                            cik, vj, &(vik[i*ccols]), cjk,
+                                            hijval, jindx);
+                for (k = 0; k < ccols; k++) {
+                    ci[k * crows + i] = ci[k * crows] + cik[k];
+                }
             }
 
             /* Generate double replacements in p for the pq-pair jpair */
@@ -2811,8 +2821,9 @@ void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
     }
     for (k = 0; k < vcols; k++) {
         for (j = 0; j < npx; j++) {
-            cik[k] = cik[k] + hijval[j]*vjk[k * vrows + j];
-            cjk[k * vrows + j] = cjk[k * vrows + j] + hijval[j]*vik[k];
+            cik[k] = cik[k] + hijval[jindx[j]]*vjk[k * vrows + jindx[j]];
+            cjk[k * vrows + jindx[j]] = cjk[k * vrows + jindx[j]]
+                + hijval[jindx[j]]*vik[k];
         }
     }
     return;
@@ -3113,6 +3124,55 @@ void evaluate_hij_pxqxlist2x_ut(struct det deti, struct xstr *pxlist, int npx,
     
     return;
 }
+
+/*
+ * evaluate_hij_pxqxlist2x_ut2: evaluate hij for single replacements in alpha
+ * and beta strings. Upper triangle only.
+ */
+void evaluate_hij_pxqxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
+                                 struct xstr *qxlist, int nqx,
+                                 struct occstr *pstr, struct eospace *peosp, int npe,
+                                 struct occstr *qstr, struct eospace *qeosp, int nqe,
+                                 int **pq, int npq, double *m1, double *m2, int aelec,
+                                 int belec, int intorb, int vrows, int vcols,
+                                 int jstep, double *cik, double *vjk, double *vik,
+                                 double *cjk, double *hijval, int *jindx)
+{
+    int j = 0, k = 0;
+    int r = 0, s = 0;
+    int njx = 0;
+    init_dbl_array_0(cik, vcols);
+    /* Loop over r and s combinations */
+    for (r = 0; r < npx; r++) {
+        for (s = 0; s < nqx; s++) {
+            jindx[njx] = string_info_to_determinant(pxlist[r].index,
+                                                    qxlist[s].index,
+                                                    peosp, npe, qeosp,
+                                                    nqe, pq, npq);
+            jindx[njx] = jindx[njx] - jstep;
+            njx++;
+        }
+    }
+    k = 0;
+    for (r = 0; r < npx; r++) {
+        for (s = 0; s < nqx; s++) {
+            hijval[jindx[k]] = hmatels_2xab(pxlist[r].io, pxlist[r].fo,
+                                            pxlist[r].permx,
+                                            qxlist[s].io, qxlist[s].fo,
+                                            qxlist[s].permx, m2);
+            k++;
+        }
+    }
+    for (k = 0; k < vcols; k++) {
+        for (j = 0; j < njx; j++) {
+            cik[k] = cik[k] + hijval[jindx[j]]*vjk[k * vrows + jindx[j]];
+            cjk[k * vrows + jindx[j]] = cjk[k * vrows + jindx[j]]
+                + hijval[jindx[j]]*vik[k];
+        }
+    }
+    return;
+}
+
 
 /*
  * evaluate_hij_jindx: evaluate hij for single replacements in alpha strings.

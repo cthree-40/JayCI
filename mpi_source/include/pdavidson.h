@@ -638,6 +638,18 @@ void evaluate_hij_pxqxlist2x_ut(struct det deti, struct xstr *pxlist, int npx,
                                 int **vx2, int *cnums);
 
 /*
+ * evaluate_hij_pxqxlist2x_ut2: evaluate hij for single replacements in alpha
+ * and beta strings. Upper triangle only.
+ */
+void evaluate_hij_pxqxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
+                                 struct xstr *qxlist, int nqx,
+                                 struct occstr *pstr, struct eospace *peosp, int npe,
+                                 struct occstr *qstr, struct eospace *qeosp, int nqe,
+                                 int **pq, int npq, double *m1, double *m2, int aelec,
+                                 int belec, int intorb, int vrows, int vcols,
+                                 int jstep, double *cik, double *vjk, double *vik,
+                                 double *cjk, double *hijval, int *jindx);
+/*
  * evaluate_hij_qxlist1x: evaluate hij for single replacements in alpha strings.
  */
 void evaluate_hij_qxlist1x(struct det deti, int pindx, int npx,
