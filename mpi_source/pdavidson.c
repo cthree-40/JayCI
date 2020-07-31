@@ -243,7 +243,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         GA_Print_file(fptr2, c_hndl);
         fclose(fptr2);
 #endif
-        return 0;
+        //return 0;
         make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
         print_subspacehmat(vhv, ckdim);
         error = diag_subspacehmat(vhv, hevec, heval, ckdim, krymax,
