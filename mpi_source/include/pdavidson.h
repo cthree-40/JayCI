@@ -987,6 +987,14 @@ void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps
                           int d_hndl, int c_hndl, int w_hndl, int ga_buffer_len,
                           int nmo, int ndocc, int nactv);
 
+void perform_hvispacefast_debug(struct occstr *pstr, struct eospace *peosp, int pegrps,
+                          struct occstr *qstr, struct eospace *qeosp, int qegrps,
+                          int **pqs, int num_pq, double *m1, double *m2,
+                          int aelec, int belec, int intorb, int ndets,
+                          double core_e, int dim, int mdim, int v_hndl,
+                          int d_hndl, int c_hndl, int w_hndl, int ga_buffer_len,
+                                int nmo, int ndocc, int nactv);
+
 /*
  * print_iter_info: print iteration information.
  */

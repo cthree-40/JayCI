@@ -196,11 +196,12 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
     while (citer < maxiter && croot <= nroots) {
 #ifdef DEBUGGING
         GA_Zero(v_hndl);
-        srand(100001);
+        srand(100);
         double alpha = 1.0;
         int lo[2], hi[2];
         for (int z = 0; z <= ckdim; z++) {
             lo[0] = z; hi[0] = z;
+            //lo[1] = hi[1] = z;
             lo[1] = hi[1] = rand() % 2600;
             printf(" [%d, %d], [%d, %d]\n", lo[0], lo[1], hi[0], hi[1]);
             GA_Add_constant_patch(v_hndl, lo, hi, &alpha);
@@ -209,11 +210,18 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         fptr0 = fopen("v.vectors","w");
         GA_Print_file(fptr0, v_hndl);
         fclose(fptr0);
-        perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
+        //perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
+        //                     qeospace, qegrps, pq_space_pairs, num_pq,
+        //                     moints1, moints2, aelec, belec, intorb,
+        //                     ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
+        //                     c_hndl, w_hndl, ga_buffer_len);
+        perform_hvispacefast_debug(pstrings, peospace, pegrps, qstrings,
                              qeospace, qegrps, pq_space_pairs, num_pq,
                              moints1, moints2, aelec, belec, intorb,
                              ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
-                             c_hndl, w_hndl, ga_buffer_len);
+                             c_hndl, w_hndl, ga_buffer_len, totalmo,
+                             ndocc, nactv);
+	
         FILE *fptr1;
         fptr1 = fopen("c.old", "w");
         GA_Print_file(fptr1, c_hndl);
@@ -228,14 +236,14 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                              ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
                              c_hndl, w_hndl, ga_buffer_len, totalmo,
                              ndocc, nactv);
-	return 0;    
+	//return 0;    
 #ifdef DEBUGGING
         FILE *fptr2;
         fptr2 = fopen("c.new", "w");
         GA_Print_file(fptr2, c_hndl);
         fclose(fptr2);
 #endif
-
+        return 0;
         make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
         print_subspacehmat(vhv, ckdim);
         error = diag_subspacehmat(vhv, hevec, heval, ckdim, krymax,
@@ -298,7 +306,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
             compute_hv_newvectorfaster(pstrings, peospace, pegrps, qstrings,
                                        qeospace, qegrps, pq_space_pairs, num_pq,
                                        moints1, moints2, aelec, belec, intorb,
-                             ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
+                                       ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
                                        c_hndl, w_hndl, ga_buffer_len, totalmo,
                                        ndocc, nactv);
             //compute_hv_newvector(v_hndl, c_hndl, ckdim, pstrings,
@@ -1088,8 +1096,8 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
         ip = wi[i][0];
         iq = wi[i][1];
 #ifdef DEBUGGING
-        if (i == 1351 || i == 1447) {
-            printf("|%3d> = |%5d,%5d>\n", i, ip, iq);
+        if ((i + cstep) == (1643 - 1) || (i + cstep) == (1118 - 1)) {
+            printf("|%3d> = |%5d,%5d>\n", (i + cstep), ip, iq);
             printf("  Alpha string: ");
             print_occstring(pstr[ip], aelec, ndocc, nactv);
             printf("   Beta string: ");
@@ -1113,7 +1121,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
                                               vorbs, pxlist, elecx, orbsx);
             /* Upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
-
+            
             if ((peosp[j].docc + qeosp[iqspace].docc) >= doccmin &&
                 (peosp[j].virt + qeosp[iqspace].virt) <= virtmax) {
                 /* p'q is valid determinant */
@@ -1311,7 +1319,7 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     double alpha[1] = {1.0};
     int i, j;
 
-    /* Reset buflen to be the largest possible necessary */
+    /* Reset buflen to be the largest necessary */
     buflen = -1; /* Force this */
     if (buflen <= 0) {
         for (i = 0; i < npq; i++) {
@@ -1323,37 +1331,38 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     /* Allocate buffers */
     vjdata = malloc(sizeof(double) * buflen * ccols);
     cjdata = malloc(sizeof(double) * buflen * ccols);
-    vj_ld[0] = buflen;
     vidata = malloc(sizeof(double) * crows * ccols);
-    vi_ld[0] = crows;
     wjscr = malloc(sizeof(int) * 3);
 
     /* Get V(i,k) buffers */
-    vi_lo[0] = 0;
-    vi_hi[0] = ccols - 1;
+    vi_lo[0] = colnums[0];
+    vi_hi[0] = colnums[ccols - 1];
     vi_lo[1] = cstep;
     vi_hi[1] = cmax;
+    vi_ld[0] = crows;
     NGA_Get(v_hndl, vi_lo, vi_hi, vidata, vi_ld);
 
     /* Get pq pairing of first determinant i */
     ipspace = get_string_eospace(pstr[wi[0][0]], ndocc, nactv, peosp, pegrps);
     iqspace = get_string_eospace(qstr[wi[0][1]], ndocc, nactv, qeosp, qegrps);
     for (pqstart = 0; pqstart < npq; pqstart++) {
-	if (ipspace == pq[pqstart][0] && iqspace == pq[pqstart][1]) break;
+        /* Find first instance of ip's eosp space */
+	if (ipspace == pq[pqstart][0]) break;
     }
-
     /* Loop over determinants via eosp pairings */
     for (i = pqstart; i < npq; i++) {
         get_eospace_detrange(pq, npq, i, peosp, pegrps, qeosp, qegrps,
                              &jstartdet, &jfinaldet);
-        for (j = jstartdet; j < jfinaldet; j += buflen) {
-            jmax = int_min((j + buflen - 1), (jfinaldet - 1));
-            vj_lo[0] = 0;
+        for (j = jstartdet; j <= jfinaldet; j += buflen) {
+            init_dbl_array_0(cjdata, (buflen * ccols));
+            jmax = int_min((j + buflen - 1), jfinaldet);
+            vj_lo[0] = colnums[0];
             vj_lo[1] = j;
-            vj_hi[0] = ccols - 1;
+            vj_hi[0] = colnums[ccols - 1];
             vj_hi[1] = jmax;
+            vj_ld[0] = jmax - j + 1;
             NGA_Get(v_hndl, vj_lo, vj_hi, vjdata, vj_ld);
-
+            
             w_lo[0] = j;
             w_lo[1] = 0;
             w_hi[0] = j;
@@ -1376,6 +1385,7 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
                              jfinalq, pq[i], vjdata, vidata, cjdata);
             
             NGA_Acc(c_hndl, vj_lo, vj_hi, cjdata, vj_ld, alpha);
+
         }
     }
     /* Deallocate buffers */
@@ -1818,10 +1828,14 @@ void compute_hv_newvectorfaster(struct occstr *pstr, struct eospace *peosp, int 
     if (mpi_proc_rank == mpi_root) timestamp();
     cindx[0] = ckdim - 1;
     compute_hvc_diagonal_ga(c_hndl, v_hndl, d_hndl, c_lo[0], c_lo[0], ndets);
-    compute_cblock_Hfaster(c_local, c_cols, c_rows, wi, w_hndl, v_hndl, d_hndl,
-                           ga_buffer_len, pstr, peosp, pegrps, qstr, qeosp, qegrps,
-                           pqs, num_pq, m1, m2, aelec, belec, intorb, ndets,
-                           nmo, ndocc, nactv, c_hndl, c_lo[1], cindx);
+    compute_cblock_Hfastest(c_local, c_cols, c_rows, wi, w_hndl, v_hndl, d_hndl,
+                            ga_buffer_len, pstr, peosp, pegrps, qstr, qeosp, qegrps,
+                            pqs, num_pq, m1, m2, aelec, belec, intorb, ndets,
+                            nmo, ndocc, nactv, c_hndl, c_lo[1], c_hi[1], cindx);
+//    compute_cblock_Hfaster(c_local, c_cols, c_rows, wi, w_hndl, v_hndl, d_hndl,
+//                           ga_buffer_len, pstr, peosp, pegrps, qstr, qeosp, qegrps,
+//                           pqs, num_pq, m1, m2, aelec, belec, intorb, ndets,
+//                           nmo, ndocc, nactv, c_hndl, c_lo[1], cindx);
     NGA_Acc(c_hndl, c_lo, c_hi, c_local, c_ld, alpha);
     if (mpi_proc_rank == mpi_root) timestamp();
     free(c_local);
@@ -1894,7 +1908,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
     /* BEGIN OMP SECTION */
 #pragma omp parallel \
     default(none) \
-    shared(wi, crows, ccols, jpair, vj, vik, ci,			\
+    shared(wi, crows, ccols, jpair, vj, vik, ci, cj,			\
            ndocc, nactv, vorbs, intorb, nmos, aelec, belec, pstr,	\
            peosp, pegrps, qstr, qeosp, qegrps, pq, npq, m1, m2,		\
            buflen, xlistmax, jstart)		       \
@@ -1942,7 +1956,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
                                           cjk, hijval, jindx);
                 for (k = 0; k < ccols; k++) {
-                     ci[k * crows + i] = ci[k * crows] + cik[k];
+                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
             }
 
@@ -1950,6 +1964,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             nqx = generate_single_excitations(qstr[iq], qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx);
+
             /* Evaluate <pq|H|p'q'> */
             if (npx != 0 && nqx != 0) {
                 evaluate_hij_pxqxlist2x_ut2(deti, pxlist, npx, qxlist, nqx,
@@ -1959,7 +1974,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                             cik, vj, &(vik[i*ccols]), cjk,
                                             hijval, jindx);
                 for (k = 0; k < ccols; k++) {
-                    ci[k * crows + i] = ci[k * crows] + cik[k];
+                    ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
             }
 
@@ -1978,7 +1993,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
                                           cjk, hijval, jindx);
                 for (k = 0; k < ccols; k++) {
-                    ci[k * crows + i] = ci[k * crows] + cik[k];
+                    ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
             }
 
@@ -1998,7 +2013,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
                                           cjk, hijval, jindx);
                 for (k = 0; k < ccols; k++) {
-                    ci[k * crows + i] = ci[k * crows] + cik[k];
+                    ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
             }
 
@@ -2017,11 +2032,20 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
                                           cjk, hijval, jindx);
                 for (k = 0; k < ccols; k++) {
-                    ci[k * crows + i] = ci[k * crows] + cik[k];
+                    ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
             }
             
         }
+
+        /* Collect cjk into cj */
+        for (k = 0; k < ccols; k++) {
+            for (j = 0; j < buflen; j++) {
+#pragma omp critical
+                cj[k*buflen + j] += cjk[k*buflen + j];
+            }
+        }
+        
         /* Deallocate private OMP arrays */
         free(pxlist);
         free(qxlist);
@@ -3210,17 +3234,11 @@ void evaluate_hij_pxqxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                                     peosp, npe, qeosp,
                                                     nqe, pq, npq);
             jindx[njx] = jindx[njx] - jstep;
+            hijval[jindx[njx]] = hmatels_2xab(pxlist[r].io, pxlist[r].fo,
+                                              pxlist[r].permx,
+                                              qxlist[s].io, qxlist[s].fo,
+                                              qxlist[s].permx, m2);
             njx++;
-        }
-    }
-    k = 0;
-    for (r = 0; r < npx; r++) {
-        for (s = 0; s < nqx; s++) {
-            hijval[jindx[k]] = hmatels_2xab(pxlist[r].io, pxlist[r].fo,
-                                            pxlist[r].permx,
-                                            qxlist[s].io, qxlist[s].fo,
-                                            qxlist[s].permx, m2);
-            k++;
         }
     }
     for (k = 0; k < vcols; k++) {
@@ -4336,6 +4354,120 @@ void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps
     
     return;
 }
+
+/*
+ * peform_hvispacefast: perform Hv=c on basis vectors v_i, i = 1, .., n.
+ * Input:
+ *  pstr  = alpha strings
+ *  peosp = alpha electron spaces
+ *  pegrps= number of alpha electron spaces
+ *  qstr  = beta  strings
+ *  qeosp = beta  electron spaces
+ *  qegrps= number of beta  electron spaces
+ *  pqs   = alpha and beta space pairs
+ *  num_pq= number of alpha and beta space pairs
+ *  m1    = 1-e integrals
+ *  m2    = 2-e integrals
+ *  aelec = alpha electrons
+ *  belec = beta  electrons
+ *  intorb= internal orbitals
+ *  ndets = number of determinants
+ *  core_e= core energy
+ *  dim   = number of basis vectors
+ *  mdim  = maximum size of krylov space
+ *  v_hndl= (GLOBAL ARRAY HANDLE) basis vectors
+ *  d_hndl= (GLOBAL ARRAY HANDLE) diagonal elements <i|H|i>
+ *  w_hndl= (GLOBAL ARRAY HANDLE) wavefunction
+ * Output:
+ *  c_hndl= (GLOBAL ARRAY HANDLE) Hv=c vectors
+ */
+void perform_hvispacefast_debug(struct occstr *pstr, struct eospace *peosp, int pegrps,
+                          struct occstr *qstr, struct eospace *qeosp, int qegrps,
+                          int **pqs, int num_pq, double *m1, double *m2,
+                          int aelec, int belec, int intorb, int ndets,
+                          double core_e, int dim, int mdim, int v_hndl,
+                          int d_hndl, int c_hndl, int w_hndl, int ga_buffer_len,
+                          int nmo, int ndocc, int nactv)
+{
+    /*
+     * The following convention is used: H(i,j)*V(j,k)=C(i,k)
+     */
+    double **c_local = NULL;   /* Local c array */
+    double *cdata    = NULL;   /* Local c array data */
+    int c_rows       = 0;      /* Local c rows */
+    int c_cols       = 0;      /* Local c columns */
+    int c_lo[2]      = {0, 0}; /* starting indices for memory block */
+    int c_hi[2]      = {0, 0}; /* ending indices of memory block */
+    int c_ld[1]      = {0};    /* Leading dimensions of C local buffer */
+    int cchunk = 0;
+    int lwrbnd = 0;
+    int uprbnd = 0;
+    
+    int **wi       = NULL;     /* Local w array */
+    int *widata    = NULL;     /* Local w array data (1-D) */
+    int wi_lo[2]   = {0, 0};
+    int wi_hi[2]   = {0, 0};
+    int wi_ld[1]   = {0};      /* Leading dimensions of Wi local buffer */
+    int i;
+    int *cindx = NULL;         /* Column indices i for v_i and c_i */
+    double alpha[1] = {1.0};
+    
+    if (mpi_proc_rank == mpi_root) {
+        printf(" Performing Hv=c on initial vector space...\n");
+        fflush(stdout);
+    }
+    NGA_Zero(c_hndl);
+    compute_cimat_chunks(ndets, &cchunk, &lwrbnd, &uprbnd);
+    /* Determine which block of data is locally owned. And get the blocks of
+     * V that are required to compute c. */
+    NGA_Distribution(c_hndl, mpi_proc_rank, c_lo, c_hi);
+    c_cols = c_hi[0] - c_lo[0] + 1;
+    c_lo[1]= lwrbnd;
+    c_hi[1]= uprbnd;
+    c_rows = c_hi[1] - c_lo[1] + 1;
+    c_cols = int_min(c_cols, dim);
+    c_hi[0] = c_cols - 1;
+    c_ld[0] = c_rows;
+    /* Allocate local array and get C data */
+    cdata = allocate_mem_double_cont(&c_local, c_rows, c_cols);
+    NGA_Get(c_hndl, c_lo, c_hi, cdata, c_ld);
+    
+    /* Allocate local Wi array and get W data */
+    widata = allocate_mem_int_cont(&wi, 3, c_rows);
+    wi_lo[0] = c_lo[1];
+    wi_lo[1] = 0;
+    wi_hi[0] = c_hi[1];
+    wi_hi[1] = 2;
+    wi_ld[0] = 3;
+    NGA_Get(w_hndl, wi_lo, wi_hi, widata, wi_ld); 
+
+    cindx = malloc(sizeof(int) * c_cols);
+    for (i = 0; i < c_cols; i++) {
+        cindx[i] = i;
+    }
+    /* Compute C(i,k) = H(i,j)*V(j,k) for all i in c_lo[1]..c_hi[1] */
+    if (mpi_proc_rank == mpi_root) timestamp();
+    compute_hvc_diagonal_ga(c_hndl, v_hndl, d_hndl, 0, (dim - 1), ndets);
+//    compute_cblock_Hfastest(cdata, c_cols, c_rows, wi, w_hndl, v_hndl, d_hndl,
+//                            ga_buffer_len, pstr, peosp, pegrps, qstr, qeosp, qegrps,
+//                            pqs, num_pq, m1, m2, aelec, belec, intorb, ndets,
+//                            nmo, ndocc, nactv, c_hndl, c_lo[1], c_hi[1], cindx);
+    compute_cblock_Hfaster(cdata, c_cols, c_rows, wi, w_hndl, v_hndl, d_hndl,
+                           ga_buffer_len, pstr, peosp, pegrps, qstr, qeosp, qegrps,
+                          pqs, num_pq, m1, m2, aelec, belec, intorb, ndets,
+                           nmo, ndocc, nactv, c_hndl, c_lo[1], cindx);
+    NGA_Acc(c_hndl, c_lo, c_hi, cdata, c_ld, alpha);
+    GA_Sync();
+    if (mpi_proc_rank == mpi_root) timestamp();
+    
+    deallocate_mem_cont(&c_local, cdata);
+    deallocate_mem_cont_int(&wi, widata);
+    free(cindx);
+    GA_Sync();
+    
+    return;
+}
+
 
 /*
  * print_iter_info: print iteration information.

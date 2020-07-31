@@ -3606,7 +3606,7 @@ void get_eospace_detrange(int **pq, int npq, int pair, struct eospace *peosp,
     for (i = 0; i < pair; i++) {
         *start = *start + peosp[pq[i][0]].nstr * qeosp[pq[i][1]].nstr;
     }
-    *final = *start + peosp[pq[i][0]].nstr * qeosp[pq[i][1]].nstr;
+    *final = *start + peosp[pq[i][0]].nstr * qeosp[pq[i][1]].nstr - 1;
     return;
 }
 /*
