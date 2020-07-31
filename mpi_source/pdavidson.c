@@ -1880,7 +1880,11 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
     /* c(i,k) array */
     double *cik = NULL;
     /* c(j,k) array */
-    double *cjk = NULL;
+    //double *cjk = NULL;
+    double **cjk = NULL;
+    double *cjkdat= NULL;
+    int cjkith = 0;
+    
     /* v(i,k) array */
     double *vik = NULL;
     /* h(i,j) values */
@@ -1888,6 +1892,9 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
 
     int buflen = 0;
     
+    /* OpenMP variables */
+    int nthreads = 0, ithread = 0;
+
     int i, j, k;
 
     vorbs = nmos - intorb;
@@ -1911,24 +1918,32 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
     shared(wi, crows, ccols, jpair, vj, vik, ci, cj,			\
            ndocc, nactv, vorbs, intorb, nmos, aelec, belec, pstr,	\
            peosp, pegrps, qstr, qeosp, qegrps, pq, npq, m1, m2,		\
-           buflen, xlistmax, jstart)		       \
+           buflen, xlistmax, jstart, cjk, cjkdat)			\
     private(deti, ip, iq, ipspace, iqspace, \
             qxlist, pxlist, xstrscr, elecx, orbsx,        \
-            cik, cjk, hijval, jindx, npx, nqx,		  \
-            i, j, k)
+            cik, hijval, jindx, npx, nqx,		  \
+            i, j, k, nthreads, ithread)
     {
-        /* Allocate replacement lists */
+	ithread = omp_get_thread_num();
+	nthreads = omp_get_num_threads();
+	
+#pragma omp single
+	{
+	    cjkdat = allocate_mem_double_cont(&cjk, ccols*buflen, nthreads);
+	}
+	
+	/* Allocate replacement lists */
         pxlist = malloc(sizeof(struct xstr) * xlistmax);
         qxlist = malloc(sizeof(struct xstr) * xlistmax);
         xstrscr= malloc(sizeof(struct xstr) * xlistmax);
         elecx  = malloc(sizeof(int) * int_max(aelec, belec));
         orbsx  = malloc(sizeof(int) * nmos);
         cik    = malloc(sizeof(double) * ccols);
-        cjk    = malloc(sizeof(double) * ccols * buflen);
-        jindx  = malloc(sizeof(int) * xlistmax * xlistmax);
+        //cjk    = malloc(sizeof(double) * ccols * buflen);
+	jindx  = malloc(sizeof(int) * xlistmax * xlistmax);
         hijval = malloc(sizeof(double) * buflen);
         
-        init_dbl_array_0(cjk, (ccols * buflen));
+        init_dbl_array_0(cjk[ithread], (ccols * buflen));
 
 #pragma omp for schedule(runtime)
         /* Compute <i|H|j> */
@@ -1954,7 +1969,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
-                                          cjk, hijval, jindx);
+                                          cjk[ithread], hijval, jindx);
                 for (k = 0; k < ccols; k++) {
                      ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -1971,7 +1986,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                             pstr, peosp, pegrps, qstr, qeosp,
                                             qegrps, pq, npq, m1, m2, aelec,
                                             belec, intorb, buflen, ccols, jstart,
-                                            cik, vj, &(vik[i*ccols]), cjk,
+                                            cik, vj, &(vik[i*ccols]), cjk[ithread],
                                             hijval, jindx);
                 for (k = 0; k < ccols; k++) {
                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
@@ -1991,7 +2006,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
-                                          cjk, hijval, jindx);
+                                          cjk[ithread], hijval, jindx);
                 for (k = 0; k < ccols; k++) {
                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -2011,7 +2026,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
-                                          cjk, hijval, jindx);
+                                          cjk[ithread], hijval, jindx);
                 for (k = 0; k < ccols; k++) {
                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -2030,7 +2045,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
-                                          cjk, hijval, jindx);
+                                          cjk[ithread], hijval, jindx);
                 for (k = 0; k < ccols; k++) {
                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -2039,11 +2054,11 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
         }
 
         /* Collect cjk into cj */
-#pragma omp critical
-        {
-            for (k = 0; k < ccols; k++) {
+#pragma omp for
+	for (i = 0; i < nthreads; i++) {
+	    for (k = 0; k < ccols; k++) {
                 for (j = 0; j < buflen; j++) {
-                    cj[k*buflen + j] += cjk[k*buflen + j];
+                    cj[k*buflen + j] += cjk[i][k*buflen + j];
                 }
             }
         }
