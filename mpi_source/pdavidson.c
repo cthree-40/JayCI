@@ -2039,10 +2039,12 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
         }
 
         /* Collect cjk into cj */
-        for (k = 0; k < ccols; k++) {
-            for (j = 0; j < buflen; j++) {
-#pragma omp atomic
-                cj[k*buflen + j] += cjk[k*buflen + j];
+#pragma omp critical
+        {
+            for (k = 0; k < ccols; k++) {
+                for (j = 0; j < buflen; j++) {
+                    cj[k*buflen + j] += cjk[k*buflen + j];
+                }
             }
         }
         
