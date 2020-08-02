@@ -2055,12 +2055,12 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
 
         /* Collect cjk into cj */
 #pragma omp for
-	for (i = 0; i < nthreads; i++) {
-	    for (k = 0; k < ccols; k++) {
-                for (j = 0; j < buflen; j++) {
-                    cj[k*buflen + j] += cjk[i][k*buflen + j];
-                }
+        for (k = 0; k < ccols*buflen; k++) {
+
+            for (i = 0; i < nthreads; i++) {
+                cj[k] += cjk[i][k];
             }
+
         }
         
         /* Deallocate private OMP arrays */
