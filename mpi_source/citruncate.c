@@ -593,7 +593,7 @@ int generate_single_excitations(struct occstr str, struct eospace eosp,
                                 int *elecs, int *orbsx)
 {
     int n1x = 0;
-    
+    int nvo = 0;  /* Number of virtual orbitals */
     /* str eospace information */
     int str_docc = 0;
     int str_actv = 0;
@@ -604,20 +604,23 @@ int generate_single_excitations(struct occstr str, struct eospace eosp,
     if (abs(str_actv - eosp.actv) > 1) return n1x;
     if (abs(str_virt - eosp.virt) > 1) return n1x;
 
+    /* Get available orbitals */
+    get_available_orbital_list(str, intorb, vorbs, orbsx, &nvo);
+    
     /* Internal excitations */
     generate_doccx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                   vorbs, nelec, orbsx, singlex, &n1x);
+                   vorbs, nelec, orbsx, singlex, &n1x, nvo);
     generate_actvx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                   vorbs, nelec, orbsx, singlex, &n1x);
+                   vorbs, nelec, orbsx, singlex, &n1x, nvo);
     generate_virtx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                   vorbs, nelec, orbsx, singlex, &n1x);
+                   vorbs, nelec, orbsx, singlex, &n1x, nvo);
     /* External excitations */
     generate_docc2virtx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                        vorbs, nelec, orbsx, singlex, &n1x);
+                        vorbs, nelec, orbsx, singlex, &n1x, nvo);
     generate_docc2actvx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                        vorbs, nelec, orbsx, singlex, &n1x);
+                        vorbs, nelec, orbsx, singlex, &n1x, nvo);
     generate_actv2virtx(1, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                        vorbs, nelec, orbsx, singlex, &n1x);
+                        vorbs, nelec, orbsx, singlex, &n1x, nvo);
 
     return n1x;
 }
@@ -633,6 +636,7 @@ int generate_double_excitations(struct occstr str, struct eospace eosp,
                                 int *elecs, int *orbsx)
 {
     int n2x = 0;
+    int nvo = 0;
     
     /* str eospace information */
     int str_docc = 0;
@@ -644,53 +648,56 @@ int generate_double_excitations(struct occstr str, struct eospace eosp,
     if (abs(str_actv - eosp.actv) > 2) return n2x;
     if (abs(str_virt - eosp.virt) > 2) return n2x;
 
+    /* Get available orbitals */
+    get_available_orbital_list(str, intorb, vorbs, orbsx, &nvo);
+
     /* Internal excitations */
     generate_doccx(2, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                   vorbs, nelec, orbsx, doublex, &n2x);
+                   vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_actvx(2, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                   vorbs, nelec, orbsx, doublex, &n2x);
+                   vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc, nactv,
-                   vorbs, nelec, orbsx, doublex, &n2x);
+                   vorbs, nelec, orbsx, doublex, &n2x, nvo);
     /* External excitations */
     generate_docc2virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                        nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                        nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_docc2actvx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                        nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                        nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_actv2virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                        nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                        nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     /* External + External excitations */
     generate_docc2actvvirtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                            nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                            nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_actv2doccvirtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                            nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                            nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_virt2doccactvx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                            nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                            nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     /* Internal + External excitations */
     generate_actv2virtx_actv1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_actv2virtx_docc1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_actv2virtx_virt1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_docc2actvx_actv1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_docc2actvx_docc1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_docc2actvx_virt1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_docc2virtx_docc1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_docc2virtx_actv1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_docc2virtx_virt1(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                              nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                              nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     /* Internal + Internal excitations */
     generate_doccx_actvx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                         nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                         nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_doccx_virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                         nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                         nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     generate_actvx_virtx(2, str, str_docc, str_actv, str_virt, eosp, ndocc,
-                         nactv, vorbs, nelec, orbsx, doublex, &n2x);
+                         nactv, vorbs, nelec, orbsx, doublex, &n2x, nvo);
     return n2x;
 }
 
@@ -700,12 +707,13 @@ int generate_double_excitations(struct occstr str, struct eospace eosp,
  */
 void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
-                    int nvirt, int elec, int *scr, struct xstr *xlist, int *numx)
+                    int nvirt, int elec, int *scr, struct xstr *xlist,
+                    int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
-    long long int ibyte = 0x00; /* Internal orbitals */
-    long long int xbyte = 0x00; /* Excitation orbitals */
+    //long long int ibyte = 0x00; /* Internal orbitals */
+    //long long int xbyte = 0x00; /* Excitation orbitals */
     int intorb;
     int i, j, k, l;
     intorb = ndocc + nactv;
@@ -719,12 +727,12 @@ void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
     if (str_virt != eosp.virt) return;
     
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
     
     /* Loop over occupied orbitals */
     newstr = str;
@@ -796,16 +804,17 @@ void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
  */
 void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
-                         int nvirt, int elec, int *scr, struct xstr *xlist, int *numx)
+                         int nvirt, int elec, int *scr, struct xstr *xlist,
+                         int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
     int xtype = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int tmp;
-    int nvo = 0;
+    //int nvo = 0;
     int intorb = ndocc + nactv;
 
     /* Check if excitations are possible */
@@ -813,18 +822,18 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
     if (abs(str_virt - eosp.virt) != nrep) return;
     if (str_docc != eosp.docc) return;
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation ACTV -> VIRTX or ACTV <- VIRTX */
     xtype = str_actv - eosp.actv;
@@ -987,16 +996,16 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
 void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
     int xtype = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int tmp;
-    int nvo = 0;
+//    int nvo = 0;
     int intorb = ndocc + nactv;
 
     /* Check if excitations are possible */
@@ -1005,18 +1014,18 @@ void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
     if (str_docc != eosp.docc) return;
         
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+//    for (i = 0; i < intorb; i++) {
+//        ibyte = ibyte + pow(2, i);
+//    }
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+//    xbyte = ibyte ^ str.byte1;
+//    nonzerobits(xbyte, intorb, scr);
+//    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+//        if (i != str.virtx[0] && i != str.virtx[1]) {
+//            scr[intorb + nvo] = i;
+//            nvo++;
+//        }
+//    }
 
     /* Is the excitation ACTV -> VIRTX or ACTV <- VIRTX */
     xtype = str_actv - eosp.actv;
@@ -1147,15 +1156,15 @@ void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
 void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
     int xtype = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, k, l;
-    int nvo = 0;
+    //int nvo = 0;
     int intorb = ndocc + nactv;
 
     /* Check if excitations are possible */
@@ -1166,18 +1175,18 @@ void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
     if (str_docc != eosp.docc) return;
 
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation ACTV -> VIRTX + VIRTX or ACTV <- VIRTX + VIRTX */
     xtype = str_actv - eosp.actv;
@@ -1266,21 +1275,21 @@ void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
 
 /*
  * generate_actv2virtx_docc1: generate replacements between DOCC, ACTV and VIRT
- * spaces. This is a special case where one replacement occurs within DOCC, in addition
- * to the ACTV <-> VIRT replacement.
+ * spaces. This is a special case where one replacement occurs within DOCC, in
+ * addition to the ACTV <-> VIRT replacement.
  */
 void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
     int tmp;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
 
@@ -1292,19 +1301,19 @@ void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
     if (abs(str_virt - eosp.virt) != 1) return;
     
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
     /* VIRT */
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation DOCC, ACTV->VIRT or DOCC, ACTV<-VIRT */
     xtype = str_actv - eosp.actv;
@@ -1435,15 +1444,15 @@ void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
 void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
-                             struct xstr *xlist, int *numx)
+                             struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
     int xtype = 0;
-    long long ibyte = 0x00;
-    long long xbyte = 0x00;
+    //long long ibyte = 0x00;
+    //long long xbyte = 0x00;
     int tmp;
-    int nvo = 0;
+    //int nvo = 0;
     int i, j, k, l;
     int intorb = ndocc + nactv;
 
@@ -1455,19 +1464,19 @@ void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
     if (abs(str_actv - eosp.actv) != nrep) return;
 
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
     /* VIRT */
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation ACTV -> (DOCC, VIRT) or ACTV <- (DOCC, VIRT) */
     xtype = str_actv - eosp.actv;
@@ -1587,13 +1596,14 @@ void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
  */
 void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
-                         int nvirt, int elec, int *scr, struct xstr *xlist, int *numx)
+                         int nvirt, int elec, int *scr, struct xstr *xlist,
+                         int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
     int xtype = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
     /* Check if excitations are possible */
@@ -1602,12 +1612,12 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
     if (str_virt != eosp.virt) return;
     
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
 
     /* Is the excitation DOCC -> ACTV or DOCC <- ACTV */
     xtype = str_docc - eosp.docc;
@@ -1749,14 +1759,14 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
 void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
 
@@ -1766,18 +1776,18 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
     if (str_actv == eosp.actv) return;
     
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation DOCC -> ACTV or ACTV -> DOCC */
     xtype = str_docc - eosp.docc;
@@ -1884,14 +1894,14 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
 void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
 
@@ -1900,18 +1910,18 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
     if (str_virt != eosp.virt) return;
     if (str_actv == eosp.actv) return;
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //     if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation DOCC -> ACTV or ACTV <- DOCC */
     xtype = str_docc - eosp.docc;
@@ -2015,15 +2025,15 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
 void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
     int tmp;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
 
@@ -2033,18 +2043,18 @@ void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
     if (str_actv == eosp.actv) return;
 
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation DOCC -> ACTV or ACTV <- DOCC */
     xtype = str_docc - eosp.docc;
@@ -2175,15 +2185,15 @@ void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
 void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
     int tmp;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
 
@@ -2195,19 +2205,19 @@ void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
     if (abs(str_virt - eosp.virt) != 1) return;
 
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
     /* VIRT */
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation DOCC, DOCC->VIRT or DOCC, DOCC<-VIRT */
     xtype = str_docc - eosp.docc;
@@ -2331,15 +2341,15 @@ void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
 void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
     int tmp;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
     
@@ -2351,19 +2361,19 @@ void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
     if (abs(str_virt - eosp.virt) != 1) return;
 
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
     /* VIRT */
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation ACTV, DOCC->VIRT or ACTV, DOCC<-VIRT */
     xtype = str_docc - eosp.docc;
@@ -2485,22 +2495,22 @@ void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
 }
 
 /*
- * generate_docc2virtx_actv1: generate excitations from DOCC -> VIRT with
+ * generate_docc2virtx_virt1: generate excitations from DOCC -> VIRT with
  * a replacement within the virt.
  */
 void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx)
+                               int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
     int xtype = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int tmp;
-    int nvo = 0;
+    //int nvo = 0;
     int intorb = ndocc + nactv;
 
     /* Check if excitations are possible */
@@ -2510,18 +2520,18 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
     if (str_virt != 2 && eosp.virt != 2) return;
     if (str_actv != eosp.actv) return;
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation DOCC -> VIRTX + VIRTX or DOCC <- VIRTX + VIRTX */
     xtype = str_docc - eosp.docc;
@@ -2613,15 +2623,15 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
 void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
-                          int *scr, struct xstr *xlist, int *numx)
+                          int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
     int tmp;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
     
@@ -2632,12 +2642,12 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
     if (nrep != 2) return;
     
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
-    /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
+    //* Get possible excitations */
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
 
     newstr = str;
     switch(nrep) {
@@ -2694,15 +2704,15 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
 void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
-                          int *scr, struct xstr *xlist, int *numx)
+                          int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
     int tmp;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
     
@@ -2713,18 +2723,18 @@ void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
     if (nrep != 2) return;
     
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     newstr = str;
     switch(nrep) {
@@ -2787,15 +2797,15 @@ void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
 void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
-                          int *scr, struct xstr *xlist, int *numx)
+                          int *scr, struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
     int tmp;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
 
@@ -2807,18 +2817,18 @@ void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
     if (nrep != 2) return;
     
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     newstr = str;
     switch(nrep) {
@@ -2883,15 +2893,15 @@ void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
 void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
-                             struct xstr *xlist, int *numx)
+                             struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
     int xtype = 0;
     int tmp;
-    int nvo = 0;
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //int nvo = 0;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int intorb = ndocc + nactv;
 
@@ -2904,19 +2914,19 @@ void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
 
 
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
     /* VIRT */
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is the excitation DOCC -> (ACTV, VIRT) or DOCC <- (ACTV, VIRT) */
     xtype = str_docc - eosp.docc;
@@ -3040,15 +3050,16 @@ void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
  */
 void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
-                         int nvirt, int elec, int *scr, struct xstr *xlist, int *numx)
+                         int nvirt, int elec, int *scr, struct xstr *xlist,
+                         int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
-    long long int ibyte = 0x00;
-    long long int xbyte = 0x00;
+    //long long int ibyte = 0x00;
+    //long long int xbyte = 0x00;
     int i, j, k, l;
     int tmp;
-    int nvo = 0;
+    //int nvo = 0;
     int xtype = 0;
     int intorb = ndocc + nactv;
     
@@ -3057,18 +3068,18 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
     if (str_actv != eosp.actv) return;
 
     /* Generate DOCC orbital byte */
-    for (i = 0; i < ndocc; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < ndocc; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, ndocc, scr);
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, ndocc, scr);
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
     /* Is excitation DOCC -> VIRT or DOCC <- VIRT? */
     xtype = str_docc - eosp.docc;
     if (xtype > 0) {
@@ -3226,12 +3237,13 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
  */
 void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
-                    int nvirt, int elec, int *scr, struct xstr *xlist, int *numx)
+                    int nvirt, int elec, int *scr, struct xstr *xlist,
+                    int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
-    long long int ibyte = 0x00; /* Internal orbitals */
-    long long int xbyte = 0x00; /* Excitation orbitals */
+    //long long int ibyte = 0x00; /* Internal orbitals */
+    //long long int xbyte = 0x00; /* Excitation orbitals */
     int intorb;
     int i, j, k ,l;
     intorb = ndocc + nactv;
@@ -3243,12 +3255,12 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
     if (str_virt != eosp.virt) return;
 
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
 
     /* Loop over occupied orbitals */
     newstr = str;
@@ -3315,13 +3327,14 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
  */
 void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
-                    int nvirt, int elec, int *scr, struct xstr *xlist, int *numx)
+                    int nvirt, int elec, int *scr, struct xstr *xlist,
+                    int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
     int i, j, k, l;
     int tmp;
-    int nvo = 0;
+    //int nvo = 0;
     int intorb = ndocc + nactv;
 
     /* Check if excitations are possible */
@@ -3332,18 +3345,18 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
     if (str_docc != eosp.docc) return;
     
     /* Generate possible orbitals for replacement */
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[nvo] = i;
-            nvo++;
-        }
-    }
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[nvo] = i;
+    //        nvo++;
+    //    }
+    //}
     /* Loop over occupied orbitals */
     newstr = str;
     switch (nrep) {
     case 1: /* Single replacements */
         for (i = str_virt - 1; i >= 0; i--) {
-            for (j = 0; j < nvo; j++) {
+            for (j = intorb; j < (nvo + intorb); j++) {
                 newstr = str;
                 newstr.virtx[0] = str.virtx[0];
                 newstr.virtx[1] = str.virtx[1];
@@ -3371,9 +3384,9 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
     case 2: /* Double replacements */
         if ((nvirt - str_virt) < 2) return; /* Can't have 2x */
         for (i = str_virt - 1; i >= 1; i--) {
-            for (j = 0; j < (nvo - 1); j++) {
+            for (j = intorb; j < (intorb + nvo - 1); j++) {
                 for (k = (i - 1); k >= 0; k--) {
-                    for (l = (j + 1); l < nvo; l++) {
+                    for (l = (j + 1); l < (intorb + nvo); l++) {
                         newstr = str;
                         newstr.virtx[0] = str.virtx[0];
                         newstr.virtx[1] = str.virtx[1];
@@ -3421,7 +3434,7 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
 void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
-                             struct xstr *xlist, int *numx)
+                             struct xstr *xlist, int *numx, int nvo)
 {
     struct occstr newstr;
     int elecs[20];
@@ -3429,7 +3442,7 @@ void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
     long long ibyte = 0x00;
     long long xbyte = 0x00;
     int tmp;
-    int nvo = 0;
+    //int nvo = 0;
     int i, j, k, l;
     int intorb = ndocc + nactv;
     
@@ -3442,19 +3455,19 @@ void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
 
 
     /* Generate internal orbital byte */
-    for (i = 0; i < intorb; i++) {
-        ibyte = ibyte + pow(2, i);
-    }
+    //for (i = 0; i < intorb; i++) {
+    //    ibyte = ibyte + pow(2, i);
+    //}
     /* Get possible excitations */
-    xbyte = ibyte ^ str.byte1;
-    nonzerobits(xbyte, intorb, scr);
+    //xbyte = ibyte ^ str.byte1;
+    //nonzerobits(xbyte, intorb, scr);
     /* VIRT */
-    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
-            scr[intorb + nvo] = i;
-            nvo++;
-        }
-    }
+    //for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+    //    if (i != str.virtx[0] && i != str.virtx[1]) {
+    //        scr[intorb + nvo] = i;
+    //        nvo++;
+    //    }
+    //}
 
     /* Is this excitation VIRT -> (DOCC, ACTV) or VIRT <- (DOCC, ACTV)? */
     xtype = str_virt - eosp.virt;
@@ -3590,6 +3603,37 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
         free(docc);
         free(doccscr);
         return;
+}
+
+/*
+ * get_available_orbital_list: get list of available orbitals for input str
+ * Input:
+ *  str = input occupation string
+ *  intorb = internal orbitals
+ *  nvirt = number of virtual orbitals
+ * Output:
+ *  orbsx = orbitals available for excitations
+ *  nvo   = number of available orbitals.
+ */
+void get_available_orbital_list(struct occstr str, int intorb, int nvirt,
+                                int *orbsx, int *nvo)
+{
+    /* Replacement byte and internal orbital byte */
+    long long int xbyte = 0x00, ibyte = 0x00;
+    int i = 0;
+    for (i = 0; i < intorb; i++) {
+        ibyte = ibyte + pow(2, i);
+    }
+    xbyte = ibyte ^ str.byte1;
+    nonzerobits(xbyte, intorb, orbsx);
+    *nvo = 0;
+    for (i = intorb + 1; i <= (intorb + nvirt); i++) {
+        if (i != str.virtx[0] && i != str.virtx[1]) {
+            orbsx[intorb + (*nvo)] = i;
+            (*nvo)++;
+        }
+    }
+    return;
 }
 
 /*

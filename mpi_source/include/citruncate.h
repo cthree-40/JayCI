@@ -173,14 +173,16 @@ void generate_determinant_list_rtnlist(struct eostring *pstrlist, int npstr,
  */
 void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
-                    int nvirt, int elec, int *scr, struct xstr *xlist, int *numx);
+                    int nvirt, int elec, int *scr, struct xstr *xlist,
+                    int *numx, int nvo);
 
 /*
  * generate_actv2virtx: generate replacements between DOCC and ACTV spaces.
  */
 void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
-                         int nvirt, int elec, int *scr, struct xstr *xlist, int *numx);
+                         int nvirt, int elec, int *scr, struct xstr *xlist,
+                         int *numx, int nvo);
 
 /*
  * generate_actv2virtx_actv1: generate replacements between ACTV and VIRT spaces.
@@ -190,7 +192,7 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
 void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_actv2virtx_docc1: generate replacements between DOCC, ACTV and VIRT
@@ -200,7 +202,7 @@ void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
 void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 
 
 /*
@@ -211,7 +213,7 @@ void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
 void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_docc2actvx_docc1: generate excitations from DOCC -> ACTV with
@@ -220,7 +222,7 @@ void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
 void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_docc2actvx_actv1: generate excitations from DOCC -> ACTV with
@@ -229,7 +231,7 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
 void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_docc2actvx_virt1: generate excitations from DOCC -> ACTV with
@@ -238,7 +240,7 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
 void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 /*
  * generate_docc2virtx_docc1: generate excitations from DOCC -> VIRT with
  * a replacement within the DOCC.
@@ -246,7 +248,7 @@ void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
 void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 /*
  * generate_docc2virtx_actv1: generate excitations from DOCC -> VIRT with
  * a replacement within the ACTV.
@@ -254,7 +256,7 @@ void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
 void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_docc2virtx_actv1: generate excitations from DOCC -> VIRT with
@@ -263,7 +265,7 @@ void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
 void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
-                               int *scr, struct xstr *xlist, int *numx);
+                               int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_doccx_actvx: generate replacements  DOCC + ACTV.
@@ -271,7 +273,7 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
 void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
-                          int *scr, struct xstr *xlist, int *numx);
+                          int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_doccx_virtx: generate replacements  DOCC + VIRT.
@@ -279,7 +281,7 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
 void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
-                          int *scr, struct xstr *xlist, int *numx);
+                          int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_actv_virtx: generate replacements  ACTV + VIRT.
@@ -287,7 +289,7 @@ void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
 void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
-                          int *scr, struct xstr *xlist, int *numx);
+                          int *scr, struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_actv2doccvirtx: generate replacements between ACTV and (DOCC,VIRT)
@@ -296,7 +298,7 @@ void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
 void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
-                             struct xstr *xlist, int *numx);
+                             struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_doccx: generate excitations within the DOCC space given a
@@ -304,14 +306,16 @@ void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
  */
 void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
-                    int nvirt, int elec, int *scr, struct xstr *xlist, int *numx);
+                    int nvirt, int elec, int *scr, struct xstr *xlist,
+                    int *numx, int nvo);
 
 /*
  * generate_docc2actvx: generate replacements between DOCC and ACTV spaces.
  */
 void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
-                         int nvirt, int elec, int *scr, struct xstr *xlist, int *numx);
+                         int nvirt, int elec, int *scr, struct xstr *xlist,
+                         int *numx, int nvo);
 
 /*
  * generate_docc2actvvirtx: generate excitations from DOCC -> (ACTV, VIRT)
@@ -320,7 +324,7 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
 void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
-                             struct xstr *xlist, int *numx);
+                             struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_docc2virtx: generate excitations from DOCC -> VIRT spaces for
@@ -328,7 +332,8 @@ void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
  */
 void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
-                         int nvirt, int elec, int *scr, struct xstr *xlist, int *numx);
+                         int nvirt, int elec, int *scr, struct xstr *xlist,
+                         int *numx, int nvo);
 
 /*
  * generate_virtx: generate excitations within the VIRT space given a
@@ -336,7 +341,8 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
  */
 void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
-                    int nvirt, int elec, int *scr, struct xstr *xlist, int *numx);
+                    int nvirt, int elec, int *scr, struct xstr *xlist,
+                    int *numx, int nvo);
 
 /*
  * generate_virt2doccactvx: generate replacements between VIRT and (DOCC,ACTV)
@@ -345,7 +351,7 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
 void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
-                             struct xstr *xlist, int *numx);
+                             struct xstr *xlist, int *numx, int nvo);
 
 /*
  * generate_single_excitations: generate the single excitations in
@@ -374,6 +380,20 @@ int generate_double_excitations(struct occstr str, struct eospace eosp,
 void generate_string_list(struct eostring *strlist, int nstr, int orbs,
                           int elecs, int ndocc, int nactv, int xlvl,
                           struct eospace *eosp, int egrps);
+
+/*
+ * get_available_orbital_list: get list of available orbitals for input str
+ * Input:
+ *  str = input occupation string
+ *  intorb = internal orbitals
+ *  nvirt = number of virtual orbitals
+ * Output:
+ *  orbsx = orbitals available for excitations
+ *  nvo   = number of available orbitals.
+ */
+void get_available_orbital_list(struct occstr str, int intorb, int nvirt,
+                                int *orbsx, int *nvo);
+
 
 /*
  * get_eospace_detrange: get starting and final determinant indexes
