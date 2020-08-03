@@ -1382,7 +1382,7 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
                              belec,
                              intorb, nmos, ndocc, nactv, cstep, colnums,
                              jstartdet, jmax, jstartp, jstartq, jfinalp,
-                             jfinalq, pq[i], vjdata, vidata, cjdata);
+                             jfinalq, pq[i], vjdata, vidata, cjdata, i);
             
             NGA_Acc(c_hndl, vj_lo, vj_hi, cjdata, vj_ld, alpha);
 
@@ -1858,7 +1858,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                       int nmos, int ndocc, int nactv, int cstep, int *cnums,
                       int jstart, int jmax, int jstartp, int jstartq,
                       int jfinalp, int jfinalq, int *jpair, double *vj,
-                      double *vi, double *cj)
+                      double *vi, double *cj, int jpq)
 {
     /* |i> determinant information */
     struct det deti;
@@ -1915,7 +1915,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
     /* BEGIN OMP SECTION */
 #pragma omp parallel \
     default(none) \
-    shared(wi, crows, ccols, jpair, vj, vik, ci, cj,			\
+    shared(wi, crows, ccols, jpair, vj, vik, ci, cj, jpq,               \
            ndocc, nactv, vorbs, intorb, nmos, aelec, belec, pstr,	\
            peosp, pegrps, qstr, qeosp, qegrps, pq, npq, m1, m2,		\
            buflen, xlistmax, jstart, cjk, cjkdat)			\
@@ -1969,7 +1969,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
-                                          cjk[ithread], hijval, jindx);
+                                          cjk[ithread], hijval, jindx, jpq);
                 for (k = 0; k < ccols; k++) {
                      ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -1987,7 +1987,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                             qegrps, pq, npq, m1, m2, aelec,
                                             belec, intorb, buflen, ccols, jstart,
                                             cik, vj, &(vik[i*ccols]), cjk[ithread],
-                                            hijval, jindx);
+                                            hijval, jindx, jpq);
                 for (k = 0; k < ccols; k++) {
                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -2006,7 +2006,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
-                                          cjk[ithread], hijval, jindx);
+                                          cjk[ithread], hijval, jindx, jpq);
                 for (k = 0; k < ccols; k++) {
                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -2026,7 +2026,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
-                                          cjk[ithread], hijval, jindx);
+                                          cjk[ithread], hijval, jindx, jpq);
                 for (k = 0; k < ccols; k++) {
                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -2045,7 +2045,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                                           pegrps, qstr, qeosp, qegrps, pq, npq,
                                           m1, m2, aelec, belec, intorb, buflen,
                                           ccols, jstart, cik, vj, &(vik[i*ccols]),
-                                          cjk[ithread], hijval, jindx);
+                                          cjk[ithread], hijval, jindx, jpq);
                 for (k = 0; k < ccols; k++) {
                     ci[k * crows + i] = ci[k * crows + i] + cik[k];
                 }
@@ -2071,7 +2071,6 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
         free(orbsx);
         free(cik);
         free(hijval);
-        
     }
     /* END OMP SECTION */
     /* Deallocate arrays shared by OMP */
@@ -2855,6 +2854,7 @@ void evaluate_hij_pxlist1x_ut(struct det deti, struct xstr *pxlist, int npx,
  *  cjk    = C(j,k)
  *  hijval = <i|H|j> values
  *  jindx  = array for determinant indices
+ *  jpq    = pq[i] index of |j>
  */
 void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                int qindx, int nqx,
@@ -2863,7 +2863,7 @@ void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                int **pq, int npq, double *m1, double *m2, int aelec,
                                int belec, int intorb, int vrows, int vcols,
                                int jstep, double *cik, double *vjk, double *vik,
-                               double *cjk, double *hijval, int *jindx)
+                               double *cjk, double *hijval, int *jindx, int jpq)
 {
     int j = 0, k = 0;
     int r = 0;
@@ -2871,8 +2871,8 @@ void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
     if (nqx != 1) return;
     init_dbl_array_0(cik, vcols);
     for (r = 0; r < npx; r++) {
-        jindx[r] = string_info_to_determinant(pxlist[r].index, qindx, peosp,
-                                              npe, qeosp, nqe, pq, npq);
+        jindx[r] = string_info_to_determinant_fast(pxlist[r].index, qindx, peosp,
+                                                   npe, qeosp, nqe, pq, npq, jpq);
         /* Adjust index to our buffer arrays */
         jindx[r] = jindx[r] - jstep;
     }
@@ -3042,7 +3042,7 @@ void evaluate_hij_pxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                int **pq, int npq, double *m1, double *m2, int aelec,
                                int belec, int intorb, int vrows, int vcols,
                                int jstep, double *cik, double *vjk, double *vik,
-                               double *cjk, double *hijval, int *jindx)
+                               double *cjk, double *hijval, int *jindx, int jpq)
 {
     int j = 0, k = 0;
     int r = 0;
@@ -3050,8 +3050,8 @@ void evaluate_hij_pxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
     if (nqx != 1) return;
     init_dbl_array_0(cik, vcols);
     for (r = 0; r < npx; r++) {
-        jindx[r] = string_info_to_determinant(pxlist[r].index, qindx, peosp,
-                                              npe, qeosp, nqe, pq, npq);
+        jindx[r] = string_info_to_determinant_fast(pxlist[r].index, qindx, peosp,
+                                                   npe, qeosp, nqe, pq, npq, jpq);
         /* Adjust index to our buffer arrays */
         jindx[r] = jindx[r] - jstep;
     }
@@ -3237,7 +3237,7 @@ void evaluate_hij_pxqxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                  int **pq, int npq, double *m1, double *m2, int aelec,
                                  int belec, int intorb, int vrows, int vcols,
                                  int jstep, double *cik, double *vjk, double *vik,
-                                 double *cjk, double *hijval, int *jindx)
+                                 double *cjk, double *hijval, int *jindx, int jpq)
 {
     int j = 0, k = 0;
     int r = 0, s = 0;
@@ -3246,10 +3246,10 @@ void evaluate_hij_pxqxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
     /* Loop over r and s combinations */
     for (r = 0; r < npx; r++) {
         for (s = 0; s < nqx; s++) {
-            jindx[njx] = string_info_to_determinant(pxlist[r].index,
-                                                    qxlist[s].index,
-                                                    peosp, npe, qeosp,
-                                                    nqe, pq, npq);
+            jindx[njx] = string_info_to_determinant_fast(pxlist[r].index,
+                                                         qxlist[s].index,
+                                                         peosp, npe, qeosp,
+                                                         nqe, pq, npq, jpq);
             jindx[njx] = jindx[njx] - jstep;
             hijval[jindx[njx]] = hmatels_2xab(pxlist[r].io, pxlist[r].fo,
                                               pxlist[r].permx,
@@ -3447,7 +3447,7 @@ void evaluate_hij_qxlist1x_ut2(struct det deti, int pindx, int npx,
                                int **pq, int npq, double *m1, double *m2, int aelec,
                                int belec, int intorb, int vrows, int vcols,
                                int jstep, double *cik, double *vjk, double *vik,
-                               double *cjk, double *hijval, int *jindx)
+                               double *cjk, double *hijval, int *jindx, int jpq)
 {
     int j = 0, k = 0;
     int s = 0;
@@ -3455,8 +3455,8 @@ void evaluate_hij_qxlist1x_ut2(struct det deti, int pindx, int npx,
     if (npx != 1) return;
     init_dbl_array_0(cik, vcols);
     for (s = 0; s < nqx; s++) {
-        jindx[s] = string_info_to_determinant(pindx, qxlist[s].index, peosp,
-                                              npe, qeosp, nqe, pq, npq);
+        jindx[s] = string_info_to_determinant_fast(pindx, qxlist[s].index, peosp,
+                                                   npe, qeosp, nqe, pq, npq, jpq);
         /* Adjust index to our buffer arrays */
         jindx[s] = jindx[s] - jstep;
     }
@@ -3626,7 +3626,7 @@ void evaluate_hij_qxlist2x_ut2(struct det deti, int pindx, int npx,
                                int **pq, int npq, double *m1, double *m2, int aelec,
                                int belec, int intorb, int vrows, int vcols,
                                int jstep, double *cik, double *vjk, double *vik,
-                               double *cjk, double *hijval, int *jindx)
+                               double *cjk, double *hijval, int *jindx, int jpq)
 {
     int j = 0, k = 0;
     int s = 0;
@@ -3634,8 +3634,8 @@ void evaluate_hij_qxlist2x_ut2(struct det deti, int pindx, int npx,
     if (npx != 1) return;
     init_dbl_array_0(cik, vcols);
     for (s = 0; s < nqx; s++) {
-        jindx[s] = string_info_to_determinant(pindx, qxlist[s].index, peosp,
-                                              npe, qeosp, nqe, pq, npq);
+        jindx[s] = string_info_to_determinant_fast(pindx, qxlist[s].index, peosp,
+                                                   npe, qeosp, nqe, pq, npq, jpq);
         /* Adjust index to our buffer arrays */
         jindx[s] = jindx[s] - jstep;
     }
@@ -4696,6 +4696,47 @@ int string_info_to_determinant(int pval, int qval, struct eospace *peosp,
         }
         return cntr;
 }
+
+/*
+ * string_info_to_determinant_fast: compute the determinant index given
+ * the p and q string information. 
+ * Input:
+ *  pval    = p string
+ *  qval    = q string
+ *  peosp   = alpha electron orbital spaces
+ *  pegrps  = number of alpha electron orbital spaces
+ *  qeosp   = beta  electron orbital spaces
+ *  qegrps  = number of beta  electron orbital spaces
+ *  pq      = (p,q)-space pairings
+ *  npq     = number of (p,q)-space pairings
+ *  ipq     = pq index of pval and qval
+ * Output:
+ *  detindx = determinant index in expansion.
+ */
+int string_info_to_determinant_fast(int pval, int qval, struct eospace *peosp,
+                                    int pegrps, struct eospace *qeosp, int qegrps,
+                                    int **pq, int npq, int ipq)
+{
+        int i, j, k;
+        int jstart, kstart;
+        int jnstr, knstr;
+        int cntr = 0; /* Counter */
+        /* p,q pairing is found: i */
+        for (i = 0; i < ipq; i++) {
+                cntr = cntr + peosp[(pq[i][0])].nstr * qeosp[(pq[i][1])].nstr;
+        }
+        /* Search for index */
+        jstart = peosp[(pq[ipq][0])].start;
+        kstart = qeosp[(pq[ipq][1])].start;
+        jnstr  = peosp[(pq[ipq][0])].nstr;
+        knstr  = qeosp[(pq[ipq][1])].nstr;
+
+        cntr = cntr + (pval - jstart)*knstr + qval - kstart;
+
+        return cntr;
+
+}
+
 
 /*
  * test_convergence: test convergence of davidson algorithm. returns

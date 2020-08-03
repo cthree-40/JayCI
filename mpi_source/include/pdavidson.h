@@ -296,7 +296,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
                       int nmos, int ndocc, int nactv, int cstep, int *cnums,
                       int jstart, int jmax, int jstartp, int jstartq,
                       int jfinalp, int jfinalq, int *jpair, double *vj,
-                      double *vi, double *cj);
+                      double *vi, double *cj, int jpq);
 
 /*
  * compute_hvc_diagonal_ga: compute <i|H|i>*v(i,j)=c(i,j) using global arrays.
@@ -568,6 +568,7 @@ void evaluate_hij_pxlist1x_ut(struct det deti, struct xstr *pxlist, int npx,
  *  cjk    = C(j,k)
  *  hijval = <i|H|j> values
  *  jindx  = array for determinant indices
+ *  jpq    = pq[i] index of p,q
  */
 void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                int qindx, int nqx,
@@ -576,7 +577,7 @@ void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                int **pq, int npq, double *m1, double *m2, int aelec,
                                int belec, int intorb, int vrows, int vcols,
                                int jstep, double *cik, double *vjk, double *vik,
-                               double *cjk, double *hijval, int *jindx);
+                               double *cjk, double *hijval, int *jindx, int jpq);
 
 /*
  * evaluate_hij_pxlist2x: evaluate hij for double replacements in alpha strings.
@@ -648,7 +649,7 @@ void evaluate_hij_pxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                int **pq, int npq, double *m1, double *m2, int aelec,
                                int belec, int intorb, int vrows, int vcols,
                                int jstep, double *cik, double *vjk, double *vik,
-                               double *cjk, double *hijval, int *jindx);
+                               double *cjk, double *hijval, int *jindx, int jpq);
 
 /*
  * evaluate_hij_pxqxlist2x_ut2: evaluate hij for single replacements in alpha
@@ -661,7 +662,7 @@ void evaluate_hij_pxqxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
                                  int **pq, int npq, double *m1, double *m2, int aelec,
                                  int belec, int intorb, int vrows, int vcols,
                                  int jstep, double *cik, double *vjk, double *vik,
-                                 double *cjk, double *hijval, int *jindx);
+                                 double *cjk, double *hijval, int *jindx, int jpq);
 /*
  * evaluate_hij_qxlist1x: evaluate hij for single replacements in alpha strings.
  */
@@ -730,7 +731,7 @@ void evaluate_hij_qxlist1x_ut2(struct det deti, int pindx, int npx,
                                int **pq, int npq, double *m1, double *m2, int aelec,
                                int belec, int intorb, int vrows, int vcols,
                                int jstep, double *cik, double *vjk, double *vik,
-                               double *cjk, double *hijval, int *jindx);
+                               double *cjk, double *hijval, int *jindx, int jpq);
 
 /*
  * evaluate_hij_qxlist2x: evaluate hij for double replacements in beta strings.
@@ -772,7 +773,7 @@ void evaluate_hij_qxlist2x_ut2(struct det deti, int pindx, int npx,
                                int **pq, int npq, double *m1, double *m2, int aelec,
                                int belec, int intorb, int vrows, int vcols,
                                int jstep, double *cik, double *vjk, double *vik,
-                               double *cjk, double *hijval, int *jindx);
+                               double *cjk, double *hijval, int *jindx, int jpq);
 
 
 /*
@@ -1077,6 +1078,26 @@ void set_ga_det_indexes_trans(int *jindx, int num, int cols, int **vindx);
 int string_info_to_determinant(int pval, int qval, struct eospace *peosp,
                                int pegrps, struct eospace *qeosp, int qegrps,
                                int **pq, int npq);
+
+/*
+ * string_info_to_determinant_fast: compute the determinant index given
+ * the p and q string information. 
+ * Input:
+ *  pval    = p string
+ *  qval    = q string
+ *  peosp   = alpha electron orbital spaces
+ *  pegrps  = number of alpha electron orbital spaces
+ *  qeosp   = beta  electron orbital spaces
+ *  qegrps  = number of beta  electron orbital spaces
+ *  pq      = (p,q)-space pairings
+ *  npq     = number of (p,q)-space pairings
+ *  ipq     = pq index of pval and qval
+ * Output:
+ *  detindx = determinant index in expansion.
+ */
+int string_info_to_determinant_fast(int pval, int qval, struct eospace *peosp,
+                                    int pegrps, struct eospace *qeosp, int qegrps,
+                                    int **pq, int npq, int ipq);
 
 /*
  * test_convergence: test convergence of davidson algorithm. returns
