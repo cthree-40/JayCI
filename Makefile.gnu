@@ -65,29 +65,29 @@ COLIBDIR:= $(SDIR)/colib
 CORI:=cori
 EDISON:=edison
 ifneq ($(filter cori edison,$(NERSC_HOST)),)
-	CC := cc -qopenmp -I $(IDIR) 
-	MPICC := cc -qopenmp -I $(MPIIDIR) -DBIGMEM
+	CC := cc -fopenmp -I $(IDIR) 
+	MPICC := cc -fopenmp -I $(MPIIDIR) -DBIGMEM
 	FC := ftn
 	MPIFC := ftn -DBIGMEM
 	AR := ar rv
 	RANL := ranlib
+	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
+	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
+	          -fomit-frame-pointer -fstrict-aliasing -O3
+	DEBUG  := -g #-DDEBUGGING
+	FDEBUG := -fbacktrace
 else
-	ifneq ($(findstring intel,$(COMPILERS)),)
-		CC := icc -qopenmp -I${MKLROOT}/include -I $(IDIR) 
-		MPICC := mpicc -qopenmp -I${MKLROOT}/include -I $(MPIIDIR)
-		#FC := ifort -I${MKLROOT}/include
-		FC := gfortran
-		MPIFC := mpif90
-		AR := ar rv
-		RANL := ranlib
-	else
-		CC := gcc -fopenmp -I $(IDIR)
-		MPICC := mpicc -fopenmp -I $(MPIIDIR)
-		FC := gfortran
-		MPIFC := mpif90
-		AR := ar rv
-		RANL := ranlib
-	endif
+	CC := gcc -fopenmp -I $(IDIR)
+	MPICC := mpicc -fopenmp -I $(MPIIDIR)
+	FC := gfortran
+	MPIFC := mpif90
+	AR := ar rv
+	RANL := ranlib
+	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
+	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
+	          -fomit-frame-pointer -fstrict-aliasing -O3
+	DEBUG  := -g #-DDEBUGGING
+	FDEBUG := -fbacktrace
 endif
 
 # Compiler options 
@@ -95,36 +95,9 @@ FCOPS  :=
 CCDEF  := -DFLUSH -DINT64 -DEXTNAME
 CPOPS  := 
 
-# Compiler flags
-# These are compiler dependent. Changing FFLAGS from
-# the default value is not recommended. 
-ifeq ($(findstring gfortran,$(FC)),)
-# intel compilers
-	FFLAGS := -i8 -auto -assume byterecl -O3
-	CFLAGS := -Wall -std=c11 -funroll-all-loops \
-		  -fomit-frame-pointer -fstrict-aliasing -O3
-	VTUNE := -g
-else
-# gnu compilers
-	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
-	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
-	          -fomit-frame-pointer -fstrict-aliasing -O3
-endif
-
-# Debugging flags
-ifeq ($(findstring gfortran,$(FC)),)
-# intel compilers
-	DEBUG  := -g 
-	FDEBUG := -traceback
-else
-# gnu compilers
-	DEBUG  := -g #-DDEBUGGING
-	FDEBUG := -fbacktrace
-endif
-
 # Libraries
 ifneq ($(filter cori edison,$(NERSC_HOST)),)
-	MATHLIBS := 
+	MATHLIBS := -L/usr/lib64 -lgfortran -lgomp 
 else
 	MATHLIBS := -L/usr/lib64 -llapack -lblas -lm -lgfortran -lgomp
 	GALIBS   := -L/usr/local/lib -lga -larmci
