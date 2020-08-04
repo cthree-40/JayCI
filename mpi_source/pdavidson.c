@@ -341,8 +341,10 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         fflush(stdout);
     }
     print_gavectors2file_dbl_ufmt(v_hndl, ndets, nroots,"civec");
-    if (cflag != 2)
+    if (cflag != 2) {
+	print_gavectors2file_dbl_ufmt(v_hndl, ndets, krymin, "ci.restart");
         print_gavectors2file_dbl_ufmt(c_hndl, ndets, nroots, "hvvec");
+    }
     /* Deallocate arrays */
     free(d_local);
     free(heval);
@@ -422,7 +424,7 @@ void build_init_guess_vectors(int n, int v, int dim, int kmin, int ndets,
                 }
         }
 
-        if (mpi_proc_rank == mpi_root) {
+        if (mpi_proc_rank == mpi_root && (n == 1 || n == 2)) {
                 /* Set initial guess vectors */
                 for (i = 0; i < kmin; i++) {
                         for (j = 0; j < dim; j++) {
@@ -439,7 +441,11 @@ void build_init_guess_vectors(int n, int v, int dim, int kmin, int ndets,
                 deallocate_mem_cont(&refspace, rdata);
                 deallocate_mem_cont(&initvecs, ivdata);
         }
-        
+
+	if (n == 3) {
+	    /* Read old civectors */
+	    read_gavectorsfile_dbl_ufmt(v, ndets, kmin, "ci.restart");
+	}
         return;
 }
 
