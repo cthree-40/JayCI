@@ -1832,6 +1832,7 @@ void compute_hv_newvectorfaster(struct occstr *pstr, struct eospace *peosp, int 
     
     /* Compute C(i) = H(i,j)*V(j) for new vector */
     if (mpi_proc_rank == mpi_root) timestamp();
+    GA_Sync();
     cindx[0] = ckdim - 1;
     compute_hvc_diagonal_ga(c_hndl, v_hndl, d_hndl, c_lo[0], c_lo[0], ndets);
     compute_cblock_Hfastest(c_local, c_cols, c_rows, wi, w_hndl, v_hndl, d_hndl,
@@ -4357,6 +4358,7 @@ void perform_hvispacefast(struct occstr *pstr, struct eospace *peosp, int pegrps
     }
     /* Compute C(i,k) = H(i,j)*V(j,k) for all i in c_lo[1]..c_hi[1] */
     if (mpi_proc_rank == mpi_root) timestamp();
+    GA_Sync();
     compute_hvc_diagonal_ga(c_hndl, v_hndl, d_hndl, 0, (dim - 1), ndets);
     compute_cblock_Hfastest(cdata, c_cols, c_rows, wi, w_hndl, v_hndl, d_hndl,
                             ga_buffer_len, pstr, peosp, pegrps, qstr, qeosp, qegrps,

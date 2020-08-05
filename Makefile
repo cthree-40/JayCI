@@ -64,10 +64,10 @@ COLIBDIR:= $(SDIR)/colib
 #  3) We are building on a standard Linux machine.
 CORI:=cori
 EDISON:=edison
-ifneq ($(filter cori edison,$(NERSC_HOST)),)
+ifneq ($(filter cori,$(NERSC_HOST)),)
 	CC := cc -qopenmp -I $(IDIR) 
 	MPICC := cc -qopenmp -I $(MPIIDIR) -DBIGMEM
-	FC := ftn
+	FC := ftn -craype=knl
 	MPIFC := ftn -DBIGMEM
 	AR := ar rv
 	RANL := ranlib
