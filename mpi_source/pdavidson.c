@@ -3925,11 +3925,8 @@ int get_upptri_element_rownumber (long long int element, int n)
 long long int get_upptri_size (int n)
 {
     long long int result = 0;
-    for (int i = 0; i < n; i++) {
-	for (int j = i + 1; j < n; j++) {
-	    result++;
-	}
-    } 
+    result = (long long int) n * n - n;
+    result = result / 2;
     return result;
 }
 
