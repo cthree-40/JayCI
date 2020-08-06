@@ -3939,77 +3939,85 @@ void init_diag_H_subspace( int w_hndl, struct occstr *pstr, struct occstr *qstr,
                            int aelec, int belec, int intorb, int ndets, int dim,
                            double **refspace)
 {
-        struct det deti;
-        struct det detj;
-        double **hij = NULL;
-        double *hij_data = NULL;
-        double *rdata = NULL;
-        double *rev = NULL;
-
-        int **w       = NULL;     /* Local w array */
-        int *wdata    = NULL;     /* Local w array data (1-D) */
-        int w_lo[2] = {0, 0};
-        int w_hi[2] = {0, 0};
-        int w_ld[1] = {0};
-        
-        int i, j, ii;
-        int error = 0;
-
-        /* Allocate h matrix subblock and refvec data */
-        hij_data = allocate_mem_double_cont(&hij, dim, dim);
-        rdata = malloc(sizeof(double) * dim * dim);
-        rev = malloc(sizeof(double) * dim);
-
-        /* Allocate w array and get wavefunction information */
-        wdata = allocate_mem_int_cont(&w, 3, dim);
-        w_lo[0] = 0;
-        w_lo[1] = 0;
-        w_hi[0] = dim - 1;
-        w_hi[1] = 2;
-        w_ld[0] = 3;
-        NGA_Get(w_hndl, w_lo, w_hi, wdata, w_ld);
-
+    struct det deti;
+    struct det detj;
+    double **hij = NULL;
+    double *hij_data = NULL;
+    double *rdata = NULL;
+    double *rev = NULL;
+    
+    int **w       = NULL;     /* Local w array */
+    int *wdata    = NULL;     /* Local w array data (1-D) */
+    int w_lo[2] = {0, 0};
+    int w_hi[2] = {0, 0};
+    int w_ld[1] = {0};
+    
+    int i, j, ii;
+    int error = 0;
+    
+    /* Allocate h matrix subblock and refvec data */
+    hij_data = allocate_mem_double_cont(&hij, dim, dim);
+    rdata = malloc(sizeof(double) * dim * dim);
+    rev = malloc(sizeof(double) * dim);
+    
+    /* Allocate w array and get wavefunction information */
+    wdata = allocate_mem_int_cont(&w, 3, dim);
+    w_lo[0] = 0;
+    w_lo[1] = 0;
+    w_hi[0] = dim - 1;
+    w_hi[1] = 2;
+    w_ld[0] = 3;
+    NGA_Get(w_hndl, w_lo, w_hi, wdata, w_ld);
+    
+    /* OMP SECTION */
+#pragma omp parallel                                                    \
+    default(none)                                                       \
+    shared(w, dim, m1, m2, aelec, belec, intorb, qstr, pstr, hij)       \
+    private(deti, detj, i, j)
+    {
+#pragma omp for schedule(runtime)
         /* Loop through list of triplets for determinants <i| . */
         for (i = 0; i < dim; i++) {
-                deti.astr = pstr[w[i][0]];
-                deti.bstr = qstr[w[i][1]];
-                deti.cas = w[i][2];
-                /* Loop over determinants |j> */
-                for (j = 0; j < dim; j++) {
-                        detj.astr = pstr[w[j][0]];
-                        detj.bstr = qstr[w[j][1]];
-                        detj.cas = w[j][2];
-
-                        hij[i][j] = hmatels(deti, detj, m1, m2, aelec,
-                                            belec, intorb);
-                }
+            deti.astr = pstr[w[i][0]];
+            deti.bstr = qstr[w[i][1]];
+            deti.cas = w[i][2];
+            /* Loop over determinants |j> */
+            for (j = 0; j < dim; j++) {
+                detj.astr = pstr[w[j][0]];
+                detj.bstr = qstr[w[j][1]];
+                detj.cas = w[j][2];
+                
+                hij[i][j] = hmatels(deti, detj, m1, m2, aelec,
+                                    belec, intorb);
+            }
         }
-
-        /* Diagonalize hij */
-        error = diagmat_dsyevr(hij_data, dim, rdata, rev);
-        if (error != 0) {
-                error_message(mpi_proc_rank, "Error occured during DSYEVR",
-                              "init_diag_H_subspace");
+    } /* END OMP SECTION */
+    
+    /* Diagonalize hij */
+    error = diagmat_dsyevr(hij_data, dim, rdata, rev);
+    if (error != 0) {
+        error_message(mpi_proc_rank, "Error occured during DSYEVR",
+                      "init_diag_H_subspace");
+    }
+    printf(" eigenvalues = %lf %lf %lf\n",
+           rev[0] + total_core_e,
+           rev[1] + total_core_e,
+           rev[2] + total_core_e);
+    fflush(stdout);
+    /* Copy rdata into refspace */
+    ii = 0;
+    for (i = 0; i < dim; i++) {
+        for (j = 0; j < dim; j++) {
+            refspace[i][j] = rdata[ii];
+            ii++;
         }
-        printf(" eigenvalues = %lf %lf %lf\n",
-               rev[0] + total_core_e,
-               rev[1] + total_core_e,
-               rev[2] + total_core_e);
-	fflush(stdout);
-        /* Copy rdata into refspace */
-        ii = 0;
-        for (i = 0; i < dim; i++) {
-                for (j = 0; j < dim; j++) {
-                        refspace[i][j] = rdata[ii];
-                        ii++;
-                }
-        }
-
-        deallocate_mem_cont(&hij, hij_data);
-        deallocate_mem_cont_int(&w, wdata);
-        free(rdata);
-        free(rev);
-        return;
+    }
+    
+    deallocate_mem_cont(&hij, hij_data);
+    deallocate_mem_cont_int(&w, wdata);
+    free(rdata);
+    free(rev);
+    return;
 }
 
 /*
