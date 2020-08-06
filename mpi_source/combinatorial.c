@@ -64,6 +64,18 @@ int binomial_coef2(int n, int k)
         return result;
 };
 
+/*
+ * binomial_coef3: return binomial coefficient of n and k.
+ * WARNING: Does not check for initialization of binom_data[][].
+ */
+int binomial_coef3(int n, int k)
+{
+        int result;
+        result = binom_data[n][k];
+        return result;
+};
+
+
 int fact_product(int m, int n)
 /* fact_product
  * ------------

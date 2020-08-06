@@ -36,6 +36,7 @@ void str_adr2str(int index, int *scr, int elec, int orbs, int *str)
     return;
 
 }    
+
 /* str_adrfind: Computes address of orbital index string
  * -------------------------------------------------------------------
  * [citation]
@@ -62,6 +63,34 @@ int str_adrfind(int *str, int elec, int orbs)
      }
      return address;
 }
+
+/* str_adrfind_fast: Computes address of orbital index string
+ * -------------------------------------------------------------------
+ * WARNING: binomial_coef3 does not check for initialization of binom data.
+ *
+ * Input:
+ *  str  = orbital index string
+ *  elec = electron number
+ *  orbs = MO's in system */
+int str_adrfind_fast(int *str, int elec, int orbs)
+{
+    int address;
+    int i, j;
+    
+    address = 1;
+    for (i = 2; i <= elec; i++) {
+        for (j = (str[i - 2] + 1); j <= (str[i - 1] - 1); j++ ) {
+            address = address +
+                binomial_coef3((orbs - j),(elec - i));
+        }
+    }
+    for (i = 1; i <= str[0] - 1; i++) {
+        address = address +
+            binomial_coef3((orbs - i),(elec - 1));
+    }
+    return address;
+}
+
 
 /* str_strfind1: 
  *   Compute orbital occupation string from preceding string 
@@ -98,6 +127,7 @@ void str_strfind1(int *str1, int elec, int orbs, int *str2)
      return;
 
 }
+
 /* str_strfind2:
  *  Compute orbital occupation string for jth string from ith
  * -------------------------------------------------------------------

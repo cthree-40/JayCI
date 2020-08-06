@@ -15,6 +15,13 @@ int binomial_coef(int m, int n);
  * binomial_coef2: return binomial coefficient of n and k
  */
 int binomial_coef2(int n, int k);
+
+/*
+ * binomial_coef3: return binomial coefficient of n and k.
+ * WARNING: Does not check for initialization of binom_data[][].
+ */
+int binomial_coef3(int n, int k);
+
 int fact_product(int m, int n);
 /*
  * initialize_binom_coef: initialize the binomial coefficient array.

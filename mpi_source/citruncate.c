@@ -2508,8 +2508,8 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
     int xtype = 0;
     //long long int ibyte = 0x00;
     //long long int xbyte = 0x00;
-    int i, j, k, l;
-    int tmp;
+    int i, k, l;
+    //int tmp;
     //int nvo = 0;
     int intorb = ndocc + nactv;
 
@@ -2627,7 +2627,7 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
-    int xtype = 0;
+    //int xtype = 0;
     int tmp;
     //int nvo = 0;
     //long long int ibyte = 0x00;
@@ -3683,114 +3683,115 @@ int get_string_eospace(struct occstr str, int ndocc, int nactv,
 int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
                    int nvirt, int nelec, int *elecs)
 {
-        int i, j;
-        int dstr = 0, astr = 0, vstr = 0;
-        int daddr = 0, aaddr = 0, vaddr = 0;
-        int addr = 0;
-
-        /* Create electron string necessary for address look up. */
-        nonzerobits(str.byte1, (ndocc + nactv), elecs);
-        for (i = 0; i < str.nvrtx; i++) {
-                elecs[nelec - str.nvrtx + i] = str.virtx[i];
-        }
-        /* Give orbitals in string "relative" values for space */
-        /* DOCC space can be skipped. */
-        for (i = eosp.docc; i < eosp.docc + eosp.actv; i++) {
-            elecs[i] = elecs[i] - ndocc;
-        }
-        for (i = eosp.docc + eosp.actv; i < nelec; i++) {
-            elecs[i] = elecs[i] - ndocc - nactv;
-        }
-
+    int i, j;
+    int dstr = 0, astr = 0, vstr = 0;
+    int daddr = 0, aaddr = 0, vaddr = 0;
+    int addr = 0;
+    
+    /* Create electron string necessary for address look up. */
+    nonzerobits(str.byte1, (ndocc + nactv), elecs);
+    for (i = 0; i < str.nvrtx; i++) {
+        //elecs[nelec - str.nvrtx + i] = str.virtx[i];
+        elecs[nelec - str.nvrtx + i] = str.virtx[i] - ndocc - nactv;
+    }
+    /* Give orbitals in string "relative" values for space */
+    /* DOCC space can be skipped. */
+    for (i = eosp.docc; i < eosp.docc + eosp.actv; i++) {
+        elecs[i] = elecs[i] - ndocc;
+    }
+    //for (i = eosp.docc + eosp.actv; i < nelec; i++) {
+    //    elecs[i] = elecs[i] - ndocc - nactv;
+    //}
+    
 #ifdef DEBUGGING
-        for (i = 0; i < nelec; i++) {
-            if (elecs[i] <= 0) {
-                printf("Error! ");
-                for (j = 0; j < nelec; j++) {
-                    printf(" %d", elecs[j]);
-                }
-                printf("\n");
-                print_occstring(str, nelec, ndocc, nactv);
-                return -10;
-            }
-        }
-#endif
-
-        if ((eosp.docc * eosp.actv * eosp.virt) != 0) {
-            /* Electrons present in all spaces */
-//            dstr = binomial_coef2(ndocc, eosp.docc);
-            astr = binomial_coef2(nactv, eosp.actv);
-            vstr = binomial_coef2(nvirt, eosp.virt);
-
-            daddr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
-            aaddr = str_adrfind(&(elecs[eosp.docc]),eosp.actv,nactv);
-            vaddr = str_adrfind(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
-
-            addr = (daddr - 1) * astr * vstr + (aaddr - 1) * vstr + vaddr;
-
-        } else if (eosp.actv != 0 && eosp.virt != 0) {
-            /* (0, 1, 1) */
-            astr = binomial_coef2(nactv, eosp.actv);
-            vstr = binomial_coef2(nvirt, eosp.virt);
-
-            aaddr = str_adrfind(&(elecs[eosp.docc]),eosp.actv,nactv);
-            vaddr = str_adrfind(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
-
-            addr = (aaddr - 1) * vstr + vaddr;
-
-        } else if (eosp.docc != 0 && eosp.virt != 0) {
-            /* (1, 0, 1) */
-//            dstr = binomial_coef2(ndocc, eosp.docc);
-            vstr = binomial_coef2(nvirt, eosp.virt);
-
-            daddr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
-            vaddr = str_adrfind(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
-            
-            addr = (daddr - 1) * vstr + vaddr;
-
-        } else if (eosp.docc != 0 && eosp.actv != 0) {
-            /* (1, 1, 0) */
-//            dstr = binomial_coef2(ndocc, eosp.docc);
-            astr = binomial_coef2(nactv, eosp.actv);
-
-            daddr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
-            aaddr = str_adrfind(&(elecs[eosp.docc]),eosp.actv,nactv);
-
-            addr = (daddr - 1) * astr + aaddr;
-
-        } else if (eosp.docc != 0) {
-            /* (1, 0, 0) */
-            dstr = binomial_coef2(ndocc, eosp.docc);
-
-            addr = str_adrfind(&(elecs[0]),eosp.docc,ndocc);
-            
-        } else if (eosp.actv != 0) {
-            /* (0, 1, 0) */
-            astr = binomial_coef2(nactv, eosp.actv);
-
-            addr = str_adrfind(&(elecs[eosp.docc]),eosp.actv,nactv);
-
-        } else if (eosp.virt != 0) {
-            /* (0, 0, 1) */
-            vstr = binomial_coef2(nvirt, eosp.virt);
-
-            addr = str_adrfind(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
-
-        }
-
-        addr = addr + eosp.start - 1;
-        if (addr > (eosp.start + eosp.nstr)) {
-            printf("Error! addr = %d, eosp.start = %d, eosp.nstr = %d\n",
-                   addr, eosp.start, eosp.nstr);
-            printf("eosp.docc = %d, eosp.actv = %d, eosp.virt = %d\n",
-                   eosp.docc, eosp.actv, eosp.virt);
-            printf("Relative occupations: ");
-            for (i = 0; i < (eosp.docc + eosp.actv + eosp.virt); i++) {
-                printf(" %d", elecs[i]);
+    for (i = 0; i < nelec; i++) {
+        if (elecs[i] <= 0) {
+            printf("Error! ");
+            for (j = 0; j < nelec; j++) {
+                printf(" %d", elecs[j]);
             }
             printf("\n");
+            print_occstring(str, nelec, ndocc, nactv);
+            return -10;
         }
-        return addr;
+    }
+#endif
+    
+    if ((eosp.docc * eosp.actv * eosp.virt) != 0) {
+        /* Electrons present in all spaces */
+//            dstr = binomial_coef2(ndocc, eosp.docc);
+        astr = binomial_coef3(nactv, eosp.actv);
+        vstr = binomial_coef3(nvirt, eosp.virt);
+        
+        daddr = str_adrfind_fast(&(elecs[0]),eosp.docc,ndocc);
+        aaddr = str_adrfind_fast(&(elecs[eosp.docc]),eosp.actv,nactv);
+        vaddr = str_adrfind_fast(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
+        
+        addr = (daddr - 1) * astr * vstr + (aaddr - 1) * vstr + vaddr;
+        
+    } else if (eosp.actv != 0 && eosp.virt != 0) {
+        /* (0, 1, 1) */
+        astr = binomial_coef3(nactv, eosp.actv);
+        vstr = binomial_coef3(nvirt, eosp.virt);
+        
+        aaddr = str_adrfind_fast(&(elecs[eosp.docc]),eosp.actv,nactv);
+        vaddr = str_adrfind_fast(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
+        
+        addr = (aaddr - 1) * vstr + vaddr;
+        
+    } else if (eosp.docc != 0 && eosp.virt != 0) {
+        /* (1, 0, 1) */
+//            dstr = binomial_coef2(ndocc, eosp.docc);
+        vstr = binomial_coef3(nvirt, eosp.virt);
+        
+        daddr = str_adrfind_fast(&(elecs[0]),eosp.docc,ndocc);
+        vaddr = str_adrfind_fast(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
+        
+        addr = (daddr - 1) * vstr + vaddr;
+        
+    } else if (eosp.docc != 0 && eosp.actv != 0) {
+        /* (1, 1, 0) */
+//            dstr = binomial_coef2(ndocc, eosp.docc);
+        astr = binomial_coef3(nactv, eosp.actv);
+        
+        daddr = str_adrfind_fast(&(elecs[0]),eosp.docc,ndocc);
+        aaddr = str_adrfind_fast(&(elecs[eosp.docc]),eosp.actv,nactv);
+        
+        addr = (daddr - 1) * astr + aaddr;
+        
+    } else if (eosp.docc != 0) {
+        /* (1, 0, 0) */
+        dstr = binomial_coef3(ndocc, eosp.docc);
+        
+        addr = str_adrfind_fast(&(elecs[0]),eosp.docc,ndocc);
+        
+    } else if (eosp.actv != 0) {
+        /* (0, 1, 0) */
+        astr = binomial_coef3(nactv, eosp.actv);
+        
+        addr = str_adrfind_fast(&(elecs[eosp.docc]),eosp.actv,nactv);
+        
+    } else if (eosp.virt != 0) {
+        /* (0, 0, 1) */
+        vstr = binomial_coef3(nvirt, eosp.virt);
+        
+        addr = str_adrfind_fast(&(elecs[eosp.docc + eosp.actv]),eosp.virt,nvirt);
+        
+    }
+    
+    addr = addr + eosp.start - 1;
+    if (addr > (eosp.start + eosp.nstr)) {
+        printf("Error! addr = %d, eosp.start = %d, eosp.nstr = %d\n",
+               addr, eosp.start, eosp.nstr);
+        printf("eosp.docc = %d, eosp.actv = %d, eosp.virt = %d\n",
+               eosp.docc, eosp.actv, eosp.virt);
+        printf("Relative occupations: ");
+        for (i = 0; i < (eosp.docc + eosp.actv + eosp.virt); i++) {
+            printf(" %d", elecs[i]);
+        }
+        printf("\n");
+    }
+    return addr;
 }
 
 /*
