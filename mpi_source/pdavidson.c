@@ -1607,13 +1607,22 @@ void compute_diagonal_iHi(double *hdgls, int start, int final,
     if (wdata == NULL) printf("Error! Could not allocate wdata!\n");
     NGA_Get(w_hndl, w_lo, w_hi, wdata, w_ld);
     
-    /* Loop over these determinants */
-    for (i = 0; i <= (final - start); i++) {
-	deti.astr = pstr[w[i][0]];
-	deti.bstr = qstr[w[i][1]];
-	deti.cas  = w[i][2];
-	hdgls[i] = hmatels(deti, deti, mo1, mo2, aelec, belec, intorb);
-    }
+    /* OMP SECTION */
+#pragma omp parallel                                            \
+    default(none)                                               \
+    shared(hdgls, final, start, mo1, mo2, aelec, belec, intorb, \
+           pstr, qstr, w)                                         \
+    private(deti, i)
+    {
+#pragma omp for schedule(runtime)
+        /* Loop over these determinants */
+        for (i = 0; i <= (final - start); i++) {
+            deti.astr = pstr[w[i][0]];
+            deti.bstr = qstr[w[i][1]];
+            deti.cas  = w[i][2];
+            hdgls[i] = hmatels(deti, deti, mo1, mo2, aelec, belec, intorb);
+        }
+    } /* END OMP SECTION */
     
     /* Free memory */
     deallocate_mem_cont_int(&w, wdata);
