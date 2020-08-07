@@ -67,7 +67,7 @@ EDISON:=edison
 ifneq ($(filter cori,$(NERSC_HOST)),)
 	CC := cc -qopenmp -I $(IDIR) 
 	MPICC := cc -qopenmp -I $(MPIIDIR) -DBIGMEM
-	FC := ftn -craype=knl
+	FC := ftn
 	MPIFC := ftn -DBIGMEM
 	AR := ar rv
 	RANL := ranlib
@@ -132,8 +132,8 @@ else
 	COLIBLIB := $(LDIR)/colib.a
 endif
 
-COLIBLIB   := $(LDIR)/colib.a
-COLIBLIBSO := $(LDIR)/libcolib.so
+#COLIBLIB   := $(LDIR)/colib.a
+#COLIBLIBSO := $(LDIR)/libcolib.so
 
 # Objects for jayci
 OBJS := 	timestamp.o \
