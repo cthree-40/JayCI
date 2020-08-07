@@ -124,13 +124,16 @@ endif
 
 # Libraries
 ifneq ($(filter cori edison,$(NERSC_HOST)),)
-	MATHLIBS := 
+	MATHLIBS :=
+	COLIBLIB := -L$(LDIR) -lcolib
 else
 	MATHLIBS := -L/usr/lib64 -llapack -lblas -lm -lgfortran -lgomp
 	GALIBS   := -L/usr/local/lib -lga -larmci
+	COLIBLIB := $(LDIR)/colib.a
 endif
 
-COLIBLIB := $(LDIR)/colib.a
+COLIBLIB   := $(LDIR)/colib.a
+COLIBLIBSO := $(LDIR)/libcolib.so
 
 # Objects for jayci
 OBJS := 	timestamp.o \
@@ -286,6 +289,7 @@ PDYCIEXE:=$(BDIR)/pdycicalc-$(PDYCICALCVER)-$(OS)-$(ARC)
 TESTEXE:= $(TDIR)/test.x
 ATESTEXE:= $(BDIR)/testao.x
 COLIBX := $(LDIR)/colib-$(JAYCIVER)-$(OS)-$(ARC).a
+COLIBXSO:=$(LDIR)/libcolib-$(JAYCIVER)-$(OS)-$(ARC).so
 CDS := cd $(SDIR)
 CDPS:= cd $(MPISDIR)
 RM  := rm -rf
@@ -303,12 +307,17 @@ colib: $(COLIBOBJS) $(UNIXOBJS) | $(LDIR)
 	@echo " Archiver (AR):		$(AR)"
 	@echo " Library file name:	$(COLIBX)"
 	@echo "------------------------------------------------------"
+	@echo "Building colib.a static library."
 	$(CDS); $(AR) $(COLIBX) $(COLIBOBJS) $(UNIXOBJS)
 	$(RANL) $(COLIBX)
 	chmod +x $(COLIBX)
+	@echo "Building libcolib.so shared library."
+	$(CDS); $(MPICC) -shared -o $(COLIBXSO) -fPIC $(COLIBOBJS) $(UNIXOBJS)
+	chmod +x $(COLIBXSO)
 	@echo "------------------------------------------------------"
-	@echo " Creating symbolic link to new library"
+	@echo " Creating symbolic link to new libraries"
 	ln -sf $(COLIBX) $(LDIR)/colib.a
+	ln -sf $(COLIBXSO) $(LDIR)/libcolib.so
 	@echo "------------------------------------------------------"
 	@echo " Finished build."
 	@echo ""
@@ -451,10 +460,10 @@ deepclean:
 
 # Rules --------------------------------------------------------------
 $(UNIXDIR)/%.o: $(UNIXDIR)/%.c
-	$(CC) -c $(CCDEF) -o $@ $< $(CFLAGS) -Wno-implicit-function-declaration
+	$(CC) -c $(CCDEF) -fPIC -o $@ $< $(CFLAGS) -Wno-implicit-function-declaration
 
 $(COLIBDIR)/%.o: $(COLIBDIR)/%.f
-	$(FC) -c -o $@ $< $(CPOPS) $(DEBUG) $(FFLAGS)
+	$(FC) -c -fPIC -o $@ $< $(CPOPS) $(DEBUG) $(FFLAGS)
 
 $(SDIR)/%.o:$(SDIR)/%.c
 	$(CC) -c -o $@ $< $(DEBUG) $(CFLAGS)
