@@ -2628,7 +2628,6 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
     struct occstr newstr; /* New string. */
     int elecs[20];
     //int xtype = 0;
-    int tmp;
     //int nvo = 0;
     //long long int ibyte = 0x00;
     //long long int xbyte = 0x00;
@@ -2708,7 +2707,7 @@ void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
 {
     struct occstr newstr; /* New string. */
     int elecs[20];
-    int xtype = 0;
+    //int xtype = 0;
     int tmp;
     //int nvo = 0;
     //long long int ibyte = 0x00;
@@ -3244,9 +3243,9 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
     int elecs[20];
     //long long int ibyte = 0x00; /* Internal orbitals */
     //long long int xbyte = 0x00; /* Excitation orbitals */
-    int intorb;
+    //int intorb;
     int i, j, k ,l;
-    intorb = ndocc + nactv;
+    //intorb = ndocc + nactv;
     
     /* Check if excitations are possible */
     if (str_docc != eosp.docc) return;

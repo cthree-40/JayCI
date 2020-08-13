@@ -106,9 +106,9 @@ ifeq ($(findstring gfortran,$(FC)),)
 	VTUNE := -g
 else
 # gnu compilers
-	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O3
+	FFLAGS := -fdefault-integer-8 -frecord-marker=4 -O0
 	CFLAGS := -Wall -std=c11 -march=native -funroll-loops -ffast-math \
-	          -fomit-frame-pointer -fstrict-aliasing -O3
+	          -fomit-frame-pointer -fstrict-aliasing -O0
 endif
 
 # Debugging flags

@@ -64,6 +64,11 @@ int deallocate_mem(
     );
 
 /*
+ * deallocate_mem_int: deallocate 2d int array.
+ */
+void deallocate_mem_int(int ***array, int m);
+
+/*
  * deallocate_mem_cont: deallocate *contiguous* 2d array
  */
 void deallocate_mem_cont(double ***array, double *ptr);

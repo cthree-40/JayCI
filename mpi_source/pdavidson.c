@@ -2086,7 +2086,13 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
         free(elecx);
         free(orbsx);
         free(cik);
+        free(jindx);
         free(hijval);
+        
+#pragma omp single
+        {
+            deallocate_mem_cont(&cjk, cjkdat);
+        }
     }
     /* END OMP SECTION */
     /* Deallocate arrays shared by OMP */

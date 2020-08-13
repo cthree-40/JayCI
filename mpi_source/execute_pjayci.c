@@ -53,6 +53,7 @@ int execute_pjayci ()
         struct eospace *peospace;    /* Alpha electron string spaces */
         struct eospace *qeospace;    /* Beta  electron string spaces */
         int **pq_space_pairs = NULL; /* Valid (p,q) space pairs. */
+        int *pqdata = NULL;          /* 1-d block of (p,q) memory */
         int num_pq = 0;              /* Number of valid (p,q) space pairs */
         int pegrps = 0;              /* Alpha electron occupation groups */
         int qegrps = 0;              /* Beta  electron occupation groups */
@@ -79,13 +80,6 @@ int execute_pjayci ()
         int ga_buffer_len = 0; /* Length of GA buffers. */
 	double memusage = 0.0; /* Estimated memory usage */
 
-        int **p1x = NULL, **p2x = NULL; /* 1 and 2 excitation string lists */
-        int **q1x = NULL, **q2x = NULL; /* 1 and 2 excitation string lists */
-        int nq1x = 0, nq2x = 0;
-        int np1x = 0, np2x = 0;
-        
-
-        
         /* Read in the &general namelist. Ensure that the expansion's
          * CAS space is not greater than 64 orbitals. */
         if (mpi_proc_rank == mpi_root) {
@@ -163,7 +157,7 @@ int execute_pjayci ()
         qeospace = allocate_eospace_array(ci_belec, ci_orbs, ndocc, nactv, xlvl,
 					  &qegrps);
         num_pq = pegrps * qegrps;
-        error = allocate_mem_int(&pq_space_pairs, 2, num_pq);
+        pqdata = allocate_mem_int_cont(&pq_space_pairs, 2, num_pq);
         error = citrunc(aelec, belec, orbitals, nfrzc, ndocc, nactv, nfrzv,
                         xlvl, pstrings, pstr_len, qstrings, qstr_len,
                         peospace, pegrps, qeospace, qegrps, &dtrm_len,
@@ -224,6 +218,14 @@ int execute_pjayci ()
         GA_Sync();
         free(moints1);
         free(moints2);
+        /* Deallocate pstrings and qstrings */
+        free(pstrings);
+        free(qstrings);
+        /* Deallocate peospace and qeospace */
+        free(peospace);
+        free(qeospace);
+        /* Deallocate pq_space_pairs */
+        deallocate_mem_cont_int(&pq_space_pairs, pqdata);
         return error;
 }
 

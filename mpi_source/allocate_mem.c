@@ -139,6 +139,18 @@ int deallocate_mem(double ***array, int n, int m)
 }
 
 /*
+ * deallocate_mem_int: deallocate 2d int array.
+ */
+void deallocate_mem_int(int ***array, int m)
+{
+    for (int i = 0; i < m; i++) {
+        free((*array)[i]);
+    }
+    free(*array);
+    return;
+}
+
+/*
  * deallocate_mem_cont: deallocate *contiguous* 2d array
  */
 void deallocate_mem_cont(double ***array, double *ptr)
