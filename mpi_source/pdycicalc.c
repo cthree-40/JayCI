@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "mpi_utilities.h"
+#include "binarystr.h"
+#include "citruncate.h"
 #include "run_pdycicalc.h"
 #include <mpi.h>
 #include <ga.h>
