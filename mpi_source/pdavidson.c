@@ -188,6 +188,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         printf(" Initial guess vectors set.\n");
         fflush(stdout);
     }
+
     
     GA_Sync();
 
@@ -210,17 +211,17 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         fptr0 = fopen("v.vectors","w");
         GA_Print_file(fptr0, v_hndl);
         fclose(fptr0);
-        //perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
-        //                     qeospace, qegrps, pq_space_pairs, num_pq,
-        //                     moints1, moints2, aelec, belec, intorb,
-        //                     ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
-        //                     c_hndl, w_hndl, ga_buffer_len);
-        perform_hvispacefast_debug(pstrings, peospace, pegrps, qstrings,
+        perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
                              qeospace, qegrps, pq_space_pairs, num_pq,
                              moints1, moints2, aelec, belec, intorb,
                              ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
-                             c_hndl, w_hndl, ga_buffer_len, totalmo,
-                             ndocc, nactv);
+                             c_hndl, w_hndl, ga_buffer_len);
+        //perform_hvispacefast_debug(pstrings, peospace, pegrps, qstrings,
+        //                     qeospace, qegrps, pq_space_pairs, num_pq,
+        //                     moints1, moints2, aelec, belec, intorb,
+        //                     ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
+        //                     c_hndl, w_hndl, ga_buffer_len, totalmo,
+        //                     ndocc, nactv);
 	
         FILE *fptr1;
         fptr1 = fopen("c.old", "w");
@@ -2417,23 +2418,29 @@ void evaluate_hdblock_ij2(int **wi, int idets, int **wj, int jdets,
 #pragma omp for schedule(runtime)
         /* Loop through list of triplets for determinants |i>. */
         for (i = 0; i < idets; i++) {
-                deti.astr = pstr[wi[i][0]];
-                deti.bstr = qstr[wi[i][1]];
-                deti.cas = wi[i][2];
-                /* Loop over determinants |j> */
-                for (j = 0; j < jdets; j++) {
-                        detj.astr = pstr[wj[j][0]];
-                        detj.bstr = qstr[wj[j][1]];
-                        detj.cas  = wj[j][2];
-                        
-                        hijval = hmatels(deti, detj, mo1, mo2,
-                                         aelec, belec, intorb);
-                        /* H_ij*v_jl = c_il */
-                        for (l = 0; l < vcols; l++) {
+            deti.astr = pstr[wi[i][0]];
+            deti.bstr = qstr[wi[i][1]];
+            deti.cas = wi[i][2];
+            if (i == 1301 || i == 1307) {
+                printf("|%d> = |%d,%d>\n", i, wi[i][0],wi[i][1]);
+                printf("pstring :");
+                print_occstring(deti.astr, aelec, 2, 3);
+                printf("qstring :");
+                print_occstring(deti.bstr, belec, 2, 3);
+            }
+            /* Loop over determinants |j> */
+            for (j = 0; j < jdets; j++) {
+                detj.astr = pstr[wj[j][0]];
+                detj.bstr = qstr[wj[j][1]];
+                detj.cas  = wj[j][2];
+                hijval = hmatels(deti, detj, mo1, mo2,
+                                 aelec, belec, intorb);
+                /* H_ij*v_jl = c_il */
+                for (l = 0; l < vcols; l++) {
 //#pragma omp atomic update
-                                c[l][i] = c[l][i] + hijval * v[l][j];
-                        }
+                    c[l][i] = c[l][i] + hijval * v[l][j];
                 }
+            }
         }
         } /* End of OMP Section */
         return;
@@ -3969,7 +3976,7 @@ void init_diag_H_subspace( int w_hndl, struct occstr *pstr, struct occstr *qstr,
     
     int i, j, ii;
     int error = 0;
-    
+
     /* Allocate h matrix subblock and refvec data */
     hij_data = allocate_mem_double_cont(&hij, dim, dim);
     rdata = malloc(sizeof(double) * dim * dim);
@@ -4014,11 +4021,12 @@ void init_diag_H_subspace( int w_hndl, struct occstr *pstr, struct occstr *qstr,
         error_message(mpi_proc_rank, "Error occured during DSYEVR",
                       "init_diag_H_subspace");
     }
-    printf(" eigenvalues = %lf %lf %lf\n",
+    printf(" eigenvalues = %18.10lf %18.10lf %18.10lf\n",
            rev[0] + total_core_e,
            rev[1] + total_core_e,
            rev[2] + total_core_e);
     fflush(stdout);
+    
     /* Copy rdata into refspace */
     ii = 0;
     for (i = 0; i < dim; i++) {
@@ -4229,7 +4237,8 @@ void perform_hv_initspace(struct occstr *pstr, struct eospace *peosp, int pegrps
         wi_ld[0] = 3;
         NGA_Get(w_hndl, wi_lo, wi_hi, widata, wi_ld); 
 
-        buflen = ga_buffer_len; /* Set buffer size for each column */
+        buflen = ndets;
+        //buflen = ga_buffer_len; /* Set buffer size for each column */
         v_lo[0] = 0;
         v_lo[1] = 0;
         v_hi[0] = dim - 1;
@@ -4528,13 +4537,13 @@ void print_iter_info(double *heval, int ckdim, int croot, double rnorm,
                 printf("\n  Eigenvalues:\n");
                 for (i = 0; i < ckdim; i++) {
                         if ((i + 1) < croot) {
-                                printf("   Root #%2d  %15.8lf *CONVERGED*\n",
+                                printf("   Root #%2d  %18.10lf *CONVERGED*\n",
                                        (i + 1), (heval[i] + totfrze));
                         } else if ((i + 1) == croot) {
-                                printf("   Root #%2d  %15.8lf ||r||: %15.8lf\n",
+                                printf("   Root #%2d  %18.10lf ||r||: %15.8lf\n",
                                        (i + 1), (heval[i] + totfrze), rnorm);
                         } else {
-                                printf("   Root #%2d  %15.8lf\n",
+                                printf("   Root #%2d  %18.10lf\n",
                                        (i + 1), (heval[i] + totfrze));
                         }
                 }

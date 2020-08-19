@@ -3405,7 +3405,7 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                         xlist[*numx].io[1] = str.virtx[1];
                         xlist[*numx].fo[0] = scr[j];
                         xlist[*numx].fo[1] = scr[l];
-
+                        
                         xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
                                                                    xlist[*numx].io[0],
                                                                    xlist[*numx].fo[0],
@@ -3413,7 +3413,6 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                                                                    xlist[*numx].fo[1],
                                                                    elec);
                         (*numx)++;
-                        return;
                     }
                 }
             }
