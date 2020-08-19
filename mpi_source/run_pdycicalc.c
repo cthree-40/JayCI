@@ -60,6 +60,7 @@ int run_pdycicalc ()
         struct eospace *peospace0;
         struct eospace *qeospace0;
         int **pq_space_pairs0 = NULL;
+        int *pqsp0data = NULL;
         int pegrps0 = 0;
         int qegrps0 = 0;
         int num_pq0 = 0;
@@ -87,6 +88,7 @@ int run_pdycicalc ()
         struct eospace *peospace1;
         struct eospace *qeospace1;
         int **pq_space_pairs1 = NULL;
+        int *pqsp1data = NULL;
         int pegrps1 = 0;
         int qegrps1 = 0;
         int num_pq1 = 0;
@@ -205,7 +207,7 @@ int run_pdycicalc ()
         qeospace0 = allocate_eospace_array(cibelec0, ciorbs0, ndocc0, nactv0,
                                            xlvl0, &qegrps0);
         num_pq0 = pegrps0 * qegrps0;
-        error = allocate_mem_int(&pq_space_pairs0, 2, num_pq0);
+        pqsp0data = allocate_mem_int_cont(&pq_space_pairs0, 2, num_pq0);
         error = citrunc(naelec0, nbelec0, norbs0, nfrzc0, ndocc0, nactv0, nfrzv0,
                         xlvl0, pstrings0, pstr0_len, qstrings0, qstr0_len,
                         peospace0, pegrps0, qeospace0, qegrps0, &dtrm0_len,
@@ -237,7 +239,7 @@ int run_pdycicalc ()
         qeospace1 = allocate_eospace_array(cibelec1, ciorbs1, ndocc1, nactv1,
                                            xlvl1, &qegrps1);
         num_pq1 = pegrps1 * qegrps1;
-        error = allocate_mem_int(&pq_space_pairs1, 2, num_pq1);
+        pqsp1data = allocate_mem_int_cont(&pq_space_pairs1, 2, num_pq1);
         error = citrunc(naelec1, nbelec1, norbs1, nfrzc1, ndocc1, nactv1, nfrzv1,
                         xlvl1, pstrings1, pstr1_len, qstrings1, qstr1_len,
                         peospace1, pegrps1, qeospace1, qegrps1, &dtrm1_len,
@@ -364,7 +366,22 @@ int run_pdycicalc ()
                                             dyorb_gl, dysnst0, ndyst0, dysnst1,
                                             ndyst1);
         }
-        
+
+        /* Deallocate pstrings and qstrings */
+        free(pstrings0);
+        free(pstrings1);
+        free(qstrings0);
+        free(qstrings1);
+        free(peospace0);
+        free(peospace1);
+        free(qeospace0);
+        free(qeospace1);
+        /* Deallocate dyorb_*_data */
+        deallocate_mem_cont(&dyorb_lc, dyorb_lc_data);
+        deallocate_mem_cont(&dyorb_gl, dyorb_gl_data);
+        /* Deallocate pqspace pairs */
+        deallocate_mem_cont_int(&pq_space_pairs0, pqsp0data);
+        deallocate_mem_cont_int(&pq_space_pairs1, pqsp1data);
         return error;
 }
 
@@ -594,7 +611,7 @@ void print_dysonorbitals_to_file(char *filename, int ndyorbs, int orbs,
                                  int *dysnst1, int ndyst1)
 {
         FILE* fptr = NULL; /* File pointer */
-        int i, j, k;
+        int i, j;
 
         fptr = fopen(filename, "w");
         if (fptr == NULL) {

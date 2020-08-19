@@ -207,7 +207,10 @@ void compute_dyson_orbital(int w0_hndl, int dlen0, int w1_hndl, int dlen1,
         }
         
         GA_Sync();
-
+        deallocate_mem_cont_int(&w0buff, w0data);
+        deallocate_mem_cont_int(&w1buff, w1data);
+        deallocate_mem_cont(&v0buff, v0data);
+        deallocate_mem_cont(&v1buff, v1data);
         return;
 }
 
