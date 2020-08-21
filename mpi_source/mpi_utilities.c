@@ -277,6 +277,71 @@ void print_gavectors2file_dbl(int hndl, int len, int dim, char *fname)
 }
 
 /*
+ * print_gavectors2file_dbl_trans: print a set of GA vectors to a file.
+ * Input:
+ *  hndl  = global arrays handle
+ *  len   = length of vectors
+ *  dim   = number of vectors
+ *  fname = file name
+ */
+void print_gavectors2file_dbl_trans(int hndl, int len, int dim, char *fname)
+{
+#define BUFSIZE 6
+        double vdata[BUFSIZE];       /* GA Vector buffer */
+        int ld = 1;                  /* Local vector buffer leading dimension */
+        FILE *fptr = NULL;           /* File pointer */
+        int hi[2] = {0, 0};
+        int lo[2] = {0, 0};
+        int ga_type    = 0;          /* Data type of GA */
+        int ga_ndim    = 0;          /* Number of dimensions of GA */
+        int ga_dims[2] = {0, 0};     /* Dimensions of GA */
+        int buflen = BUFSIZE;
+        int i, j, jj;
+        int jmax;
+        
+        if (mpi_proc_rank == mpi_root) {
+                
+                NGA_Inquire(hndl, &ga_type, &ga_ndim, ga_dims);
+                if (dim > ga_dims[0] || len > ga_dims[1]) {
+                        error_message(mpi_proc_rank, "Dimension out of range.",
+                                      "print_gavectors2file");
+                        fprintf(stderr, "(%d, %d) != GA[%d, %d]\n", dim, len,
+                                ga_dims[0], ga_dims[1]);
+                        return;
+                }
+
+                fptr = fopen(fname, "w");
+                fprintf(fptr, " %10d %10d\n", dim, len);
+
+                for (i = 0; i < len; i++) {
+                        for (j = 0; j < dim; j += buflen) {
+                                jmax = int_min((j + buflen - 1), (len - 1));
+                                lo[1] = i;
+                                lo[0] = j;
+                                hi[1] = i;
+                                hi[0] = jmax;
+
+                                NGA_Get(hndl, lo, hi, vdata, &ld);
+
+                                for (jj = 0; jj < (jmax - j + 1); jj++) {
+                                        fprintf(fptr, " %20.15lf", vdata[jj]);
+                                }
+                        }
+                        fprintf(fptr, "\n");
+                }
+
+                fflush(fptr);
+
+                fclose(fptr);
+
+        }
+
+        GA_Sync();
+        return;
+}
+
+
+/*
  * print_gavectors2file_dbl_ufmt: print a set of GA vectors to a file.
  * UNFORMATTED
  * Input:

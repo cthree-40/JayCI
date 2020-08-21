@@ -67,6 +67,17 @@ void print_gavectors2file_int_ufmt(int hndl, int len, int dim, char *fname);
 void print_gavectors2file_dbl(int hndl, int len, int dim, char *fname);
 
 /*
+ * print_gavectors2file_dbl_trans: print a set of GA vectors to a file.
+ * Input:
+ *  hndl  = global arrays handle
+ *  len   = length of vectors
+ *  dim   = number of vectors
+ *  fname = file name
+ */
+void print_gavectors2file_dbl_trans(int hndl, int len, int dim, char *fname);
+
+
+/*
  * print_gavectors2file_dbl_ufmt: print a set of GA vectors to a file.
  * UNFORMATTED
  * Input:

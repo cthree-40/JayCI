@@ -200,10 +200,14 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         srand(100);
         double alpha = 1.0;
         int lo[2], hi[2];
+        int columns[4] = {177, 9381, 2479, 29159};
         for (int z = 0; z <= ckdim; z++) {
             lo[0] = z; hi[0] = z;
             //lo[1] = hi[1] = z;
             lo[1] = hi[1] = rand() % 2600;
+            if (z < 4) {
+                lo[1] = hi[1] = columns[z];
+            }
             printf(" [%d, %d], [%d, %d]\n", lo[0], lo[1], hi[0], hi[1]);
             GA_Add_constant_patch(v_hndl, lo, hi, &alpha);
         }
@@ -223,10 +227,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         //                     c_hndl, w_hndl, ga_buffer_len, totalmo,
         //                     ndocc, nactv);
 	
-        FILE *fptr1;
-        fptr1 = fopen("c.old", "w");
-        GA_Print_file(fptr1, c_hndl);
-        fclose(fptr1);
+        print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.old");
         GA_Zero(c_hndl);
         
 #endif
@@ -239,10 +240,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
                              ndocc, nactv);
 	//return 0;    
 #ifdef DEBUGGING
-        FILE *fptr2;
-        fptr2 = fopen("c.new", "w");
-        GA_Print_file(fptr2, c_hndl);
-        fclose(fptr2);
+        print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.new");
 #endif
         //return 0;
         make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
@@ -2421,7 +2419,13 @@ void evaluate_hdblock_ij2(int **wi, int idets, int **wj, int jdets,
             deti.astr = pstr[wi[i][0]];
             deti.bstr = qstr[wi[i][1]];
             deti.cas = wi[i][2];
-            if (i == 1301 || i == 1307) {
+            if (wi[i][0] == 87 && wi[i][1] == 0) {
+                printf(" |87,0> = %d\n", i);
+            }
+            if (wi[i][0] == 915 && wi[i][1] == 0) {
+                printf(" |915,0> = %d\n", i);
+            }
+            if (i == 23 || i == 470 || i == 2304) {
                 printf("|%d> = |%d,%d>\n", i, wi[i][0],wi[i][1]);
                 printf("pstring :");
                 print_occstring(deti.astr, aelec, 2, 3);
