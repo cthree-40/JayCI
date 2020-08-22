@@ -197,15 +197,15 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
     while (citer < maxiter && croot <= nroots) {
 #ifdef DEBUGGING
         GA_Zero(v_hndl);
-        srand(105);
+        srand(100001);
         double alpha = 1.0;
         int lo[2], hi[2];
-        int columns[4] = {177, 9381, 2479, 29159};
+        int columns[4] = {105, 13386, 2479, 29159};
         for (int z = 0; z <= ckdim; z++) {
             lo[0] = z; hi[0] = z;
             //lo[1] = hi[1] = z;
             lo[1] = hi[1] = rand() % 30000;
-            //if (z < 4) {
+            //if (z < 2) {
             //    lo[1] = hi[1] = columns[z];
             //}
             printf(" [%d, %d], [%d, %d]\n", lo[0], lo[1], hi[0], hi[1]);
@@ -241,8 +241,8 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
 	//return 0;    
 #ifdef DEBUGGING
         print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.new");
+        return 0;
 #endif
-        //return 0;
         make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
         print_subspacehmat(vhv, ckdim);
         error = diag_subspacehmat(vhv, hevec, heval, ckdim, krymax,
@@ -2425,7 +2425,7 @@ void evaluate_hdblock_ij2(int **wi, int idets, int **wj, int jdets,
             if (wi[i][0] == 915 && wi[i][1] == 0) {
                 printf(" |915,0> = %d\n", i);
             }
-            if (i == 1125 || i == 670) {
+            if (i == 13386 || i == 105) {
                 printf("|%d> = |%d,%d>\n", i, wi[i][0],wi[i][1]);
                 printf("pstring :");
                 print_occstring(deti.astr, aelec, 2, 3);
