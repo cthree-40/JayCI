@@ -1642,7 +1642,7 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
                     xlist[*numx].io[1] = 0;
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = 0;
-
+                    
                     xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
                                                            scr[j], elec);;
                     (*numx)++;
@@ -1674,18 +1674,16 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
                             xlist[*numx].io[1] = str.istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
+                            xlist[*numx].permx = pindex_double_rep_cas(newstr.byte1,
+                                                                       xlist[*numx].io,
+                                                                       xlist[*numx].fo,
+                                                                       intorb);
 
-                            xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
-                                                                   xlist[*numx].io[0],
-                                                                   xlist[*numx].fo[0],
-                                                                   xlist[*numx].io[1],
-                                                                   xlist[*numx].fo[1],
-                                                                   elec);
                             xlist[*numx].io[0] = str.istr[i];
                             xlist[*numx].fo[0] = str.istr[j];
                             xlist[*numx].io[1] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
-                            xlist[*numx].permx = xlist[*numx].permx * (-1);
+                            //xlist[*numx].permx = xlist[*numx].permx * (-1);
                             (*numx)++;
                         }
                     }
@@ -1740,18 +1738,16 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
                             xlist[*numx].io[1] = str.istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
+                            xlist[*numx].permx = pindex_double_rep_cas(newstr.byte1,
+                                                                       xlist[*numx].io,
+                                                                       xlist[*numx].fo,
+                                                                       intorb);
 
-                            xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
-                                                                   xlist[*numx].io[0],
-                                                                   xlist[*numx].fo[0],
-                                                                   xlist[*numx].io[1],
-                                                                   xlist[*numx].fo[1],
-                                                                   elec);
                             xlist[*numx].io[0] = str.istr[i];
                             xlist[*numx].fo[0] = str.istr[j];
                             xlist[*numx].io[1] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
-                            xlist[*numx].permx = xlist[*numx].permx * (-1);
+//                            xlist[*numx].permx = xlist[*numx].permx * (-1);
                             (*numx)++;
                         }
                     }
@@ -1834,12 +1830,6 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                             xlist[*numx].io[1] = str.istr[j];
                             xlist[*numx].fo[0] = scr[l];
                             xlist[*numx].fo[1] = scr[k];
-                            //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
-                            //                                       xlist[*numx].io[0],
-                            //                                       xlist[*numx].fo[0],
-                            //                                       xlist[*numx].io[1],
-                            //                                       xlist[*numx].fo[1],
-                            //                                       elec);
                             xlist[*numx].permx = pindex_double_rep_cas(newstr.byte1,
                                                                        xlist[*numx].io,
                                                                        xlist[*numx].fo,
@@ -1848,7 +1838,6 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                             xlist[*numx].fo[0] = str.istr[j];
                             xlist[*numx].fo[1] = scr[k];
                             xlist[*numx].io[1] = scr[l];
-                            //xlist[*numx].permx = xlist[*numx].permx * (-1);
                             (*numx)++;
                         }
                     }
@@ -1886,13 +1875,10 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                             xlist[*numx].io[1] = str.istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
-
-                            xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
-                                                                   xlist[*numx].io[0],
-                                                                   xlist[*numx].fo[0],
-                                                                   xlist[*numx].io[1],
-                                                                   xlist[*numx].fo[1],
-                                                                   elec);
+                            xlist[*numx].permx = pindex_double_rep_cas(newstr.byte1,
+                                                                       xlist[*numx].io,
+                                                                       xlist[*numx].fo,
+                                                                       intorb);
                             xlist[*numx].io[0] = str.istr[i];
                             xlist[*numx].fo[0] = str.istr[j];
                             xlist[*numx].fo[1] = scr[k];
