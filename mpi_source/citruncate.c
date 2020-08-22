@@ -1830,22 +1830,25 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                             xlist[*numx].index = occstr2address(newstr, eosp, ndocc,
                                                                 nactv, nvirt, elec,
                                                                 elecs);
-                            xlist[*numx].io[1] = str.istr[i];
-                            xlist[*numx].io[0] = str.istr[j];
-                            xlist[*numx].fo[0] = scr[k];
-                            xlist[*numx].fo[1] = scr[l];
-
-                            xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
-                                                                   xlist[*numx].io[0],
-                                                                   xlist[*numx].fo[0],
-                                                                   xlist[*numx].io[1],
-                                                                   xlist[*numx].fo[1],
-                                                                   elec);
+                            xlist[*numx].io[0] = str.istr[i];
+                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].fo[0] = scr[l];
+                            xlist[*numx].fo[1] = scr[k];
+                            //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+                            //                                       xlist[*numx].io[0],
+                            //                                       xlist[*numx].fo[0],
+                            //                                       xlist[*numx].io[1],
+                            //                                       xlist[*numx].fo[1],
+                            //                                       elec);
+                            xlist[*numx].permx = pindex_double_rep_cas(newstr.byte1,
+                                                                       xlist[*numx].io,
+                                                                       xlist[*numx].fo,
+                                                                       intorb);
                             xlist[*numx].io[0] = str.istr[i];
                             xlist[*numx].fo[0] = str.istr[j];
                             xlist[*numx].fo[1] = scr[k];
                             xlist[*numx].io[1] = scr[l];
-                            xlist[*numx].permx = xlist[*numx].permx * (-1);
+                            //xlist[*numx].permx = xlist[*numx].permx * (-1);
                             (*numx)++;
                         }
                     }

@@ -215,11 +215,11 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         fptr0 = fopen("v.vectors","w");
         GA_Print_file(fptr0, v_hndl);
         fclose(fptr0);
-        perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
-                             qeospace, qegrps, pq_space_pairs, num_pq,
-                             moints1, moints2, aelec, belec, intorb,
-                             ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
-                             c_hndl, w_hndl, ga_buffer_len);
+        //perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
+        //                     qeospace, qegrps, pq_space_pairs, num_pq,
+        //                     moints1, moints2, aelec, belec, intorb,
+        //                     ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
+        //                     c_hndl, w_hndl, ga_buffer_len);
         //perform_hvispacefast_debug(pstrings, peospace, pegrps, qstrings,
         //                     qeospace, qegrps, pq_space_pairs, num_pq,
         //                     moints1, moints2, aelec, belec, intorb,
@@ -227,8 +227,8 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         //                     c_hndl, w_hndl, ga_buffer_len, totalmo,
         //                     ndocc, nactv);
 	
-        print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.old");
-        GA_Zero(c_hndl);
+        //print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.old");
+        //GA_Zero(c_hndl);
         
 #endif
         
