@@ -197,17 +197,17 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
     while (citer < maxiter && croot <= nroots) {
 #ifdef DEBUGGING
         GA_Zero(v_hndl);
-        srand(100);
+        srand(105);
         double alpha = 1.0;
         int lo[2], hi[2];
         int columns[4] = {177, 9381, 2479, 29159};
         for (int z = 0; z <= ckdim; z++) {
             lo[0] = z; hi[0] = z;
             //lo[1] = hi[1] = z;
-            lo[1] = hi[1] = rand() % 2600;
-            if (z < 4) {
-                lo[1] = hi[1] = columns[z];
-            }
+            lo[1] = hi[1] = rand() % 30000;
+            //if (z < 4) {
+            //    lo[1] = hi[1] = columns[z];
+            //}
             printf(" [%d, %d], [%d, %d]\n", lo[0], lo[1], hi[0], hi[1]);
             GA_Add_constant_patch(v_hndl, lo, hi, &alpha);
         }
@@ -215,11 +215,11 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         fptr0 = fopen("v.vectors","w");
         GA_Print_file(fptr0, v_hndl);
         fclose(fptr0);
-        //perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
-        //                     qeospace, qegrps, pq_space_pairs, num_pq,
-        //                     moints1, moints2, aelec, belec, intorb,
-        //                     ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
-        //                     c_hndl, w_hndl, ga_buffer_len);
+        perform_hv_initspace(pstrings, peospace, pegrps, qstrings,
+                             qeospace, qegrps, pq_space_pairs, num_pq,
+                             moints1, moints2, aelec, belec, intorb,
+                             ndets, totcore_e, ckdim, krymax, v_hndl, d_hndl,
+                             c_hndl, w_hndl, ga_buffer_len);
         //perform_hvispacefast_debug(pstrings, peospace, pegrps, qstrings,
         //                     qeospace, qegrps, pq_space_pairs, num_pq,
         //                     moints1, moints2, aelec, belec, intorb,
@@ -227,8 +227,8 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         //                     c_hndl, w_hndl, ga_buffer_len, totalmo,
         //                     ndocc, nactv);
 	
-        //print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.old");
-        //GA_Zero(c_hndl);
+        print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.old");
+        GA_Zero(c_hndl);
         
 #endif
         
@@ -2425,7 +2425,7 @@ void evaluate_hdblock_ij2(int **wi, int idets, int **wj, int jdets,
             if (wi[i][0] == 915 && wi[i][1] == 0) {
                 printf(" |915,0> = %d\n", i);
             }
-            if (i == 23 || i == 470 || i == 2304) {
+            if (i == 1125 || i == 670) {
                 printf("|%d> = |%d,%d>\n", i, wi[i][0],wi[i][1]);
                 printf("pstring :");
                 print_occstring(deti.astr, aelec, 2, 3);
