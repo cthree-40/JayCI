@@ -198,29 +198,6 @@ double hmatels_2xaa(int *aio, int *afo, int api, double *m2)
     i1 = index2e(aio[0], afo[0], aio[1], afo[1]);
     i2 = index2e(aio[0], afo[1], aio[1], afo[0]);
     val = api * (m2[i1 - 1] - m2[i2 - 1]);
-    if ((aio[0] == 1 && aio[1] == 4) && (afo[0] == 3 && afo[1] == 5)) {
-        double val = 0.0;
-        i1 = index2e(aio[0], afo[0], aio[1], afo[1]);
-        i2 = index2e(aio[0], afo[1], aio[1], afo[0]);
-        val = api * (m2[i1 - 1] - m2[i2 - 1]);
-        printf(" (%d %d | %d %d) - (%d %d | %d %d) = %20.15lf\n",
-               aio[0], afo[0], aio[1], afo[1],
-               aio[0], afo[1], aio[1], afo[0], val);
-        i1 = index2e(aio[0], aio[1], afo[0], afo[1]);
-        i2 = index2e(aio[0], afo[0], aio[1], afo[1]);
-        val = api * (m2[i1 - 1] - m2[i2 - 1]);
-        printf(" (%d %d | %d %d) - (%d %d | %d %d) = %20.15lf\n",
-               aio[0], aio[1], afo[0], afo[1],
-               aio[0], afo[0], aio[1], afo[1], val);
-        i1 = index2e(aio[1], aio[0], afo[0], afo[1]);
-        i2 = index2e(aio[1], afo[0], aio[0], afo[1]);
-        val = api * (m2[i1 - 1] - m2[i2 - 1]);
-        printf(" (%d %d | %d %d) - (%d %d | %d %d) = %20.15lf\n",
-               aio[1], aio[0], afo[0], afo[1],
-               aio[1], afo[0], aio[0], afo[1], val);
-        
-               
-    }
     return val;
 }
 
