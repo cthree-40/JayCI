@@ -788,6 +788,10 @@ void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
                                                                    xlist[*numx].fo,
                                                                    intorb);
 
+			xlist[*numx].io[0] = str.istr[i];
+			xlist[*numx].fo[0] = str.istr[k];
+			xlist[*numx].fo[1] = scr[l];
+			xlist[*numx].io[1] = scr[j];
                         (*numx)++;
                     }
                 }
@@ -1979,6 +1983,10 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
 //                                                                   xlist[*numx].io[1],
 //                                                                   xlist[*numx].fo[1],
 //                                                                   elec);
+			    xlist[*numx].io[0] = str.istr[i];
+			    xlist[*numx].fo[0] = str.istr[j];
+			    xlist[*numx].io[1] = scr[l];
+			    xlist[*numx].fo[1] = scr[k];
                             (*numx)++;
                         }
                     }
@@ -2025,6 +2033,10 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
 //                                                                   xlist[*numx].io[1],
 //                                                                   xlist[*numx].fo[1],
 //                                                                   elec);
+			    xlist[*numx].io[0] = str.istr[i];
+			    xlist[*numx].fo[0] = str.istr[j];
+			    xlist[*numx].io[1] = scr[l];
+			    xlist[*numx].fo[1] = scr[k];
                             (*numx)++;
                         }
                     }
@@ -2707,9 +2719,9 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
 //                                                                   xlist[*numx].fo[1],
 //                                                                   elec);
                         xlist[*numx].permx = pindex_double_rep_cas(newstr.byte1,
-                                                                       xlist[*numx].io,
-                                                                       xlist[*numx].fo,
-                                                                       intorb);
+								   xlist[*numx].io,
+								   xlist[*numx].fo,
+								   intorb);
                         xlist[*numx].io[0] = str.istr[i];
                         xlist[*numx].fo[0] = str.istr[j];
                         xlist[*numx].io[1] = scr[k];
@@ -3341,6 +3353,10 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
                                                                    xlist[*numx].io,
                                                                    xlist[*numx].fo,
                                                                    intorb);
+			xlist[*numx].io[0] = str.istr[i];
+			xlist[*numx].fo[0] = str.istr[k];
+			xlist[*numx].fo[1] = scr[l];
+			xlist[*numx].io[1] = scr[j];
                         (*numx)++;
                     }
                 }
