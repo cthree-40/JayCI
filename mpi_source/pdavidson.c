@@ -243,6 +243,7 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.new");
         return 0;
 #endif
+
         make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
         print_subspacehmat(vhv, ckdim);
         error = diag_subspacehmat(vhv, hevec, heval, ckdim, krymax,
