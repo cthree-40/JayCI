@@ -189,7 +189,9 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         fflush(stdout);
     }
 
-    
+#ifdef DEBUGGING
+    return 0;
+#endif
     GA_Sync();
 
     /* .. MAIN LOOP .. */

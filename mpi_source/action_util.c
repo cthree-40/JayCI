@@ -474,11 +474,16 @@ double eval2_20_cas(long long int xi, long long int xf, double *moints2,
 	nonzerobits(xf, ninto, finl_orbs);
 	
 	/* compute permuation index */
+	i1 = init_orbs[0];
+	init_orbs[0] = init_orbs[1];
+	init_orbs[1] = i1;
 	pindx = pindex_double_rep_cas(str, init_orbs, finl_orbs, ninto);
 	
 	/* compute matrix element */
-	i1 = index2e(init_orbs[0], init_orbs[1], finl_orbs[0], finl_orbs[1]);
-	i2 = index2e(init_orbs[0], finl_orbs[0], init_orbs[1], finl_orbs[1]);
+	//i1 = index2e(init_orbs[0], init_orbs[1], finl_orbs[0], finl_orbs[1]);
+	//i2 = index2e(init_orbs[0], finl_orbs[0], init_orbs[1], finl_orbs[1]);
+	i1 = index2e(init_orbs[0], finl_orbs[0], init_orbs[1], finl_orbs[1]);
+	i2 = index2e(init_orbs[0], finl_orbs[1], init_orbs[1], finl_orbs[0]);
 	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	
 	return val;
@@ -879,10 +884,15 @@ double eval2_ncas_c0cv0v2(int *vxi, int *vxj, double *moints2)
 {
 	double val = 0.0;
 	int i1, i2; /* integral indexes */
-	
-	i1 = index2e(vxi[0],vxj[0],vxi[1],vxj[1]);
-	i2 = index2e(vxi[0],vxj[1],vxi[1],vxj[0]);
-	val = (moints2[i1 - 1] - moints2[i2 - 1]);
+	int pindx = 1;
+	/* vxi and vxj are always ordered. So any replacement: 0 -> 1, 1 -> 0
+	 * needs to be flipped. Thus pindx = -1. */
+	pindx = -1;
+//	i1 = index2e(vxi[0],vxj[0],vxi[1],vxj[1]);
+//	i2 = index2e(vxi[0],vxj[1],vxi[1],vxj[0]);
+	i1 = index2e(vxi[1],vxj[0],vxi[0],vxj[1]);
+	i2 = index2e(vxi[1],vxj[1],vxi[0],vxj[0]);
+	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	return val;
 }
 
@@ -917,11 +927,11 @@ double eval2_ncas_c0cv2v0(long long int xi, long long int xf, int *vxi,
         }
 
         // CLM
-	// pindx = pindx * (-1);
+	//pindx = pindx * (-1);
 //        printf("pindx = %d\n", pindx);
 
-        i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
-	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
+        i1 = index2e(ifo[1], ifo[2], ifo[0], ifo[3]);
+	i2 = index2e(ifo[1], ifo[3], ifo[0], ifo[2]);
         val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	return val;
 }
@@ -1168,10 +1178,15 @@ double eval2_ncas_c10cv10v00(struct occstr str, long long int xi,
 		/* 2 CAS orbitals are in xf and stored in ifo[2,3] */
 		/* Excitations are: 0-->2 CAS, 1-->3 CAS->VIRT*/
 		make_orbital_strings_virt(str, estr, ne, ninto);
-		pindx = pindex_double_rep_str(estr, ifo[1], ifo[2], ifo[0],
-					      ifo[3], ne);
-		i1 = index2e(ifo[1], ifo[2], ifo[0], ifo[3]);
-		i2 = index2e(ifo[1], ifo[3], ifo[0], ifo[2]);
+		//pindx = pindex_double_rep_str(estr, ifo[1], ifo[2], ifo[0],
+		//			      ifo[3], ne);
+		//i1 = index2e(ifo[1], ifo[2], ifo[0], ifo[3]);
+		//i2 = index2e(ifo[1], ifo[3], ifo[0], ifo[2]);
+		pindx = pindex_double_rep_str(estr, ifo[0], ifo[3], ifo[1],
+					      ifo[2], ne);
+		i1 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
+		i2 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
+
 	} else {
 		/* 2 CAS orbitals are in xi and stored in ifo[0,1] */
 		make_orbital_strings_virt(str, estr, ne, ninto);
@@ -1259,6 +1274,14 @@ int pindex_double_rep_str(int *str, int io1, int fo1, int io2, int fo2, int ne)
 	int new_loc; /* new location of first exciation index */
 	int tmp;
 
+	if ((io1 < io2 && fo1 < fo2)) {
+	    printf(" String: ");
+	    for (int i = 0; i < ne; i++) {
+		printf(" %d", str[i]);
+	    }
+	    printf("\n");
+	    printf(" Replacements: %d -> %d | %d -> %d\n", io1, fo1, io2, fo2);
+	}
 	/* Perform first excitation and order string */
 	new_loc = find_pos_in_array_lnsrch(io1, str, ne);
 	if (new_loc < 0) {

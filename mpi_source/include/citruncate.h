@@ -119,7 +119,7 @@ void compute_ci_elecs_and_orbitals(int aelec, int belec, int orbitals, int nfrzc
  */
 int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
                    int qegrps, int ndocc, int nactv, int xlvl,
-                   int **pq_spaces, int *num_pq);
+                   int **pq_spaces, int *num_pq, int ci_aelec, int ci_belec);
 
 /*
  * compute_eostrings_sr: compute electron occupation strings for all string

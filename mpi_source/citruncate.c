@@ -97,7 +97,8 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
 
         /* Compute number of determinants */
         *dtrm_len = compute_detnum(peosp, pegrps, qeosp, qegrps, ndocc,
-                                   nactv, xlvl, pq_spaces, num_pq);
+                                   nactv, xlvl, pq_spaces, num_pq,
+				   ci_aelec, ci_belec);
         
         deallocate_eostrings_array(pstrings, astr_len);
         deallocate_eostrings_array(qstrings, bstr_len);
@@ -284,16 +285,21 @@ void compute_ci_elecs_and_orbitals(int aelec, int belec, int orbitals, int nfrzc
  */
 int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
                    int qegrps, int ndocc, int nactv, int xlvl,
-                   int **pq_spaces, int *num_pq)
+                   int **pq_spaces, int *num_pq, int ci_aelec, int ci_belec)
 {
         int dcnt = 0;    /* Determinant count. */
         int doccmin = 0; /* Minimum determinant DOCC occupations. */
+	int actvmin = 0; /* Minimum determinnat ACTV occupations. */
         int xcnt = 0;
         int i, j;
 
         /* Set min DOCC occupation numbers of alpha + beta strings. The
          * excitation level is the maximum occupation for VIRT orbitals. */
-        doccmin = 2 * (ndocc - int_min(ndocc, xlvl));
+        //doccmin = 2 * (ndocc - int_min(ndocc, xlvl));
+	doccmin = (2 * ndocc) - xlvl;
+	doccmin = int_max(doccmin, 0);
+	actvmin = (ci_aelec - ndocc) + (ci_belec - ndocc) - xlvl;
+	actvmin = int_max(actvmin, 0);
 
         /* Loop over p (alpha) string groups. */
         *num_pq = 0;
@@ -301,6 +307,7 @@ int compute_detnum(struct eospace *peosp, int pegrps, struct eospace *qeosp,
                 /* Loop over q (beta) string groups. */
                 for (j = 0; j < qegrps; j++) {
                         if ((peosp[i].docc + qeosp[j].docc) < doccmin) continue;
+			if ((peosp[i].actv + qeosp[j].actv) < actvmin) continue;
                         if ((peosp[i].virt + qeosp[j].virt) > xlvl) continue;
                         pq_spaces[*num_pq][0] = i;
                         pq_spaces[*num_pq][1] = j;
