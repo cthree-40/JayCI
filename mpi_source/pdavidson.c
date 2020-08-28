@@ -4016,12 +4016,39 @@ void init_diag_H_subspace( int w_hndl, struct occstr *pstr, struct occstr *qstr,
                 detj.astr = pstr[w[j][0]];
                 detj.bstr = qstr[w[j][1]];
                 detj.cas = w[j][2];
-                
+
                 hij[i][j] = hmatels(deti, detj, m1, m2, aelec,
                                     belec, intorb);
-            }
+	    }
         }
     } /* END OMP SECTION */
+
+#ifdef DEBUGGING
+    /* Print hij */
+    FILE* fptr;
+    fptr = fopen("hij.1875.all","w");
+    for (i = 0; i < dim; i++) {
+	for (j = 10; j < 20; j++) {
+	    fprintf(fptr, "%20.15lf", hij[i][j]);
+	}
+	fprintf(fptr,"\n");
+    }
+    fclose(fptr);
+    /* print wavefunction */
+    fptr = fopen("wavefuntion.info","w");
+    for (i = 0; i < dim; i++) {
+	// alpha
+	for (j = 0; j < aelec; j++) {
+	    fprintf(fptr, "%10d", pstr[w[i][0]].istr[j]);
+	}
+	// beta
+	for (j = 0; j < belec; j++) {
+	    fprintf(fptr, "%10d", qstr[w[i][1]].istr[j]);
+	}
+	fprintf(fptr, "\n");
+    }
+    fclose(fptr);
+#endif
     
     /* Diagonalize hij */
     error = diagmat_dsyevr(hij_data, dim, rdata, rev);

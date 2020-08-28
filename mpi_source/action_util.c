@@ -134,7 +134,7 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 	
 	int detdiff = 0; 
 	int numaxc = 0, numbxc  = 0, numaxv  = 0, 
-		numbxv = 0, numaxcv = 0, numbxcv = 0;
+	    numbxv = 0, numaxcv = 0, numbxcv = 0;
 	long long int axi = 0, axf = 0, bxi = 0, bxf = 0;
 	
 	/* test if determinants are CAS-flagged. */ 
@@ -436,6 +436,7 @@ double eval2_11_cas(long long int axi, long long int axf, long long int bxi,
 	pindx = pindex_single_rep_cas(abyte, axi, axf, ninto);
         pindx = pindx * pindex_single_rep_cas(bbyte, bxi, bxf, ninto);
 #endif
+	
 	/* compute matrix element */
 	i1 = index2e(aio, afo, bio, bfo);
 	val = pindx * (moints2[i1 - 1]);
@@ -478,7 +479,6 @@ double eval2_20_cas(long long int xi, long long int xf, double *moints2,
 	init_orbs[0] = init_orbs[1];
 	init_orbs[1] = i1;
 	pindx = pindex_double_rep_cas(str, init_orbs, finl_orbs, ninto);
-	
 	/* compute matrix element */
 	//i1 = index2e(init_orbs[0], init_orbs[1], finl_orbs[0], finl_orbs[1]);
 	//i2 = index2e(init_orbs[0], finl_orbs[0], init_orbs[1], finl_orbs[1]);
@@ -890,8 +890,10 @@ double eval2_ncas_c0cv0v2(int *vxi, int *vxj, double *moints2)
 	pindx = -1;
 //	i1 = index2e(vxi[0],vxj[0],vxi[1],vxj[1]);
 //	i2 = index2e(vxi[0],vxj[1],vxi[1],vxj[0]);
-	i1 = index2e(vxi[1],vxj[0],vxi[0],vxj[1]);
-	i2 = index2e(vxi[1],vxj[1],vxi[0],vxj[0]);
+//	i1 = index2e(vxi[1],vxj[0],vxi[0],vxj[1]);
+//	i2 = index2e(vxi[1],vxj[1],vxi[0],vxj[0]);
+	i1 = index2e(vxi[0],vxj[1],vxi[1],vxj[0]);
+	i2 = index2e(vxi[0],vxj[0],vxi[1],vxj[1]);
 	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	return val;
 }
@@ -910,12 +912,13 @@ double eval2_ncas_c0cv2v0(long long int xi, long long int xf, int *vxi,
 	int ifo[4] = {0};      /* initial, final orbitals */
 	long long int t = 0x0; /* pseudo-excitation byte */
         long long int s = 0x0; /* scratch string to keep track of excitations*/
+	int tmp;
         /* use pseudo-excitation byte to find number of bytes between
 	 * cas orbital in excitation and virtuals. */
 	cas_to_virt_replacements(2, 0, 0, xi, xf, vxi, vxf, ifo, ninto);  
-
-        //printf("ifo = %d %d %d %d\n", ifo[0], ifo[1], ifo[2], ifo[3]);
-
+	tmp = ifo[0];
+	ifo[0] = ifo[1];
+	ifo[1] = tmp;
         s = str;
         for (i1 = 1; i1 >= 0; i1--) {
 		t = ((long long int) 1) << (ifo[i1] - 1);
@@ -926,12 +929,10 @@ double eval2_ncas_c0cv2v0(long long int xi, long long int xf, int *vxi,
 
         }
 
-        // CLM
-	//pindx = pindx * (-1);
-//        printf("pindx = %d\n", pindx);
-
-        i1 = index2e(ifo[1], ifo[2], ifo[0], ifo[3]);
-	i2 = index2e(ifo[1], ifo[3], ifo[0], ifo[2]);
+//        i1 = index2e(ifo[1], ifo[2], ifo[0], ifo[3]);
+//	i2 = index2e(ifo[1], ifo[3], ifo[0], ifo[2]);
+	i1 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
+	i2 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
         val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	return val;
 }
@@ -1045,8 +1046,8 @@ double eval2_ncas_c00cv10v10(long long int xi, long long int xf,
                 pindx = pindex_single_rep_cas2virt(strj.byte1, xf, ninto);
                 pindx = pindx * pindex_single_rep_virt(ifo[2], stri.virtx);
         }
-	i1 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
-	i2 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
+	i1 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
+	i2 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
 	val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	return val;
 }
@@ -1257,9 +1258,11 @@ int pindex_double_rep_cas(long long int str, int *io, int *fo, int ninto)
         long long int xi = 0x0, xf = 0x0; /* initial, final orbitals */
         int i;
         for (i = 0; i < 2; i++ ) {
-                xi = ((long long int ) 1) << (io[0] - 1);
-                xf = ((long long int ) 1) << (fo[0] - 1);
+                xi = ((long long int ) 1) << (io[i] - 1);
+                xf = ((long long int ) 1) << (fo[i] - 1);
                 pindx = pindx * pindex_single_rep_cas(str, xi, xf, ninto);
+		str = str - xi;
+		str = str + xf;
         }
         return pindx;
 }
