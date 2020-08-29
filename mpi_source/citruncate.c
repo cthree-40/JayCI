@@ -95,6 +95,10 @@ int citrunc(int aelec, int belec, int orbs, int nfrzc, int ndocc,
         generate_binstring_list(qstrings, bstr_len, ci_belec, ndocc, nactv,
                                 bstrings);
 
+        /* Compute coupling coefficients for i -> j excitations */
+        compute_yij_lists(astr_len, ci_aelec, ci_orbs, astrings);
+        compute_yij_lists(bstr_len, ci_belec, ci_orbs, bstrings);
+        
         /* Compute number of determinants */
         *dtrm_len = compute_detnum(peosp, pegrps, qeosp, qegrps, ndocc,
                                    nactv, xlvl, pq_spaces, num_pq,
@@ -211,6 +215,53 @@ struct xstrmap **allocate_xmap(int xlvl)
                         malloc(sizeof(struct xstrmap) * (xlvl + 1));
         }
         return ptr;
+}
+
+/*
+ * compute_yij_lists: compute coupling coefficients for each string, exciting
+ * orbital i (occupied) to j (unoccupied).
+ */
+void compute_yij_lists(int nstr, int elec, int orbs, struct occstr *binstr)
+{
+    int *orbsx = NULL;     /* Available orbitals for excitations */
+    int nvo = 0;           /* Number of available orbitals */
+    int noadd = 0;
+    int s, i, j;
+    int cnt;
+    nvo = orbs - elec;
+    orbsx = malloc(sizeof(int) * nvo);
+    for (s = 0; s < nstr; s++) {
+        
+        /* Make available orbitals list */
+        cnt = 0;
+        for (i = 1; i <= orbs; i++) {
+            noadd = 0;
+            for (j = 0; j < elec; j++) {
+                if (binstr[s].istr[j] == i) {
+                    j = elec;
+                    noadd = 1;
+                    continue;
+                }
+            }
+            if (noadd != 1) {
+                orbsx[cnt] = i;
+                cnt++;
+            }
+        }
+        if (cnt != nvo) printf("Error! cnt != nvo: %d != %d \n", cnt, nvo);
+
+        /* Loop over electrons */
+        for (i = 0; i < elec; i++) {
+            /* Loop over available orbitals */
+            for (j = 0; j < cnt; j++) {
+                binstr[s].yij[i][orbsx[j]] = pindex_single_rep(binstr[s].istr,
+                                                               binstr[s].istr[i],
+                                                               orbsx[j], elec);
+            }
+        }
+    }
+
+    return;
 }
 
 /*

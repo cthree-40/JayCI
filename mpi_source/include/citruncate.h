@@ -103,6 +103,13 @@ struct occstr *allocate_occstr_arrays(int nstr);
 struct xstrmap **allocate_xmap(int xlvl);
 
 /*
+ * compute_yij_lists: compute coupling coefficients for each string, exciting
+ * orbital i (occupied) to j (unoccupied).
+ */
+void compute_yij_lists(int nstr, int elec, int orbs, struct occstr *binstr);
+
+
+/*
  * construct_xlist: construct list of X excitations for electron strings
  */
 int **construct_xlist(struct occstr *strlist, int nstr, int intorb, int x, int *max);

@@ -8,6 +8,7 @@ struct occstr {
     int virtx[2];        /* virtual orbital occupations               */
     int nvrtx;           /* number of virtual orbitals                */
     int istr[20];        /* list of occupations */
+    int yij[20][200];    /* coupling coefficients */
 };
 
 /* det: determinant composed of alpha and beta occupation strings */
