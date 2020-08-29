@@ -170,13 +170,13 @@ int execute_pjayci ()
                 printf(" Alpha strings = %15d\n", pstr_len);
                 printf(" Beta  strings = %15d\n", qstr_len);
 		memusage = ((pstr_len + qstr_len) *
-                            (8 + 4 + 4 + 4 + (20 * 4)) + 
+                            (8 + 4 + 4 + 4 + (20 * 4) + 4000) + 
                             (pegrps * qegrps) * 2 * 4 +
                             (pegrps + qegrps) *
                             (4 + 4 + 4 + 4 + 4 + 4 + (20 * 4)))
 			/ 1048576;
 	}
-
+        
         /* Read the molecular orbitals */
         m1len = index1e(orbitals, orbitals);
         m2len = index2e(orbitals, orbitals, orbitals, orbitals);
