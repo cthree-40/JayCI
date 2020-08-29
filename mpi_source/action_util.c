@@ -929,10 +929,10 @@ double eval2_ncas_c0cv2v0(long long int xi, long long int xf, int *vxi,
 
         }
 
-//        i1 = index2e(ifo[1], ifo[2], ifo[0], ifo[3]);
-//	i2 = index2e(ifo[1], ifo[3], ifo[0], ifo[2]);
-	i1 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
-	i2 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
+	i1 = index2e(ifo[1], ifo[2], ifo[0], ifo[3]);
+	i2 = index2e(ifo[1], ifo[3], ifo[0], ifo[2]);
+	//i1 = index2e(ifo[0], ifo[3], ifo[1], ifo[2]);
+	//i2 = index2e(ifo[0], ifo[2], ifo[1], ifo[3]);
         val = pindx * (moints2[i1 - 1] - moints2[i2 - 1]);
 	return val;
 }
@@ -1277,14 +1277,6 @@ int pindex_double_rep_str(int *str, int io1, int fo1, int io2, int fo2, int ne)
 	int new_loc; /* new location of first exciation index */
 	int tmp;
 
-	if ((io1 < io2 && fo1 < fo2)) {
-	    printf(" String: ");
-	    for (int i = 0; i < ne; i++) {
-		printf(" %d", str[i]);
-	    }
-	    printf("\n");
-	    printf(" Replacements: %d -> %d | %d -> %d\n", io1, fo1, io2, fo2);
-	}
 	/* Perform first excitation and order string */
 	new_loc = find_pos_in_array_lnsrch(io1, str, ne);
 	if (new_loc < 0) {
@@ -1299,7 +1291,9 @@ int pindex_double_rep_str(int *str, int io1, int fo1, int io2, int fo2, int ne)
 	}
 	str[new_loc] = fo1;
 	pindx = sort_array_fast_onesub(str, ne, &new_loc);
+	fflush(stdout);
 
+	
 	/* Perform second exciation and order string */
 	new_loc = find_pos_in_array_lnsrch(io2, str, ne);
 	if (new_loc < 0) {
@@ -1318,6 +1312,7 @@ int pindex_double_rep_str(int *str, int io1, int fo1, int io2, int fo2, int ne)
 	}
 	str[new_loc] = fo2;
 	pindx = pindx * sort_array_fast_onesub(str, ne, &new_loc);
+
 	return pindx;
 }
 

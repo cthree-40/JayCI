@@ -189,9 +189,6 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         fflush(stdout);
     }
 
-#ifdef DEBUGGING
-    return 0;
-#endif
     GA_Sync();
 
     /* .. MAIN LOOP .. */
@@ -202,14 +199,14 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
         srand(time(0));
         double alpha = 1.0;
         int lo[2], hi[2];
-        int columns[4] = {105, 13386, 2479, 29159};
+        int columns[5] = {550,218,698,876,870};
         for (int z = 0; z <= ckdim; z++) {
             lo[0] = z; hi[0] = z;
             //lo[1] = hi[1] = z;
-            lo[1] = hi[1] = rand() % 246232;
-            //if (z < 2) {
-            //    lo[1] = hi[1] = columns[z];
-            //}
+            lo[1] = hi[1] = rand() % 1875;
+            if (z < 5) {
+                lo[1] = hi[1] = columns[z];
+	    }
             printf(" [%d, %d], [%d, %d]\n", lo[0], lo[1], hi[0], hi[1]);
             GA_Add_constant_patch(v_hndl, lo, hi, &alpha);
         }
@@ -243,7 +240,8 @@ int pdavidson(struct occstr *pstrings, struct eospace *peospace, int pegrps,
 	//return 0;    
 #ifdef DEBUGGING
         print_gavectors2file_dbl_trans(c_hndl, ndets, ckdim, "c.new");
-        return 0;
+
+	return 0;
 #endif
 
 	make_subspacehmat_ga(v_hndl, c_hndl, ndets, ckdim, vhv);
@@ -3095,7 +3093,7 @@ void evaluate_hij_pxlist2x_ut2(struct det deti, struct xstr *pxlist, int npx,
     /* Evaluate <i|H|j> for j = 0, ... , njx */
     for (j = 0; j < npx; j++) {
         hijval[jindx[j]] = hmatels_2xaa(pxlist[j].io, pxlist[j].fo,
-                                        pxlist[j].permx,m2);
+                                        pxlist[j].permx, m2);
     }
     for (k = 0; k < vcols; k++) {
         for (j = 0; j < npx; j++) {
@@ -4023,33 +4021,6 @@ void init_diag_H_subspace( int w_hndl, struct occstr *pstr, struct occstr *qstr,
         }
     } /* END OMP SECTION */
 
-#ifdef DEBUGGING
-    /* Print hij */
-    FILE* fptr;
-    fptr = fopen("hij.1875.all","w");
-    for (i = 0; i < dim; i++) {
-	for (j = 10; j < 20; j++) {
-	    fprintf(fptr, "%20.15lf", hij[i][j]);
-	}
-	fprintf(fptr,"\n");
-    }
-    fclose(fptr);
-    /* print wavefunction */
-    fptr = fopen("wavefuntion.info","w");
-    for (i = 0; i < dim; i++) {
-	// alpha
-	for (j = 0; j < aelec; j++) {
-	    fprintf(fptr, "%10d", pstr[w[i][0]].istr[j]);
-	}
-	// beta
-	for (j = 0; j < belec; j++) {
-	    fprintf(fptr, "%10d", qstr[w[i][1]].istr[j]);
-	}
-	fprintf(fptr, "\n");
-    }
-    fclose(fptr);
-#endif
-    
     /* Diagonalize hij */
     error = diagmat_dsyevr(hij_data, dim, rdata, rev);
     if (error != 0) {
