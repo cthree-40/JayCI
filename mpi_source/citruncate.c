@@ -809,9 +809,9 @@ void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
                 xlist[*numx].fo[0] = scr[j];
                 xlist[*numx].fo[1] = 0;
                 
-                xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
-                                                       scr[j], elec);
-                
+                //xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
+                //                                       scr[j], elec);
+                xlist[*numx].permx = str.yij[i][scr[j]];
                 (*numx)++;
             }
         }
@@ -919,9 +919,10 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = 0;
                     
-                    xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
-                                                       scr[j], elec);;
-                                    
+//                    xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
+//                                                       scr[j], elec);;
+                    xlist[*numx].permx = str.yij[i][scr[j]];
+
                     (*numx)++;
                 }
             }
@@ -999,8 +1000,9 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     xlist[*numx].fo[0] = scr[i];
                     xlist[*numx].fo[1] = 0;
                     
-                    xlist[*numx].permx = pindex_single_rep(str.istr, str.virtx[j],
-                                                       scr[i], elec);;
+//                    xlist[*numx].permx = pindex_single_rep(str.istr, str.virtx[j],
+//                                                       scr[i], elec);;
+                    xlist[*numx].permx = str.yij[str_docc + str_actv + j][scr[i]];
                     (*numx)++;
                 }
             }
@@ -1698,8 +1700,10 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = 0;
                     
-                    xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
-                                                           scr[j], elec);;
+                    //xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
+                    //                                       scr[j], elec);
+                    xlist[*numx].permx = str.yij[i][scr[j]];
+
                     (*numx)++;
                 }
             }
@@ -1766,6 +1770,7 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
 
                     xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
                                                            scr[j], elec);;
+                    xlist[*numx].permx = str.yij[i][scr[j]];
                     (*numx)++;
                 }
             }
@@ -3186,8 +3191,9 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = 0;
 
-                    xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
-                                                           scr[j], elec);;
+//                    xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
+//                                                           scr[j], elec);;
+                    xlist[*numx].permx = str.yij[i][scr[j]];
                     (*numx)++;
                 }
             }
@@ -3266,8 +3272,9 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     xlist[*numx].fo[0] = scr[i];
                     xlist[*numx].fo[1] = 0;
 
-                    xlist[*numx].permx = pindex_single_rep(str.istr, str.virtx[j],
-                                                           scr[i], elec);;
+//                    xlist[*numx].permx = pindex_single_rep(str.istr, str.virtx[j],
+//                                                           scr[i], elec);;
+                    xlist[*numx].permx = str.yij[str_docc + str_actv + j][scr[i]];
                     (*numx)++;
                 }
             }
@@ -3354,8 +3361,10 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
                 xlist[*numx].fo[0] = scr[j];
                 xlist[*numx].fo[1] = 0;
 
-                xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
-                                                       scr[j], elec);;
+                //xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
+                //                                       scr[j], elec);
+                
+                xlist[*numx].permx = str.yij[i][scr[j]];
                 (*numx)++;
             }
         }
@@ -3452,7 +3461,8 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                 xlist[*numx].fo[1] = 0;
 
                 xlist[*numx].permx = pindex_single_rep(str.istr, str.virtx[i],
-                                                       scr[j], elec);;
+                                                       scr[j], elec);
+                xlist[*numx].permx = str.yij[str_docc + str_actv + i][scr[j]];
                 (*numx)++;
             }
         }
