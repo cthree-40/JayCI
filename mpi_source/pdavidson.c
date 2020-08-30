@@ -588,7 +588,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
             npx = generate_single_excitations(pstr[ip], peosp[jpspc], aelec,
                                               ndocc, nactv, intorb, vorbs,
                                               pxlist,
-                                              elecscr, orbscr);
+                                              elecscr, orbscr, pstr);
             if (npx == 0) continue;
 
             /** Evaluate contribution. **/
@@ -609,7 +609,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
             jqspc = peosp[ipspc].pairs[j];
             nqx = generate_single_excitations(qstr[iq], qeosp[jqspc], belec,
                                                ndocc, nactv, intorb, vorbs,
-                                               qxlist, elecscr, orbscr);
+                                              qxlist, elecscr, orbscr, qstr);
             if (nqx == 0) continue;
 
             /** Evaluate contribution. **/
@@ -631,10 +631,10 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
             npx = generate_single_excitations(pstr[ip], peosp[pq[j][0]], aelec,
                                                ndocc, nactv, intorb, vorbs,
                                                pxlist,
-                                               elecscr, orbscr);
+                                              elecscr, orbscr, pstr);
             nqx = generate_single_excitations(qstr[iq], qeosp[pq[j][1]], belec,
                                                ndocc, nactv, intorb, vorbs,
-                                               qxlist, elecscr, orbscr);
+                                              qxlist, elecscr, orbscr, qstr);
             if (nqx == 0 || npx == 0) continue;
 
             /** Evaluate contribution. **/
@@ -657,7 +657,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
             npx = generate_double_excitations(pstr[ip], peosp[jpspc], aelec,
                                               ndocc,
                                               nactv, intorb, vorbs, pxlist,
-                                              elecscr, orbscr);
+                                              elecscr, orbscr, pstr);
             if (npx == 0) continue;
 
             /** Evaluate contribution. **/
@@ -678,7 +678,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
             jqspc = peosp[ipspc].pairs[j];
             nqx = generate_double_excitations(qstr[iq], qeosp[jqspc], belec, ndocc,
                                               nactv, intorb, vorbs, qxlist,
-                                              elecscr, orbscr);
+                                              elecscr, orbscr, qstr);
             if (nqx == 0) continue;
 
             /** Evaluate contribution. **/
@@ -830,7 +830,7 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
             jpspace = qeosp[iqspace].pairs[j]; 
             npx = generate_single_excitations(pstr[ip], peosp[jpspace], aelec,
                                               ndocc, nactv, intorb, vorbs,
-                                              pxlist, elecx, orbsx);
+                                              pxlist, elecx, orbsx, pstr);
             /* Upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
             if (npx == 0) continue;
@@ -856,7 +856,7 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
             jqspace = peosp[ipspace].pairs[j];
             nqx = generate_single_excitations(qstr[iq], qeosp[jqspace], belec,
                                               ndocc, nactv, intorb, vorbs,
-                                              qxlist, elecx, orbsx);
+                                              qxlist, elecx, orbsx, qstr);
             /* Upper triangle only */
             remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
             if (nqx == 0) continue;
@@ -882,10 +882,10 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
         for (j = 0; j < npq; j++) {
             npx = generate_single_excitations(pstr[ip], peosp[pq[j][0]], aelec,
                                               ndocc, nactv, intorb, vorbs,
-                                              pxlist, elecx, orbsx);
+                                              pxlist, elecx, orbsx, pstr);
             nqx = generate_single_excitations(qstr[iq], qeosp[pq[j][1]], belec,
                                               ndocc, nactv, intorb, vorbs,
-                                              qxlist, elecx, orbsx);
+                                              qxlist, elecx, orbsx, qstr);
             /* Upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
             if (nqx == 0 || npx == 0) continue;
@@ -913,7 +913,7 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
             jpspace = qeosp[iqspace].pairs[j];
             npx = generate_double_excitations(pstr[ip], peosp[jpspace], aelec,
                                               ndocc, nactv, intorb, vorbs, pxlist,
-                                              elecx, orbsx);
+                                              elecx, orbsx, pstr);
             /* Upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
             if (npx == 0) continue;
@@ -940,7 +940,7 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
             jqspace = peosp[ipspace].pairs[j];
             nqx = generate_double_excitations(qstr[iq], qeosp[jqspace], belec,
                                               ndocc, nactv, intorb, vorbs, qxlist,
-                                              elecx, orbsx);
+                                              elecx, orbsx, qstr);
             /* Upper triangle only */
             remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
             if (nqx == 0) continue;
@@ -1124,7 +1124,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
             /* Evaluate <pq|H|p'q> */
             npx = generate_single_excitations(pstr[ip], peosp[j],
                                               aelec, ndocc, nactv, intorb,
-                                              vorbs, pxlist, elecx, orbsx);
+                                              vorbs, pxlist, elecx, orbsx, pstr);
             /* Upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
             
@@ -1153,7 +1153,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
                 /* p'q' is a valid determinant */
                 nqx = generate_single_excitations(qstr[iq], qeosp[jqspace], belec,
                                                   ndocc, nactv, intorb, vorbs,
-                                                  qxlist, elecx, orbsx);
+                                                  qxlist, elecx, orbsx, qstr);
                 if (nqx != 0 && npx != 0) {
                     /** Evaluate contribution. **/
                     evaluate_hij_pxqxlist2x_ut(deti, pxlist, npx, qxlist, nqx, pstr, peosp,
@@ -1176,7 +1176,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
                 /* p"q is valid determinant */
                 npx = generate_double_excitations(pstr[ip], peosp[j],
                                                   aelec, ndocc, nactv, intorb,
-                                                  vorbs, pxlist, elecx, orbsx);
+                                                  vorbs, pxlist, elecx, orbsx, pstr);
                 /* Upper triangle only */
                 remove_leq_xstr(ip, pxlist, &npx, xstrscr);
                 if (npx != 0) {
@@ -1201,7 +1201,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
             /* q' */
             nqx = generate_single_excitations(qstr[iq], qeosp[jqspace], belec,
                                               ndocc, nactv, intorb, vorbs,
-                                              qxlist, elecx, orbsx);
+                                              qxlist, elecx, orbsx, qstr);
             /* Upper triangle only */
             remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
             if (nqx != 0) {
@@ -1221,7 +1221,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
             /* Index for q eospaces that pair with p */
             nqx = generate_double_excitations(qstr[iq], qeosp[jqspace], belec,
                                               ndocc, nactv, intorb, vorbs, qxlist,
-                                              elecx, orbsx);
+                                              elecx, orbsx, qstr);
             /* Upper triangle only */
             remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
             if (nqx != 0) {
@@ -1975,7 +1975,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             /* Generate single replacements in p for the pq-pair jpair */
             npx = generate_single_excitations(pstr[ip], peosp[jpair[0]], aelec,
                                               ndocc, nactv, intorb, vorbs,
-                                              pxlist, elecx, orbsx);
+                                              pxlist, elecx, orbsx, pstr);
             /* upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
             
@@ -1994,7 +1994,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             /* Generate single replacements in q' and pair with p' */
             nqx = generate_single_excitations(qstr[iq], qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
-                                              qxlist, elecx, orbsx);
+                                              qxlist, elecx, orbsx, qstr);
 
             /* Evaluate <pq|H|p'q'> */
             if (npx != 0 && nqx != 0) {
@@ -2012,7 +2012,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             /* Generate double replacements in p for the pq-pair jpair */
             npx = generate_double_excitations(pstr[ip], peosp[jpair[0]], aelec,
                                               ndocc, nactv, intorb, vorbs,
-                                              pxlist, elecx, orbsx);
+                                              pxlist, elecx, orbsx, pstr);
             /* upper triangle only */
             remove_leq_xstr(ip, pxlist, &npx, xstrscr);
             
@@ -2031,7 +2031,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             /* Generate single replacements in q for the pq-pair jpair */
             nqx = generate_single_excitations(qstr[iq], qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
-                                              qxlist, elecx, orbsx);
+                                              qxlist, elecx, orbsx, qstr);
 
             /* upper triangle only */
             remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
@@ -2051,7 +2051,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             /* Generate double replacements in q for the pq-pair jpair */
             nqx = generate_double_excitations(qstr[iq], qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
-                                              qxlist, elecx, orbsx);
+                                              qxlist, elecx, orbsx, qstr);
             /* upper triangle only */
             remove_leq_xstr(iq, qxlist, &nqx, xstrscr);
 

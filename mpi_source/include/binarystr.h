@@ -9,6 +9,7 @@ struct occstr {
     int nvrtx;           /* number of virtual orbitals                */
     int istr[20];        /* list of occupations */
     int yij[20][200];    /* coupling coefficients */
+    int cij[20][200];    /* index of new string formed by i->j replacement */
 };
 
 /* det: determinant composed of alpha and beta occupation strings */
