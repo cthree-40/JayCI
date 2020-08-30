@@ -1163,7 +1163,8 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv,
                     //                                    nvirt, elec, elecs);
 
-                    doublerep_cij_yij(str, strlist, (elec - 1), scr[i], (elec),
+                    doublerep_cij_yij(str, strlist, (str_docc + str_actv), scr[i],
+				      (str_docc + str_actv + 1),
                                       scr[j], elec, &(xlist[*numx].permx),
                                       &(xlist[*numx].index));
                                       
@@ -2084,7 +2085,7 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                             //xlist[*numx].index = occstr2address(newstr, eosp, ndocc,
                             //                                    nactv, nvirt, elec,
                             //                                    elecs);
-                            doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
+                            doublerep_cij_yij(str, strlist, j, scr[k], i, scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
 
                             xlist[*numx].io[0] = str.istr[j];
@@ -3793,7 +3794,8 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                         //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv,
                         //                                    nvirt, elec, elecs);
 
-                        doublerep_cij_yij(str, strlist, (elec - 1), scr[j], (elec),
+                        doublerep_cij_yij(str, strlist, (str_docc + str_actv),
+					  scr[j], (str_docc + str_actv + 1),
                                           scr[l], elec, &(xlist[*numx].permx),
                                           &(xlist[*numx].index));
 
@@ -3886,7 +3888,8 @@ void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
                     //xlist[*numx].index =  occstr2address(newstr, eosp, ndocc,
                     //                                     nactv, nvirt, elec,
                     //                                     elecs);
-                    doublerep_cij_yij(str, strlist, (elec), scr[i], (elec - 1),
+                    doublerep_cij_yij(str, strlist, (str_docc + str_actv + 1),
+				      scr[i], (str_docc + str_actv),
                                       scr[j], elec,
                                       &(xlist[*numx].permx), &(xlist[*numx].index));
 
