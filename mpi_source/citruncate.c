@@ -272,6 +272,8 @@ void compute_yij_lists(int nstr, int elec, int orbs, int ndocc, int nactv,
     int spind;
     int nvirt = orbs - ndocc - nactv;
     nvo = orbs - elec;
+
+
     orbsx = malloc(sizeof(int) * nvo);
     for (s = 0; s < nstr; s++) {
         
@@ -334,7 +336,8 @@ void compute_yij_lists(int nstr, int elec, int orbs, int ndocc, int nactv,
             }
         }
     }
-
+    free(orbsx);
+    
     return;
 }
 
