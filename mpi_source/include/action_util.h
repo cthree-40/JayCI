@@ -308,10 +308,16 @@ double hmatels(
 	int ninto);      /* internal orbitals */
 
 /*
+ * hmatels_0x: compute diagonal matrix elements.
+ */
+double hmatels_0x(int *istr1, int ne1, int *istr2, int ne2,
+                  double *m1, double *m2);
+
+/*
  * hmatels_1x: compute single replacement matrix elements.
  */
-double hmatels_1x(struct occstr str1, int *io, int *fo, int pi, int ne1,
-                  struct occstr str2, int ne2, double *m1, double *m2);
+double hmatels_1x(int *istr1, int *io, int *fo, int pi, int ne1,
+                  int *istr2, int ne2, double *m1, double *m2);
 
 /*
  * hmatels_2xaa: compute double replacements in one string matrix elements.

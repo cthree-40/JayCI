@@ -1612,15 +1612,13 @@ void compute_diagonal_iHi(double *hdgls, int start, int final,
     default(none)                                               \
     shared(hdgls, final, start, mo1, mo2, aelec, belec, intorb, \
            pstr, qstr, w)                                         \
-    private(deti, i)
+    private(i)
     {
 #pragma omp for schedule(runtime)
         /* Loop over these determinants */
         for (i = 0; i <= (final - start); i++) {
-            deti.astr = pstr[w[i][0]];
-            deti.bstr = qstr[w[i][1]];
-            deti.cas  = w[i][2];
-            hdgls[i] = hmatels(deti, deti, mo1, mo2, aelec, belec, intorb);
+            hdgls[i] = hmatels_0x(pstr[w[i][0]].istr, aelec, qstr[w[i][1]].istr,
+                                  belec, mo1, mo2);
         }
     } /* END OMP SECTION */
     
@@ -2762,10 +2760,10 @@ void evaluate_hij_pxlist1x(struct det deti, struct xstr *pxlist, int npx,
                 //detj.astr = pstr[w[k][0]];
                 //detj.bstr = qstr[w[k][1]];
                 //detj.cas  = w[k][2];
-                hijval[k] = hmatels_1x(deti.astr, pxlist[njx_min + k].io,
+                hijval[k] = hmatels_1x(deti.astr.istr, pxlist[njx_min + k].io,
                                        pxlist[njx_min + k].fo,
                                        pxlist[njx_min + k].permx, aelec,
-                                       deti.bstr, belec, m1, m2);
+                                       deti.bstr.istr, belec, m1, m2);
                 //hijval[k] = hmatels(deti, detj, m1, m2, aelec, belec, intorb);
                 
             }
@@ -2835,10 +2833,10 @@ void evaluate_hij_pxlist1x_ut(struct det deti, struct xstr *pxlist, int npx,
             NGA_Gather(v_hndl, vik, vx2, vcols);
             /* Evaluate <i|H|j> for j = 0, ... , njx */
             for (k = 0; k < njx; k++) {
-                hijval[k] = hmatels_1x(deti.astr, pxlist[njx_min + k].io,
+                hijval[k] = hmatels_1x(deti.astr.istr, pxlist[njx_min + k].io,
                                        pxlist[njx_min + k].fo,
                                        pxlist[njx_min + k].permx, aelec,
-                                       deti.bstr, belec, m1, m2);
+                                       deti.bstr.istr, belec, m1, m2);
             }
             init_dbl_array_0(cjk, (njx * vcols));
             for (k = 0; k < vcols; k++) {
@@ -2913,8 +2911,8 @@ void evaluate_hij_pxlist1x_ut2(struct det deti, struct xstr *pxlist, int npx,
     }
     /* Evaluate <i|H|j> for j = 0, ... , njx */
     for (j = 0; j < npx; j++) {
-        hijval[jindx[j]] = hmatels_1x(deti.astr, pxlist[j].io, pxlist[j].fo,
-                                      pxlist[j].permx, aelec, deti.bstr, belec,
+        hijval[jindx[j]] = hmatels_1x(deti.astr.istr, pxlist[j].io, pxlist[j].fo,
+                                      pxlist[j].permx, aelec, deti.bstr.istr, belec,
                                       m1, m2);
     }
     for (k = 0; k < vcols; k++) {
@@ -3350,10 +3348,10 @@ void evaluate_hij_qxlist1x(struct det deti, int pindx, int npx,
                 //detj.astr = pstr[w[k][0]];
                 //detj.bstr = qstr[w[k][1]];
                 //detj.cas  = w[k][2];
-                hijval[k] = hmatels_1x(deti.bstr, qxlist[njx_min + k].io,
+                hijval[k] = hmatels_1x(deti.bstr.istr, qxlist[njx_min + k].io,
                                        qxlist[njx_min + k].fo,
                                        qxlist[njx_min + k].permx, belec,
-                                       deti.astr, aelec, m1, m2);
+                                       deti.astr.istr, aelec, m1, m2);
                 //hijval[k] = hmatels(deti, detj, m1, m2, aelec, belec, intorb);
             }
             for (k = 0; k < vcols; k++) {
@@ -3420,10 +3418,10 @@ void evaluate_hij_qxlist1x_ut(struct det deti, int pindx, int npx,
             NGA_Gather(v_hndl, vik, vx2, vcols);
             /* Evaluate <i|H|j> for j = 0, ... , njx */
             for (k = 0; k < njx; k++) {
-                hijval[k] = hmatels_1x(deti.bstr, qxlist[njx_min + k].io,
+                hijval[k] = hmatels_1x(deti.bstr.istr, qxlist[njx_min + k].io,
                                        qxlist[njx_min + k].fo,
                                        qxlist[njx_min + k].permx, belec,
-                                       deti.astr, aelec, m1, m2);
+                                       deti.astr.istr, aelec, m1, m2);
             }
             init_dbl_array_0(cjk, (njx * vcols));
             for (k = 0; k < vcols; k++) {
@@ -3497,8 +3495,8 @@ void evaluate_hij_qxlist1x_ut2(struct det deti, int pindx, int npx,
     }
     /* Evaluate <i|H|j> for j = 0, ... , njx */
     for (j = 0; j < nqx; j++) {
-        hijval[jindx[j]] = hmatels_1x(deti.bstr, qxlist[j].io, qxlist[j].fo,
-                                      qxlist[j].permx, belec, deti.astr, aelec,
+        hijval[jindx[j]] = hmatels_1x(deti.bstr.istr, qxlist[j].io, qxlist[j].fo,
+                                      qxlist[j].permx, belec, deti.astr.istr, aelec,
                                       m1, m2);
     }
     for (k = 0; k < vcols; k++) {

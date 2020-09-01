@@ -162,10 +162,53 @@ double hmatels(struct det deti, struct det detj, double *moints1,
 }
 
 /*
+ * hmatels_0x: compute diagonal matrix elements.
+ */
+double hmatels_0x(int *istr1, int ne1, int *istr2, int ne2,
+                  double *m1, double *m2)
+{
+    double val = 0.0;
+    int i, j;
+    int i1, i2;
+    /* alpha contribution */
+    for (i = 0; i < ne1; i++) {
+        /* 1-e contribution */
+        i1 = index1e(istr1[i],istr1[i]);
+        val = val + m1[i1 - 1];
+        /* 2-e contribution */
+        for (j = 0; j < i; j++) {
+            i1 = index2e(istr1[i], istr1[i], istr1[j], istr1[j]);
+            i2 = index2e(istr1[i], istr1[j], istr1[i], istr1[j]);
+            val = val + (m2[i1 - 1] - m2[i2 - 1]);
+        }
+    }
+    /* beta contribution */
+    for (i = 0; i < ne2; i++) {
+        /* 1-e contribution */
+        i1 = index1e(istr2[i],istr2[i]);
+        val = val + m1[i1 - 1];
+        /* 2-e contribution */
+        for (j = 0; j < i; j++) {
+            i1 = index2e(istr2[i], istr2[i], istr2[j], istr2[j]);
+            i2 = index2e(istr2[i], istr2[j], istr2[i], istr2[j]);
+            val = val + (m2[i1 - 1] - m2[i2 - 1]);
+        }
+    }
+    /* both */
+    for (i = 0; i < ne1; i++) {
+        for (j = 0; j < ne2; j++) {
+            i1 = index2e(istr1[i], istr1[i], istr2[j], istr2[j]);
+            val = val + m2[i1 - 1];
+        }
+    }
+    return val;
+}
+
+/*
  * hmatels_1x: compute single replacement matrix elements.
  */
-double hmatels_1x(struct occstr str1, int *io, int *fo, int pi, int ne1,
-                  struct occstr str2, int ne2, double *m1, double *m2)
+double hmatels_1x(int *istr1, int *io, int *fo, int pi, int ne1,
+                  int *istr2, int ne2, double *m1, double *m2)
 {
     double val = 0.0;
     int i1, i2;
@@ -175,14 +218,14 @@ double hmatels_1x(struct occstr str1, int *io, int *fo, int pi, int ne1,
     val = pi * m1[i1 - 1];
     /* 2-e contribution */
     for (i = 0; i < ne1; i++) {
-        if (str1.istr[i] != io[0]) {
-            i1 = index2e(str1.istr[i], str1.istr[i], io[0], fo[0]);
-            i2 = index2e(str1.istr[i], io[0], str1.istr[i], fo[0]);
+        if (istr1[i] != io[0]) {
+            i1 = index2e(istr1[i], istr1[i], io[0], fo[0]);
+            i2 = index2e(istr1[i], io[0], istr1[i], fo[0]);
             val = val + pi * (m2[i1 - 1] - m2[i2 - 1]);
         }
     }
     for (i = 0; i < ne2; i++) {
-        i1 = index2e(str2.istr[i], str2.istr[i], io[0], fo[0]);
+        i1 = index2e(istr2[i], istr2[i], io[0], fo[0]);
         val = val + pi * m2[i1 - 1];
     }
     return val;
