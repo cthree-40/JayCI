@@ -4,6 +4,18 @@
 #define dysoncomp_h
 
 /*
+ * build_ppo_triples: build (p0, p1, o) triples for dyson evaluation.
+ */
+int build_ppo_triples(int **ppo, struct occstr *str0, int nstr0,
+		      struct occstr *str1, int nstr1, int ninto);
+
+/*
+ * comparestrings_dyson: compare the strings of N and N+1 determinants
+ * to get the index of orbital contribution.
+ */
+int comparestrings_dyson(struct occstr str0, struct occstr str1, int ninto);
+
+/*
  * compute_dyson_orbital: compute the dyson orbital between electronic
  * states of N+1 and N electron wavefuntions by comparing alpha/beta strings.
  * Input:

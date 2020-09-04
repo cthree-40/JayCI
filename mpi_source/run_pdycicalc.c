@@ -299,7 +299,8 @@ int run_pdycicalc ()
         v1_hndl = NGA_Create(C_DBL, 2, v1_dims, "V1: CI Vector", v1_chunk);
         if (!v1_hndl) GA_Error("Create failed: V1: CI Vector", 2);
         if (mpi_proc_rank == mpi_root) printf("Global arrays created.\n");
-        
+        if (mpi_proc_rank == mpi_root) fflush(stdout);
+	
         /* Allocate LOCAL arrays: dyorb_lc, dyorb_gl */
         ndyorbs = ndyst0 * ndyst1;
         dyorb_lc_data = allocate_mem_double_cont(&dyorb_lc, norbs0, ndyorbs);
@@ -333,7 +334,8 @@ int run_pdycicalc ()
                 if (mpi_proc_rank == mpi_root) {
                         printf("N+1 wavefunction is singlet/triplet.\n");
                         printf(" Comparing beta electron strings...\n");
-                }
+			fflush(stdout);
+		}
                 /* S/T (N+1) wavefunction, compare beta  strings. */
                 compute_dyson_orbital(w0_hndl, dtrm0_len, w1_hndl, dtrm1_len,
                                       v0_hndl, v1_hndl,
@@ -344,7 +346,8 @@ int run_pdycicalc ()
                 if (mpi_proc_rank == mpi_root) {
                         printf("N+1 wavefunction is doublet.\n");
                         printf(" Comparing alpha electron strings...\n");
-                }
+			fflush(stdout);
+		}
                 /* D   (N+1) wavefunction, compare alpha strings. */
                 compute_dyson_orbital(w0_hndl, dtrm0_len, w1_hndl, dtrm1_len,
                                       v0_hndl, v1_hndl,
