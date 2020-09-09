@@ -58,7 +58,7 @@ int comparedets_ncas(struct det deti,
  *  nce = number of CAS electrons
  *  nve = number of virtual electrons
  */
-void get_string_eospace_info(struct occstr str, int ndocc, int nactv, int *nde,
+void get_string_eospace_info(struct occstr *str, int ndocc, int nactv, int *nde,
                              int *nce, int *nve);
 
 /* str2occstr: convert orbital index string -> occstr type */

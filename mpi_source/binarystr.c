@@ -211,7 +211,7 @@ int compute_virt_diffs(struct occstr ostri, struct occstr ostrj)
  *  nce = number of CAS electrons
  *  nve = number of virtual electrons
  */
-void get_string_eospace_info(struct occstr str, int ndocc, int nactv, int *nde,
+void get_string_eospace_info(struct occstr *str, int ndocc, int nactv, int *nde,
                              int *nce, int *nve)
 {
         /* 64-bit byte to check docc and cas occupation */
@@ -224,7 +224,7 @@ void get_string_eospace_info(struct occstr str, int ndocc, int nactv, int *nde,
         for (i = 0; i < (ndocc + nactv); i++) {
                 intorb_check = intorb_check + pow(2, i);
         }
-        scr = intorb_check & str.byte1;
+        scr = intorb_check & str->byte1;
         /* Check DOCC orbitals */
         *nde = 0;
         for (i = 0; i < ndocc; i++) {
@@ -241,7 +241,7 @@ void get_string_eospace_info(struct occstr str, int ndocc, int nactv, int *nde,
                 }
                 scr = scr >> 1;
         }
-        *nve = str.nvrtx;
+        *nve = str->nvrtx;
         return;
 }
 

@@ -1,4 +1,4 @@
-// File: citruncate.c
+ // File: citruncate.c
 /*
  * Truncate a Full CI expansion.
  */
@@ -328,9 +328,9 @@ void compute_yij_lists(int nstr, int elec, int orbs, int ndocc, int nactv,
                 }
 
                 /* Get eospace info for new string */
-                spind = get_string_eospace(newstr, ndocc, nactv, eosp, ngrps);
+                spind = get_string_eospace(&newstr, ndocc, nactv, eosp, ngrps);
                 neosp = eosp[spind];
-                binstr[s].cij[i][orbsx[j]] = occstr2address(newstr, neosp, ndocc,
+                binstr[s].cij[i][orbsx[j]] = occstr2address(&newstr, neosp, ndocc,
                                                             nactv, nvirt, elec,
                                                             escr);
             }
@@ -630,18 +630,18 @@ void deallocate_eostrings_array(struct eostring *array, int nstr)
  *  pindx   = yij * ykl
  *  cindx   = index of new string
  */
-void doublerep_cij_yij(struct occstr str, struct occstr *strlist,
+void doublerep_cij_yij(struct occstr *str, struct occstr *strlist,
                        int ei1, int fo1, int ei2, int fo2, int nelec,
                        int *pindx, int *cindx)
 {
     int strx; /* Index of intermediate string */
     
     /* First excitation */
-    *pindx = str.yij[ei1][fo1];
-    strx = str.cij[ei1][fo1];
+    *pindx = str->yij[ei1][fo1];
+    strx = str->cij[ei1][fo1];
 
     /* Second excitation */
-    ei2 = find_pos_in_array_lnsrch(str.istr[ei2], strlist[strx].istr, nelec);
+    ei2 = find_pos_in_array_lnsrch(str->istr[ei2], strlist[strx].istr, nelec);
     *pindx = *pindx * strlist[strx].yij[ei2][fo2];
     *cindx = strlist[strx].cij[ei2][fo2];
     return;
@@ -752,7 +752,7 @@ void generate_determinant_list_rtnlist(struct eostring *pstrlist, int npstr,
  * generate_single_excitations: generate the single excitations in
  * EOSPACE for an input string.
  */
-int generate_single_excitations(struct occstr str, struct eospace eosp,
+int generate_single_excitations(struct occstr *str, struct eospace eosp,
                                 int nelec, int ndocc, int nactv,
                                 int intorb, int vorbs,
                                 struct xstr *singlex,
@@ -796,7 +796,7 @@ int generate_single_excitations(struct occstr str, struct eospace eosp,
  * generate_double_excitations: generate the double excitations in
  * EOSPACE for an input string.
  */
-int generate_double_excitations(struct occstr str, struct eospace eosp,
+int generate_double_excitations(struct occstr *str, struct eospace eosp,
                                 int nelec, int ndocc, int nactv,
                                 int intorb, int vorbs,
                                 struct xstr *doublex,
@@ -890,7 +890,7 @@ int generate_double_excitations(struct occstr str, struct eospace eosp,
  * generate_actvx: generate excitations within the ACTV space given a
  * string.
  */
-void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
+void generate_actvx(int nrep, struct occstr *str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
                     int nvirt, int elec, int *scr, struct xstr *xlist,
                     int *numx, int nvo, struct occstr *strlist)
@@ -932,16 +932,16 @@ void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
                 //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv, nvirt,
                 //                                    elec, elecs);
 
-                xlist[*numx].index = str.cij[i][scr[j]];
+                xlist[*numx].index = str->cij[i][scr[j]];
                 
-                xlist[*numx].io[0] = str.istr[i];
+                xlist[*numx].io[0] = str->istr[i];
                 xlist[*numx].io[1] = 0;
                 xlist[*numx].fo[0] = scr[j];
                 xlist[*numx].fo[1] = 0;
                 
                 //xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
                 //                                       scr[j], elec);
-                xlist[*numx].permx = str.yij[i][scr[j]];
+                xlist[*numx].permx = str->yij[i][scr[j]];
                 (*numx)++;
             }
         }
@@ -965,8 +965,8 @@ void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
 
                         
-                        xlist[*numx].io[0] = str.istr[i];
-                        xlist[*numx].io[1] = str.istr[k];
+                        xlist[*numx].io[0] = str->istr[i];
+                        xlist[*numx].io[1] = str->istr[k];
                         xlist[*numx].fo[0] = scr[j];
                         xlist[*numx].fo[1] = scr[l];
                         
@@ -992,7 +992,7 @@ void generate_actvx(int nrep, struct occstr str, int str_docc, int str_actv,
 /*
  * generate_actv2virtx: generate replacements between ACTV and VIRT spaces.
  */
-void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv,
+void generate_actv2virtx(int nrep, struct occstr *str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
                          int nvirt, int elec, int *scr, struct xstr *xlist,
                          int *numx, int nvo, struct occstr *strlist)
@@ -1050,16 +1050,16 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv,
                     //                                    nvirt, elec, elecs);
 
-                    xlist[*numx].index = str.cij[i][scr[j]];
+                    xlist[*numx].index = str->cij[i][scr[j]];
 
-                    xlist[*numx].io[0] = str.istr[i];
+                    xlist[*numx].io[0] = str->istr[i];
                     xlist[*numx].io[1] = 0;
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = 0;
                     
 //                    xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
 //                                                       scr[j], elec);;
-                    xlist[*numx].permx = str.yij[i][scr[j]];
+                    xlist[*numx].permx = str->yij[i][scr[j]];
 
                     (*numx)++;
                 }
@@ -1086,8 +1086,8 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                               &(xlist[*numx].permx),&(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
                             
@@ -1137,16 +1137,16 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     //}
                     //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv,
                     //                                    nvirt, elec, elecs);
-                    xlist[*numx].index = str.cij[str_docc + str_actv + j][scr[i]];
+                    xlist[*numx].index = str->cij[str_docc + str_actv + j][scr[i]];
                     
-                    xlist[*numx].io[0] = str.virtx[j];
+                    xlist[*numx].io[0] = str->virtx[j];
                     xlist[*numx].io[1] = 0;
                     xlist[*numx].fo[0] = scr[i];
                     xlist[*numx].fo[1] = 0;
                     
 //                    xlist[*numx].permx = pindex_single_rep(str.istr, str.virtx[j],
 //                                                       scr[i], elec);;
-                    xlist[*numx].permx = str.yij[str_docc + str_actv + j][scr[i]];
+                    xlist[*numx].permx = str->yij[str_docc + str_actv + j][scr[i]];
                     (*numx)++;
                 }
             }
@@ -1171,8 +1171,8 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                                       scr[j], elec, &(xlist[*numx].permx),
                                       &(xlist[*numx].index));
                                       
-                    xlist[*numx].io[0] = str.virtx[0];
-                    xlist[*numx].io[1] = str.virtx[1];
+                    xlist[*numx].io[0] = str->virtx[0];
+                    xlist[*numx].io[1] = str->virtx[1];
                     xlist[*numx].fo[0] = scr[i];
                     xlist[*numx].fo[1] = scr[j];
                     
@@ -1200,7 +1200,7 @@ void generate_actv2virtx(int nrep, struct occstr str, int str_docc, int str_actv
  * This is a special case where one replacement occurs within ACTV, in addition
  * to the ACTV <-> VIRT replacement.
  */
-void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
+void generate_actv2virtx_actv1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -1279,8 +1279,8 @@ void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
                             
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
                             
@@ -1340,8 +1340,8 @@ void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
                                               (str_docc + str_actv + l), scr[j], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[*numx].io[0] = str.istr[k];
-                            xlist[*numx].io[1] = str.virtx[l];
+                            xlist[*numx].io[0] = str->istr[k];
+                            xlist[*numx].io[1] = str->virtx[l];
                             xlist[*numx].fo[0] = scr[i];
                             xlist[*numx].fo[1] = scr[j];
 
@@ -1371,7 +1371,7 @@ void generate_actv2virtx_actv1(int nrep, struct occstr str, int str_docc,
  * This is a special case where one replacement occurs within VIRT, in addition
  * to the ACTV <-> VIRT replacement.
  */
-void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
+void generate_actv2virtx_virt1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -1435,8 +1435,8 @@ void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
                                           (str_docc + str_actv), scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                        xlist[*numx].io[0] = str.istr[i];
-                        xlist[*numx].io[1] = str.virtx[0];
+                        xlist[*numx].io[0] = str->istr[i];
+                        xlist[*numx].io[1] = str->virtx[0];
                         xlist[*numx].fo[0] = scr[k];
                         xlist[*numx].fo[1] = scr[l];
 
@@ -1478,8 +1478,8 @@ void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
                                       (str_docc + str_actv + 1), scr[l], elec,
                                       &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                    xlist[*numx].io[0] = str.virtx[0];
-                    xlist[*numx].io[1] = str.virtx[1];
+                    xlist[*numx].io[0] = str->virtx[0];
+                    xlist[*numx].io[1] = str->virtx[1];
                     xlist[*numx].fo[0] = scr[i];
                     xlist[*numx].fo[1] = scr[l];
 
@@ -1507,7 +1507,7 @@ void generate_actv2virtx_virt1(int nrep, struct occstr str, int str_docc,
  * spaces. This is a special case where one replacement occurs within DOCC, in
  * addition to the ACTV <-> VIRT replacement.
  */
-void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
+void generate_actv2virtx_docc1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -1585,8 +1585,8 @@ void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -1650,8 +1650,8 @@ void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
                                               (str_docc + str_actv + l), scr[k], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.virtx[l];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->virtx[l];
                             xlist[*numx].fo[0] = scr[j];
                             xlist[*numx].fo[1] = scr[k];
 
@@ -1680,7 +1680,7 @@ void generate_actv2virtx_docc1(int nrep, struct occstr str, int str_docc,
  * generate_actv2doccvirtx: generate replacements between ACTV and (DOCC,VIRT)
  * spaces.
  */
-void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
+void generate_actv2doccvirtx(int nrep, struct occstr *str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
                              struct xstr *xlist, int *numx, int nvo,
@@ -1753,8 +1753,8 @@ void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -1816,8 +1816,8 @@ void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
                                               (str_docc + str_actv + l), scr[j], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[*numx].io[0] = str.istr[k];
-                            xlist[*numx].io[1] = str.virtx[l];
+                            xlist[*numx].io[0] = str->istr[k];
+                            xlist[*numx].io[1] = str->virtx[l];
                             xlist[*numx].fo[0] = scr[i];
                             xlist[*numx].fo[1] = scr[j];
 
@@ -1843,7 +1843,7 @@ void generate_actv2doccvirtx(int nrep, struct occstr str, int str_docc,
 /*
  * generate_docc2actvx: generate replacements between DOCC and ACTV spaces.
  */
-void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv,
+void generate_docc2actvx(int nrep, struct occstr *str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
                          int nvirt, int elec, int *scr, struct xstr *xlist,
                          int *numx, int nvo, struct occstr *strlist)
@@ -1887,16 +1887,16 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
                     //newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
                     //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv,
                     //                                    nvirt, elec, elecs);
-                    xlist[*numx].index = str.cij[i][scr[j]];
+                    xlist[*numx].index = str->cij[i][scr[j]];
                     
-                    xlist[*numx].io[0] = str.istr[i];
+                    xlist[*numx].io[0] = str->istr[i];
                     xlist[*numx].io[1] = 0;
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = 0;
                     
                     //xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
                     //                                       scr[j], elec);
-                    xlist[*numx].permx = str.yij[i][scr[j]];
+                    xlist[*numx].permx = str->yij[i][scr[j]];
 
                     (*numx)++;
                 }
@@ -1924,8 +1924,8 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -1961,16 +1961,16 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
                     //newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
                     //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv,
                     //                                    nvirt, elec, elecs);
-                    xlist[*numx].index = str.cij[i][scr[j]];
+                    xlist[*numx].index = str->cij[i][scr[j]];
                     
-                    xlist[*numx].io[0] = str.istr[i];
+                    xlist[*numx].io[0] = str->istr[i];
                     xlist[*numx].io[1] = 0;
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = 0;
 
                     //xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
                     //                                       scr[j], elec);;
-                    xlist[*numx].permx = str.yij[i][scr[j]];
+                    xlist[*numx].permx = str->yij[i][scr[j]];
                     (*numx)++;
                 }
             }
@@ -1994,8 +1994,8 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
                             //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
@@ -2026,7 +2026,7 @@ void generate_docc2actvx(int nrep, struct occstr str, int str_docc, int str_actv
  * generate_docc2actvx_actv1: generate excitations from DOCC -> ACTV with
  * a replacement within the ACTV.
  */
-void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
+void generate_docc2actvx_actv1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -2091,8 +2091,8 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, j, scr[k], i, scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[j];
-                            xlist[*numx].io[1] = str.istr[i];
+                            xlist[*numx].io[0] = str->istr[j];
+                            xlist[*numx].io[1] = str->istr[i];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -2140,8 +2140,8 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 			    //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
@@ -2169,7 +2169,7 @@ void generate_docc2actvx_actv1(int nrep, struct occstr str, int str_docc,
  * generate_docc2actvx_docc1: generate excitations from DOCC -> ACTV with
  * a replacement within the DOCC.
  */
-void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
+void generate_docc2actvx_docc1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -2234,8 +2234,8 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
                             //xlist[*numx].permx = pindex_double_rep_cas(newstr.byte1,
@@ -2287,8 +2287,8 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -2324,7 +2324,7 @@ void generate_docc2actvx_docc1(int nrep, struct occstr str, int str_docc,
  * generate_docc2actvx_virt1: generate excitations from DOCC -> ACTV with
  * a replacement within the VIRT.
  */
-void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
+void generate_docc2actvx_virt1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -2403,8 +2403,8 @@ void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
                                               scr[k], i, scr[l], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[*numx].io[1] = str.istr[i];
-                            xlist[*numx].io[0] = str.virtx[j];
+                            xlist[*numx].io[1] = str->istr[i];
+                            xlist[*numx].io[0] = str->virtx[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -2465,8 +2465,8 @@ void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
                             
                             
-                            xlist[*numx].io[1] = str.istr[i];
-                            xlist[*numx].io[0] = str.virtx[j];
+                            xlist[*numx].io[1] = str->istr[i];
+                            xlist[*numx].io[0] = str->virtx[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -2496,7 +2496,7 @@ void generate_docc2actvx_virt1(int nrep, struct occstr str, int str_docc,
  * generate_docc2virtx_docc1: generate excitations from DOCC -> VIRT with a
  * replacement within the DOCC space.
  */
-void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
+void generate_docc2virtx_docc1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -2571,8 +2571,8 @@ void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -2633,8 +2633,8 @@ void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
                                               (str_docc + str_actv + l), scr[k], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.virtx[l];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->virtx[l];
                             xlist[*numx].fo[0] = scr[j];
                             xlist[*numx].fo[1] = scr[k];
 
@@ -2662,7 +2662,7 @@ void generate_docc2virtx_docc1(int nrep, struct occstr str, int str_docc,
  * generate_docc2virtx_actv1: generate excitations from DOCC -> VIRT with
  * a replacement within the ACTV.
  */
-void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
+void generate_docc2virtx_actv1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -2738,8 +2738,8 @@ void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[(*numx)].io[0] = str.istr[i];
-                            xlist[(*numx)].io[1] = str.istr[j];
+                            xlist[(*numx)].io[0] = str->istr[i];
+                            xlist[(*numx)].io[1] = str->istr[j];
                             xlist[(*numx)].fo[0] = scr[k];
                             xlist[(*numx)].fo[1] = scr[l];
 
@@ -2802,12 +2802,12 @@ void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
                                               (str_docc + str_actv + l), scr[k], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.virtx[l];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->virtx[l];
                             xlist[*numx].fo[0] = scr[j];
                             xlist[*numx].fo[1] = scr[k];
 
-                            //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+                            //xlist[*numx].permx = pindex_double_rep_str(newstr->istr,
                             //                                       xlist[*numx].io[0],
                             //                                       xlist[*numx].fo[0],
                             //                                       xlist[*numx].io[1],
@@ -2831,7 +2831,7 @@ void generate_docc2virtx_actv1(int nrep, struct occstr str, int str_docc,
  * generate_docc2virtx_virt1: generate excitations from DOCC -> VIRT with
  * a replacement within the virt.
  */
-void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
+void generate_docc2virtx_virt1(int nrep, struct occstr *str, int str_docc,
                                int str_actv, int str_virt, struct eospace eosp,
                                int ndocc, int nactv, int nvirt, int elec,
                                int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -2881,7 +2881,7 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
                     for (l = (k + 1); l < (nvo + intorb); l++) {
                         //newstr = str; 
                         /* Remove */
-                        //newstr.byte1 = str.byte1 - pow(2, (str.istr[i] - 1));
+                        //newstr.byte1 = str.byte1 - pow(2, (str->istr[i] - 1));
                         /* Replace virtual orbital and add excitation */
                         //newstr.virtx[0] = scr[k];
                         //newstr.virtx[1] = scr[l];
@@ -2894,12 +2894,12 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
                                           (str_docc + str_actv), scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                        xlist[*numx].io[0] = str.istr[i];
-                        xlist[*numx].io[1] = str.virtx[0];
+                        xlist[*numx].io[0] = str->istr[i];
+                        xlist[*numx].io[1] = str->virtx[0];
                         xlist[*numx].fo[0] = scr[k];
                         xlist[*numx].fo[1] = scr[l];
 
-                        //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+                        //xlist[*numx].permx = pindex_double_rep_str(newstr->istr,
                         //                                           xlist[*numx].io[0],
                         //                                           xlist[*numx].fo[0],
                         //                                           xlist[*numx].io[1],
@@ -2935,12 +2935,12 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
                                       (str_docc + str_actv + 1), scr[l], elec,
                                       &(xlist[*numx].permx), &(xlist[*numx].index));
                     
-                    xlist[*numx].io[0] = str.virtx[0];
-                    xlist[*numx].io[1] = str.virtx[1];
+                    xlist[*numx].io[0] = str->virtx[0];
+                    xlist[*numx].io[1] = str->virtx[1];
                     xlist[*numx].fo[0] = scr[i];
                     xlist[*numx].fo[1] = scr[l];
 
-                    //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+                    //xlist[*numx].permx = pindex_double_rep_str(newstr->istr,
                     //                                               xlist[*numx].io[0],
                     //                                               xlist[*numx].fo[0],
                     //                                               xlist[*numx].io[1],
@@ -2963,7 +2963,7 @@ void generate_docc2virtx_virt1(int nrep, struct occstr str, int str_docc,
 /*
  * generate_doccx_actvx: generate replacements  DOCC + ACTV.
  */
-void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
+void generate_doccx_actvx(int nrep, struct occstr *str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
                           int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -3011,8 +3011,8 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
                         //newstr.nvrtx = str.nvrtx;
                         //newstr.virtx[0] = str.virtx[0];
                         //newstr.virtx[1] = str.virtx[1];
-                        //newstr.byte1 = str.byte1 - pow(2, (str.istr[i] - 1));
-                        //newstr.byte1 = newstr.byte1 - pow(2, (str.istr[j] - 1));
+                        //newstr.byte1 = str.byte1 - pow(2, (str->istr[i] - 1));
+                        //newstr.byte1 = newstr.byte1 - pow(2, (str->istr[j] - 1));
                         //newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
                         //newstr.byte1 = newstr.byte1 + pow(2, (scr[l] - 1));
                         //xlist[*numx].index = occstr2address(newstr, eosp, ndocc,
@@ -3023,12 +3023,12 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
                         
                         
-                        xlist[*numx].io[0] = str.istr[j];
-                        xlist[*numx].io[1] = str.istr[i];
+                        xlist[*numx].io[0] = str->istr[j];
+                        xlist[*numx].io[1] = str->istr[i];
                         xlist[*numx].fo[0] = scr[l];
                         xlist[*numx].fo[1] = scr[k];
 
-                        //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+                        //xlist[*numx].permx = pindex_double_rep_str(newstr->istr,
                         //                                           xlist[*numx].io[0],
                         //                                           xlist[*numx].fo[0],
                         //                                           xlist[*numx].io[1],
@@ -3050,7 +3050,7 @@ void generate_doccx_actvx(int nrep, struct occstr str, int str_docc,
 /*
  * generate_doccx_virtx: generate replacements  DOCC + VIRT.
  */
-void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
+void generate_doccx_virtx(int nrep, struct occstr *str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
                           int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -3101,7 +3101,7 @@ void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
                         //newstr.nvrtx = str.nvrtx;
                         //newstr.virtx[0] = str.virtx[0];
                         //newstr.virtx[1] = str.virtx[1];
-                        //newstr.byte1 = str.byte1 - pow(2, (str.istr[i] - 1));
+                        //newstr.byte1 = str.byte1 - pow(2, (str->istr[i] - 1));
                         //newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
                         //newstr.virtx[k] = scr[l]; // Swapped
                         //if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
@@ -3123,12 +3123,12 @@ void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
                                           (str_docc + str_actv + k), scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                        xlist[*numx].io[0] = str.istr[i];
-                        xlist[*numx].io[1] = str.virtx[k];
+                        xlist[*numx].io[0] = str->istr[i];
+                        xlist[*numx].io[1] = str->virtx[k];
                         xlist[*numx].fo[0] = scr[j];
                         xlist[*numx].fo[1] = scr[l];
 
-                        //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+                        //xlist[*numx].permx = pindex_double_rep_str(newstr->istr,
                         //                                           xlist[*numx].io[0],
                         //                                           xlist[*numx].fo[0],
                         //                                           xlist[*numx].io[1],
@@ -3149,7 +3149,7 @@ void generate_doccx_virtx(int nrep, struct occstr str, int str_docc,
 /*
  * generate_actvx_virtx: generate replacements  ACTV + VIRT.
  */
-void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
+void generate_actvx_virtx(int nrep, struct occstr *str, int str_docc,
                           int str_actv, int str_virt, struct eospace eosp,
                           int ndocc, int nactv, int nvirt, int elec,
                           int *scr, struct xstr *xlist, int *numx, int nvo,
@@ -3202,7 +3202,7 @@ void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
                         //newstr.nvrtx = str.nvrtx;
                         //newstr.virtx[0] = str.virtx[0];
                         //newstr.virtx[1] = str.virtx[1];
-                        //newstr.byte1 = str.byte1 - pow(2, (str.istr[i] - 1));
+                        //newstr.byte1 = str.byte1 - pow(2, (str->istr[i] - 1));
                         //newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
                         //newstr.virtx[k] = scr[l]; // Swapped
                         //if (newstr.virtx[0] == 0 && newstr.virtx[1] != 0) {
@@ -3224,12 +3224,12 @@ void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
                                           (str_docc + str_actv + k), scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                        xlist[*numx].io[0] = str.istr[i];
-                        xlist[*numx].io[1] = str.virtx[k];
+                        xlist[*numx].io[0] = str->istr[i];
+                        xlist[*numx].io[1] = str->virtx[k];
                         xlist[*numx].fo[0] = scr[j];
                         xlist[*numx].fo[1] = scr[l];
 
-//                        xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+//                        xlist[*numx].permx = pindex_double_rep_str(newstr->istr,
 //                                                                   xlist[*numx].io[0],
 //                                                                   xlist[*numx].fo[0],
 //                                                                   xlist[*numx].io[1],
@@ -3251,7 +3251,7 @@ void generate_actvx_virtx(int nrep, struct occstr str, int str_docc,
  * generate_docc2actvvirtx: generate excitations from DOCC -> (ACTV, VIRT)
  * for a given string.
  */
-void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
+void generate_docc2actvvirtx(int nrep, struct occstr *str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
                              struct xstr *xlist, int *numx, int nvo,
@@ -3307,8 +3307,8 @@ void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
                         /* Add new orbital to VIRT space */
                         for (l = intorb; l < (nvo + intorb); l++) {
                             //newstr = str;
-                            //newstr.byte1 = str.byte1 - pow(2, (str.istr[i] - 1));
-                            //newstr.byte1 = newstr.byte1 - pow(2, (str.istr[j] - 1));
+                            //newstr.byte1 = str.byte1 - pow(2, (str->istr[i] - 1));
+                            //newstr.byte1 = newstr.byte1 - pow(2, (str->istr[j] - 1));
                             //newstr.byte1 = newstr.byte1 + pow(2, (scr[k] - 1));
                             /* If adding occupation to VIRT, there must be
                              * str.nvirt = 0 or 1. */
@@ -3328,12 +3328,12 @@ void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
-                            //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+                            //xlist[*numx].permx = pindex_double_rep_str(newstr->istr,
                             //                                       xlist[*numx].io[0],
                             //                                       xlist[*numx].fo[0],
                             //                                       xlist[*numx].io[1],
@@ -3364,7 +3364,7 @@ void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
                             //newstr = str;
                             //newstr.byte1 = str.byte1 + pow(2, (scr[i] - 1));
                             //newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
-                            //newstr.byte1 = newstr.byte1 - pow(2, ((str.istr[k] - 1)));
+                            //newstr.byte1 = newstr.byte1 - pow(2, ((str->istr[k] - 1)));
                             //newstr.virtx[0] = str.virtx[0];
                             //newstr.virtx[1] = str.virtx[1];
                             //newstr.nvrtx = str_virt - 1;
@@ -3389,12 +3389,12 @@ void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
                                               (str_docc + str_actv + l), scr[j], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[k];
-                            xlist[*numx].io[1] = str.virtx[l];
+                            xlist[*numx].io[0] = str->istr[k];
+                            xlist[*numx].io[1] = str->virtx[l];
                             xlist[*numx].fo[0] = scr[i];
                             xlist[*numx].fo[1] = scr[j];
 
-                            //xlist[*numx].permx = pindex_double_rep_str(newstr.istr,
+                            //xlist[*numx].permx = pindex_double_rep_str(newstr->istr,
                             //                                       xlist[*numx].io[0],
                             //                                       xlist[*numx].fo[0],
                             //                                       xlist[*numx].io[1],
@@ -3417,7 +3417,7 @@ void generate_docc2actvvirtx(int nrep, struct occstr str, int str_docc,
  * generate_docc2virtx: generate excitations from DOCC -> VIRT spaces for
  * a given string.
  */
-void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv,
+void generate_docc2virtx(int nrep, struct occstr *str, int str_docc, int str_actv,
                          int str_virt, struct eospace eosp, int ndocc, int nactv,
                          int nvirt, int elec, int *scr, struct xstr *xlist,
                          int *numx, int nvo, struct occstr *strlist)
@@ -3462,7 +3462,7 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                 /* Add new orbital */
                 for (j = intorb; j < (nvo + intorb); j++) {
                     //newstr = str;
-                    //newstr.byte1 = str.byte1 - pow(2, (str.istr[i] - 1));
+                    //newstr.byte1 = str.byte1 - pow(2, (str->istr[i] - 1));
                     //newstr.virtx[0] = str.virtx[0];
                     //newstr.virtx[1] = str.virtx[1];
                     //newstr.virtx[str.nvrtx] = scr[j];
@@ -3474,16 +3474,16 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     //}
                     //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv,
                     //                                    nvirt, elec, elecs);
-                    xlist[*numx].index = str.cij[i][scr[j]];
+                    xlist[*numx].index = str->cij[i][scr[j]];
                     
-                    xlist[*numx].io[0] = str.istr[i];
+                    xlist[*numx].io[0] = str->istr[i];
                     xlist[*numx].io[1] = 0;
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = 0;
 
-//                    xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
+//                    xlist[*numx].permx = pindex_single_rep(str->istr, str->istr[i],
 //                                                           scr[j], elec);;
-                    xlist[*numx].permx = str.yij[i][scr[j]];
+                    xlist[*numx].permx = str->yij[i][scr[j]];
                     (*numx)++;
                 }
             }
@@ -3510,8 +3510,8 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                             doublerep_cij_yij(str, strlist, i, scr[k], j, scr[l], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
                             
-                            xlist[*numx].io[0] = str.istr[i];
-                            xlist[*numx].io[1] = str.istr[j];
+                            xlist[*numx].io[0] = str->istr[i];
+                            xlist[*numx].io[1] = str->istr[j];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -3561,16 +3561,16 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                     
                     //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv,
                     //                                    nvirt, elec, elecs);
-                    xlist[*numx].index = str.cij[str_docc + str_actv + j][scr[i]];
+                    xlist[*numx].index = str->cij[str_docc + str_actv + j][scr[i]];
 
-                    xlist[*numx].io[0] = str.virtx[j];
+                    xlist[*numx].io[0] = str->virtx[j];
                     xlist[*numx].io[1] = 0;
                     xlist[*numx].fo[0] = scr[i];
                     xlist[*numx].fo[1] = 0;
 
 //                    xlist[*numx].permx = pindex_single_rep(str.istr, str.virtx[j],
 //                                                           scr[i], elec);;
-                    xlist[*numx].permx = str.yij[str_docc + str_actv + j][scr[i]];
+                    xlist[*numx].permx = str->yij[str_docc + str_actv + j][scr[i]];
                     (*numx)++;
                 }
             }
@@ -3592,8 +3592,8 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
                                       (str_docc + str_actv), scr[i], elec,
                                       &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                    xlist[*numx].io[0] = str.virtx[1];
-                    xlist[*numx].io[1] = str.virtx[0];
+                    xlist[*numx].io[0] = str->virtx[1];
+                    xlist[*numx].io[1] = str->virtx[0];
                     xlist[*numx].fo[0] = scr[j];
                     xlist[*numx].fo[1] = scr[i];
 
@@ -3618,7 +3618,7 @@ void generate_docc2virtx(int nrep, struct occstr str, int str_docc, int str_actv
  * generate_doccx: generate excitations within the DOCC space given a
  * string.
  */
-void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
+void generate_doccx(int nrep, struct occstr *str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
                     int nvirt, int elec, int *scr, struct xstr *xlist,
                     int *numx, int nvo, struct occstr *strlist)
@@ -3656,9 +3656,9 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
                 //newstr.byte1 = newstr.byte1 + pow(2, (scr[j] - 1));
                 //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv, nvirt,
                 //                                    elec, elecs);
-                xlist[*numx].index = str.cij[i][scr[j]];
+                xlist[*numx].index = str->cij[i][scr[j]];
                 
-                xlist[*numx].io[0] = str.istr[i];
+                xlist[*numx].io[0] = str->istr[i];
                 xlist[*numx].io[1] = 0;
                 xlist[*numx].fo[0] = scr[j];
                 xlist[*numx].fo[1] = 0;
@@ -3666,7 +3666,7 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
                 //xlist[*numx].permx = pindex_single_rep(str.istr, str.istr[i],
                 //                                       scr[j], elec);
                 
-                xlist[*numx].permx = str.yij[i][scr[j]];
+                xlist[*numx].permx = str->yij[i][scr[j]];
                 (*numx)++;
             }
         }
@@ -3688,8 +3688,8 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
                         doublerep_cij_yij(str, strlist, i, scr[j], k, scr[l], elec,
                                           &(xlist[*numx].permx), &(xlist[*numx].index));
                         
-                        xlist[*numx].io[0] = str.istr[i];
-                        xlist[*numx].io[1] = str.istr[k];
+                        xlist[*numx].io[0] = str->istr[i];
+                        xlist[*numx].io[1] = str->istr[k];
                         xlist[*numx].fo[0] = scr[j];
                         xlist[*numx].fo[1] = scr[l];
 
@@ -3716,7 +3716,7 @@ void generate_doccx(int nrep, struct occstr str, int str_docc, int str_actv,
  * generate_virtx: generate excitations within the VIRT space given a
  * string.
  */
-void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
+void generate_virtx(int nrep, struct occstr *str, int str_docc, int str_actv,
                     int str_virt, struct eospace eosp, int ndocc, int nactv,
                     int nvirt, int elec, int *scr, struct xstr *xlist,
                     int *numx, int nvo, struct occstr *strlist)
@@ -3761,16 +3761,16 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                 //}
                 //xlist[*numx].index = occstr2address(newstr, eosp, ndocc, nactv, nvirt,
                 //                                    elec, elecs);
-                xlist[*numx].index = str.cij[str_docc + str_actv + i][scr[j]];
+                xlist[*numx].index = str->cij[str_docc + str_actv + i][scr[j]];
                 
-                xlist[*numx].io[0] = str.virtx[i];
+                xlist[*numx].io[0] = str->virtx[i];
                 xlist[*numx].io[1] = 0;
                 xlist[*numx].fo[0] = scr[j];
                 xlist[*numx].fo[1] = 0;
 
                 //xlist[*numx].permx = pindex_single_rep(str.istr, str.virtx[i],
                 //                                       scr[j], elec);
-                xlist[*numx].permx = str.yij[str_docc + str_actv + i][scr[j]];
+                xlist[*numx].permx = str->yij[str_docc + str_actv + i][scr[j]];
                 (*numx)++;
             }
         }
@@ -3802,8 +3802,8 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
                                           scr[l], elec, &(xlist[*numx].permx),
                                           &(xlist[*numx].index));
 
-                        xlist[*numx].io[0] = str.virtx[0];
-                        xlist[*numx].io[1] = str.virtx[1];
+                        xlist[*numx].io[0] = str->virtx[0];
+                        xlist[*numx].io[1] = str->virtx[1];
                         xlist[*numx].fo[0] = scr[j];
                         xlist[*numx].fo[1] = scr[l];
                         
@@ -3830,7 +3830,7 @@ void generate_virtx(int nrep, struct occstr str, int str_docc, int str_actv,
  * generate_virt2doccactvx: generate replacements between VIRT and (DOCC,ACTV)
  * spaces.
  */
-void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
+void generate_virt2doccactvx(int nrep, struct occstr *str, int str_docc,
                              int str_actv, int str_virt, struct eospace eosp,
                              int ndocc, int nactv, int nvirt, int elec, int *scr,
                              struct xstr *xlist, int *numx, int nvo,
@@ -3896,8 +3896,8 @@ void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
                                       scr[j], elec,
                                       &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                    xlist[*numx].io[0] = str.virtx[1];
-                    xlist[*numx].io[1] = str.virtx[0];
+                    xlist[*numx].io[0] = str->virtx[1];
+                    xlist[*numx].io[1] = str->virtx[0];
                     xlist[*numx].fo[0] = scr[i];
                     xlist[*numx].fo[1] = scr[j];
 
@@ -3940,8 +3940,8 @@ void generate_virt2doccactvx(int nrep, struct occstr str, int str_docc,
                             doublerep_cij_yij(str, strlist, j, scr[k], i, scr[l], elec,
                                               &(xlist[*numx].permx), &(xlist[*numx].index));
 
-                            xlist[*numx].io[0] = str.istr[j];
-                            xlist[*numx].io[1] = str.istr[i];
+                            xlist[*numx].io[0] = str->istr[j];
+                            xlist[*numx].io[1] = str->istr[i];
                             xlist[*numx].fo[0] = scr[k];
                             xlist[*numx].fo[1] = scr[l];
 
@@ -4024,7 +4024,7 @@ void generate_string_list(struct eostring *strlist, int nstr, int orbs,
  *  orbsx = orbitals available for excitations
  *  nvo   = number of available orbitals.
  */
-void get_available_orbital_list(struct occstr str, int intorb, int nvirt,
+void get_available_orbital_list(struct occstr *str, int intorb, int nvirt,
                                 int *orbsx, int *nvo)
 {
     /* Replacement byte and internal orbital byte */
@@ -4033,11 +4033,11 @@ void get_available_orbital_list(struct occstr str, int intorb, int nvirt,
     for (i = 0; i < intorb; i++) {
         ibyte = ibyte + pow(2, i);
     }
-    xbyte = ibyte ^ str.byte1;
+    xbyte = ibyte ^ str->byte1;
     nonzerobits(xbyte, intorb, orbsx);
     *nvo = 0;
     for (i = intorb + 1; i <= (intorb + nvirt); i++) {
-        if (i != str.virtx[0] && i != str.virtx[1]) {
+        if (i != str->virtx[0] && i != str->virtx[1]) {
             orbsx[intorb + (*nvo)] = i;
             (*nvo)++;
         }
@@ -4065,7 +4065,7 @@ void get_eospace_detrange(int **pq, int npq, int pair, struct eospace *peosp,
 /*
  * get_string_eospace: get eospace of input string.
  */
-int get_string_eospace(struct occstr str, int ndocc, int nactv,
+int get_string_eospace(struct occstr *str, int ndocc, int nactv,
                        struct eospace *esp, int egrps)
 {
     int spindx = 0; /* Index of eospace for input string */
@@ -4089,7 +4089,7 @@ int get_string_eospace(struct occstr str, int ndocc, int nactv,
 /*
  * occstr2address: compute the string index of given an occupation string.
  */
-int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
+int occstr2address(struct occstr *str, struct eospace eosp, int ndocc, int nactv,
                    int nvirt, int nelec, int *elecs)
 {
     int i, j;
@@ -4098,10 +4098,10 @@ int occstr2address(struct occstr str, struct eospace eosp, int ndocc, int nactv,
     int addr = 0;
     
     /* Create electron string necessary for address look up. */
-    nonzerobits(str.byte1, (ndocc + nactv), elecs);
-    for (i = 0; i < str.nvrtx; i++) {
+    nonzerobits(str->byte1, (ndocc + nactv), elecs);
+    for (i = 0; i < str->nvrtx; i++) {
         //elecs[nelec - str.nvrtx + i] = str.virtx[i];
-        elecs[nelec - str.nvrtx + i] = str.virtx[i] - ndocc - nactv;
+        elecs[nelec - str->nvrtx + i] = str->virtx[i] - ndocc - nactv;
     }
     /* Give orbitals in string "relative" values for space */
     /* DOCC space can be skipped. */

@@ -576,8 +576,8 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
         /* Get space information for ip and iq */
         /* This is necessary because excitations must match with p or q to
          * make valid determinants */
-        ipspc = get_string_eospace(pstr[ip], ndocc, nactv, peosp, pegrps);
-        iqspc = get_string_eospace(qstr[iq], ndocc, nactv, qeosp, qegrps);
+        ipspc = get_string_eospace(&(pstr[ip]), ndocc, nactv, peosp, pegrps);
+        iqspc = get_string_eospace(&(qstr[iq]), ndocc, nactv, qeosp, qegrps);
 
         /* <p,q|H|p',q > */
         /* Find single excitations in p that form valid determinants
@@ -585,7 +585,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
         for (j = 0; j < qeosp[iqspc].npairs; j++) {
             /* Index for p eospaces that pair with q */
             jpspc = qeosp[iqspc].pairs[j];
-            npx = generate_single_excitations(pstr[ip], peosp[jpspc], aelec,
+            npx = generate_single_excitations(&(pstr[ip]), peosp[jpspc], aelec,
                                               ndocc, nactv, intorb, vorbs,
                                               pxlist,
                                               elecscr, orbscr, pstr);
@@ -607,7 +607,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
         for (j = 0; j < peosp[ipspc].npairs; j++) {
             /* Index for q eospaces that pair with p */
             jqspc = peosp[ipspc].pairs[j];
-            nqx = generate_single_excitations(qstr[iq], qeosp[jqspc], belec,
+            nqx = generate_single_excitations(&(qstr[iq]), qeosp[jqspc], belec,
                                                ndocc, nactv, intorb, vorbs,
                                               qxlist, elecscr, orbscr, qstr);
             if (nqx == 0) continue;
@@ -628,11 +628,11 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
         /* Find single,single exciations in p and q */
         /* Loop over valid space combinations */
         for (j = 0; j < npq; j++) {
-            npx = generate_single_excitations(pstr[ip], peosp[pq[j][0]], aelec,
+            npx = generate_single_excitations(&(pstr[ip]), peosp[pq[j][0]], aelec,
                                                ndocc, nactv, intorb, vorbs,
                                                pxlist,
                                               elecscr, orbscr, pstr);
-            nqx = generate_single_excitations(qstr[iq], qeosp[pq[j][1]], belec,
+            nqx = generate_single_excitations(&(qstr[iq]), qeosp[pq[j][1]], belec,
                                                ndocc, nactv, intorb, vorbs,
                                               qxlist, elecscr, orbscr, qstr);
             if (nqx == 0 || npx == 0) continue;
@@ -654,7 +654,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
         for (j = 0; j < qeosp[iqspc].npairs; j++) {
             /* Index for p eospaces that pair with q */
             jpspc = qeosp[iqspc].pairs[j];
-            npx = generate_double_excitations(pstr[ip], peosp[jpspc], aelec,
+            npx = generate_double_excitations(&(pstr[ip]), peosp[jpspc], aelec,
                                               ndocc,
                                               nactv, intorb, vorbs, pxlist,
                                               elecscr, orbscr, pstr);
@@ -676,7 +676,7 @@ void compute_cblock_H(double **c, int ccols, int crows, int **wi, int w_hndl,
         for (j = 0; j < peosp[ipspc].npairs; j++) {
             /* Index for q eospaces that pair with p */
             jqspc = peosp[ipspc].pairs[j];
-            nqx = generate_double_excitations(qstr[iq], qeosp[jqspc], belec, ndocc,
+            nqx = generate_double_excitations(&(qstr[iq]), qeosp[jqspc], belec, ndocc,
                                               nactv, intorb, vorbs, qxlist,
                                               elecscr, orbscr, qstr);
             if (nqx == 0) continue;
@@ -822,13 +822,13 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
         deti.bstr = qstr[iq];
         deti.cas  = wi[i][2];
         /* Get space information for ip and iq */
-        ipspace = get_string_eospace(pstr[ip], ndocc, nactv, peosp, pegrps);
-        iqspace = get_string_eospace(qstr[iq], ndocc, nactv, qeosp, qegrps);
+        ipspace = get_string_eospace(&(pstr[ip]), ndocc, nactv, peosp, pegrps);
+        iqspace = get_string_eospace(&(qstr[iq]), ndocc, nactv, qeosp, qegrps);
         /* <p,q|H|p',q> */
         /* Loop over p' in eospaces that pair with iq */
         for (j = 0; j < qeosp[iqspace].npairs; j++) {
             jpspace = qeosp[iqspace].pairs[j]; 
-            npx = generate_single_excitations(pstr[ip], peosp[jpspace], aelec,
+            npx = generate_single_excitations(&(pstr[ip]), peosp[jpspace], aelec,
                                               ndocc, nactv, intorb, vorbs,
                                               pxlist, elecx, orbsx, pstr);
             /* Upper triangle only */
@@ -854,7 +854,7 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
         /* <p,q|H|p,q'> */
         for (j = 0; j < peosp[ipspace].npairs; j++) {
             jqspace = peosp[ipspace].pairs[j];
-            nqx = generate_single_excitations(qstr[iq], qeosp[jqspace], belec,
+            nqx = generate_single_excitations(&(qstr[iq]), qeosp[jqspace], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx, qstr);
             /* Upper triangle only */
@@ -880,10 +880,10 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
         /* Find single,single exciations in p and q */
         /* Loop over valid space combinations */
         for (j = 0; j < npq; j++) {
-            npx = generate_single_excitations(pstr[ip], peosp[pq[j][0]], aelec,
+            npx = generate_single_excitations(&(pstr[ip]), peosp[pq[j][0]], aelec,
                                               ndocc, nactv, intorb, vorbs,
                                               pxlist, elecx, orbsx, pstr);
-            nqx = generate_single_excitations(qstr[iq], qeosp[pq[j][1]], belec,
+            nqx = generate_single_excitations(&(qstr[iq]), qeosp[pq[j][1]], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx, qstr);
             /* Upper triangle only */
@@ -911,7 +911,7 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
         for (j = 0; j < qeosp[iqspace].npairs; j++) {
             /* Index for p eospaces that pair with q */
             jpspace = qeosp[iqspace].pairs[j];
-            npx = generate_double_excitations(pstr[ip], peosp[jpspace], aelec,
+            npx = generate_double_excitations(&(pstr[ip]), peosp[jpspace], aelec,
                                               ndocc, nactv, intorb, vorbs, pxlist,
                                               elecx, orbsx, pstr);
             /* Upper triangle only */
@@ -938,7 +938,7 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
         for (j = 0; j < peosp[ipspace].npairs; j++) {
             /* Index for q eospaces that pair with p */
             jqspace = peosp[ipspace].pairs[j];
-            nqx = generate_double_excitations(qstr[iq], qeosp[jqspace], belec,
+            nqx = generate_double_excitations(&(qstr[iq]), qeosp[jqspace], belec,
                                               ndocc, nactv, intorb, vorbs, qxlist,
                                               elecx, orbsx, qstr);
             /* Upper triangle only */
@@ -1116,13 +1116,13 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
         deti.bstr = qstr[iq];
         deti.cas  = wi[i][2];
         /* Get space information for ip and iq */
-        ipspace = get_string_eospace(pstr[ip], ndocc, nactv, peosp, pegrps);
-        iqspace = get_string_eospace(qstr[iq], ndocc, nactv, qeosp, qegrps);
+        ipspace = get_string_eospace(&(pstr[ip]), ndocc, nactv, peosp, pegrps);
+        iqspace = get_string_eospace(&(qstr[iq]), ndocc, nactv, qeosp, qegrps);
 
         /* Loop over alpha electron orbital spaces (EOSP) */
         for (j = 0; j < pegrps; j++) {
             /* Evaluate <pq|H|p'q> */
-            npx = generate_single_excitations(pstr[ip], peosp[j],
+            npx = generate_single_excitations(&(pstr[ip]), peosp[j],
                                               aelec, ndocc, nactv, intorb,
                                               vorbs, pxlist, elecx, orbsx, pstr);
             /* Upper triangle only */
@@ -1151,7 +1151,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
                 /* Evaluate <pq|H|p'q'> */
                 jqspace = peosp[j].pairs[jj];
                 /* p'q' is a valid determinant */
-                nqx = generate_single_excitations(qstr[iq], qeosp[jqspace], belec,
+                nqx = generate_single_excitations(&(qstr[iq]), qeosp[jqspace], belec,
                                                   ndocc, nactv, intorb, vorbs,
                                                   qxlist, elecx, orbsx, qstr);
                 if (nqx != 0 && npx != 0) {
@@ -1174,7 +1174,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
             if ((peosp[j].docc + qeosp[iqspace].docc) >= doccmin &&
                 (peosp[j].virt + qeosp[iqspace].virt) <= virtmax) {
                 /* p"q is valid determinant */
-                npx = generate_double_excitations(pstr[ip], peosp[j],
+                npx = generate_double_excitations(&(pstr[ip]), peosp[j],
                                                   aelec, ndocc, nactv, intorb,
                                                   vorbs, pxlist, elecx, orbsx, pstr);
                 /* Upper triangle only */
@@ -1199,7 +1199,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
         for (j = 0; j < peosp[ipspace].npairs; j++) {
             jqspace = peosp[ipspace].pairs[j];
             /* q' */
-            nqx = generate_single_excitations(qstr[iq], qeosp[jqspace], belec,
+            nqx = generate_single_excitations(&(qstr[iq]), qeosp[jqspace], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx, qstr);
             /* Upper triangle only */
@@ -1219,7 +1219,7 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
             }
             /* q" */
             /* Index for q eospaces that pair with p */
-            nqx = generate_double_excitations(qstr[iq], qeosp[jqspace], belec,
+            nqx = generate_double_excitations(&(qstr[iq]), qeosp[jqspace], belec,
                                               ndocc, nactv, intorb, vorbs, qxlist,
                                               elecx, orbsx, qstr);
             /* Upper triangle only */
@@ -1349,8 +1349,8 @@ void compute_cblock_Hfastest(double *c1d, int ccols, int crows, int **wi, int w_
     NGA_Get(v_hndl, vi_lo, vi_hi, vidata, vi_ld);
 
     /* Get pq pairing of first determinant i */
-    ipspace = get_string_eospace(pstr[wi[0][0]], ndocc, nactv, peosp, pegrps);
-    iqspace = get_string_eospace(qstr[wi[0][1]], ndocc, nactv, qeosp, qegrps);
+    ipspace = get_string_eospace(&(pstr[wi[0][0]]), ndocc, nactv, peosp, pegrps);
+    iqspace = get_string_eospace(&(qstr[wi[0][1]]), ndocc, nactv, qeosp, qegrps);
     for (pqstart = 0; pqstart < npq; pqstart++) {
         /* Find first instance of ip's eosp space */
 	if (ipspace == pq[pqstart][0]) break;
@@ -1967,11 +1967,11 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             deti.astr = pstr[ip];
             deti.bstr = qstr[iq];
             deti.cas  = wi[i][2];
-            ipspace = get_string_eospace(pstr[ip], ndocc, nactv, peosp, pegrps);
-            iqspace = get_string_eospace(qstr[iq], ndocc, nactv, qeosp, qegrps);
+            ipspace = get_string_eospace(&(pstr[ip]), ndocc, nactv, peosp, pegrps);
+            iqspace = get_string_eospace(&(qstr[iq]), ndocc, nactv, qeosp, qegrps);
 
             /* Generate single replacements in p for the pq-pair jpair */
-            npx = generate_single_excitations(pstr[ip], peosp[jpair[0]], aelec,
+            npx = generate_single_excitations(&(pstr[ip]), peosp[jpair[0]], aelec,
                                               ndocc, nactv, intorb, vorbs,
                                               pxlist, elecx, orbsx, pstr);
             /* upper triangle only */
@@ -1990,7 +1990,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             }
 
             /* Generate single replacements in q' and pair with p' */
-            nqx = generate_single_excitations(qstr[iq], qeosp[jpair[1]], belec,
+            nqx = generate_single_excitations(&(qstr[iq]), qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx, qstr);
 
@@ -2008,7 +2008,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             }
 
             /* Generate double replacements in p for the pq-pair jpair */
-            npx = generate_double_excitations(pstr[ip], peosp[jpair[0]], aelec,
+            npx = generate_double_excitations(&(pstr[ip]), peosp[jpair[0]], aelec,
                                               ndocc, nactv, intorb, vorbs,
                                               pxlist, elecx, orbsx, pstr);
             /* upper triangle only */
@@ -2027,7 +2027,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             }
 
             /* Generate single replacements in q for the pq-pair jpair */
-            nqx = generate_single_excitations(qstr[iq], qeosp[jpair[1]], belec,
+            nqx = generate_single_excitations(&(qstr[iq]), qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx, qstr);
 
@@ -2047,7 +2047,7 @@ void compute_hij_eosp(double *ci, int ccols, int crows, int **wi,
             }
 
             /* Generate double replacements in q for the pq-pair jpair */
-            nqx = generate_double_excitations(qstr[iq], qeosp[jpair[1]], belec,
+            nqx = generate_double_excitations(&(qstr[iq]), qeosp[jpair[1]], belec,
                                               ndocc, nactv, intorb, vorbs,
                                               qxlist, elecx, orbsx, qstr);
             /* upper triangle only */
