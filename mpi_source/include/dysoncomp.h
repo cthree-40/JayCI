@@ -19,32 +19,28 @@ int comparestrings_dyson(struct occstr str0, struct occstr str1, int ninto);
  * compute_dyson_orbital: compute the dyson orbital between electronic
  * states of N+1 and N electron wavefuntions by comparing alpha/beta strings.
  * Input:
- *  w0_hndl = N+1 wavefunction handle
- *  dlen0   = number of N+1 determinants
- *  w1_hndl = N   wvaefunction handle
- *  dlen1   = number of N determinants
- *  v0_hndl = N+1 CI vectors handle
- *  v1_hndl = N   CI vectors handle
- *  str0    = N+1 alpha/beta strings
- *  str1    = N   alpha/beta strings
- *  spindx  = alpha: 0,  beta: 1
- *  spindx2 = beta:  1, alpha: 0
- *  ninto0  = N+1 internal orbitals
- *  ninto1  = N   internal orbitals
- *  norbs   = total number of orbitals
- *  dysnst0 = dyson orbital N+1 states
- *  ndyst0  = number of N+1 states for dyson orbitals
- *  dysnst1 = dyson orbital N   states
- *  ndyst1  = number of N   states for dyson orbitals
- *  ndyorbs = number of dyson orbitals
- *  dyorb   = dyson orbital
+ *
  */
-void compute_dyson_orbital(int w0_hndl, int dlen0, int w1_hndl, int dlen1,
-                           int v0_hndl, int v1_hndl,
-                           struct occstr *str0, struct occstr *str1,
-                           int spindx1, int spindx2, int ninto0, int ninto1,
-                           int norbs, int *dysnst0, int ndyst0, int *dysnst1,
-                           int ndyst1, int ndyorbs, double **dyorb);
+void compute_dyson_orbital(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
+			   struct occstr *pstr0, struct eospace *peosp0, int npe0,
+			   struct occstr *qstr0, struct eospace *qeosp0, int nqe0,
+			   struct occstr *pstr1, struct eospace *peosp1, int npe1,
+			   struct occstr *qstr1, struct eospace *qeosp1, int nqe1,
+			   int norbs, int ndocc, int nactv, int dyst0,
+			   int *dysnst0, int dyst1, int *dysnst1, int ndets0,
+			   int ndets1, int sp1, int sp2);
+
+/*
+ * compute_det_contributions2: compute determinant contributions to dyson
+ * orbitals.
+ */
+void compute_det_contributions2(int **w0, double **v0, int v0rows, int v0cols,
+				int **w1, double **v1, int v1rows, int v1cols,
+ 				struct occstr *pstr0, struct eospace *peosp0,
+				struct occstr *qstr0, struct eospace *qeosp0,
+				struct occstr *pstr1, struct eospace *peosp1,
+				struct occstr *qstr1, struct eospace *qeosp1,
+				int ndocc, int nactv, int norbs);
 
 /*
  * compute_det_contributions: compute determinant contributions to dyson

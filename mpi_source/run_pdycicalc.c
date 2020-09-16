@@ -337,11 +337,15 @@ int run_pdycicalc ()
 			fflush(stdout);
 		}
                 /* S/T (N+1) wavefunction, compare beta  strings. */
-                compute_dyson_orbital(w0_hndl, dtrm0_len, w1_hndl, dtrm1_len,
-                                      v0_hndl, v1_hndl,
-                                      qstrings0, qstrings1, 1, 0, ninto0, ninto1,
-                                      norbs0, dysnst0, ndyst0, dysnst1,
-                                      ndyst1, ndyorbs, dyorb_lc);
+		compute_dyson_orbital(v0_hndl, v1_hndl, w0_hndl, w1_hndl,
+				      pstrings0, peospace0, pegrps0,
+				      qstrings0, qeospace0, qegrps0,
+				      pstrings1, peospace1, pegrps1,
+				      qstrings1, qeospace1, qegrps1,
+				      ciorbs1, ndocc1, nactv1, ndyst0,
+				      dysnst0, ndyst1, dysnst1, dtrm0_len,
+				      dtrm1_len, 1, 0);
+		
         } else {
                 if (mpi_proc_rank == mpi_root) {
                         printf("N+1 wavefunction is doublet.\n");
@@ -349,11 +353,14 @@ int run_pdycicalc ()
 			fflush(stdout);
 		}
                 /* D   (N+1) wavefunction, compare alpha strings. */
-                compute_dyson_orbital(w0_hndl, dtrm0_len, w1_hndl, dtrm1_len,
-                                      v0_hndl, v1_hndl,
-                                      pstrings0, pstrings1, 0, 1, ninto0, ninto1,
-                                      norbs0, dysnst0, ndyst0, dysnst1,
-                                      ndyst1, ndyorbs, dyorb_lc);
+		compute_dyson_orbital(v0_hndl, v1_hndl, w0_hndl, w1_hndl,
+				      pstrings0, peospace0, pegrps0,
+				      qstrings0, qeospace0, qegrps0,
+				      pstrings1, peospace1, pegrps1,
+				      qstrings1, qeospace1, qegrps1,
+				      ciorbs1, ndocc1, nactv1, ndyst0,
+				      dysnst0, ndyst1, dysnst1, dtrm0_len,
+				      dtrm1_len, 0, 1);
         }
 
         /* Accumulate dyson orbitals from each process. */

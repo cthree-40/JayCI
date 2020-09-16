@@ -96,161 +96,138 @@ int comparestrings_dyson(struct occstr str0, struct occstr str1, int ninto)
  * compute_dyson_orbital: compute the dyson orbital between electronic
  * states of N+1 and N electron wavefuntions by comparing alpha/beta strings.
  * Input:
- *  w0_hndl = N+1 wavefunction handle
- *  dlen0   = number of N+1 determinants
- *  w1_hndl = N   wvaefunction handle
- *  dlen1   = number of N determinants
- *  v0_hndl = N+1 CI vectors handle
- *  v1_hndl = N   CI vectors handle
- *  str0    = N+1 alpha/beta strings
- *  str1    = N   alpha/beta strings
- *  spindx1 = alpha: 0,  beta: 1
- *  spindx2 = beta:  1, alpha: 0
- *  ninto0  = N+1 internal orbitals
- *  ninto1  = N   internal orbitals
- *  norbs   = total number of orbitals
- *  dysnst0 = dyson orbital N+1 states
- *  ndyst0  = number of N+1 states for dyson orbitals
- *  dysnst1 = dyson orbital N   states
- *  ndyst1  = number of N   states for dyson orbitals
- *  ndyorbs = number of dyson orbitals
- *  dyorb   = dyson orbital
+ *
  */
-void compute_dyson_orbital(int w0_hndl, int dlen0, int w1_hndl, int dlen1,
-                           int v0_hndl, int v1_hndl,
-                           struct occstr *str0, struct occstr *str1,
-                           int spindx1, int spindx2, int ninto0, int ninto1,
-                           int norbs,  int *dysnst0, int ndyst0, int *dysnst1,
-                           int ndyst1, int ndyorbs, double **dyorb)
+void compute_dyson_orbital(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
+			   struct occstr *pstr0, struct eospace *peosp0, int npe0,
+			   struct occstr *qstr0, struct eospace *qeosp0, int nqe0,
+			   struct occstr *pstr1, struct eospace *peosp1, int npe1,
+			   struct occstr *qstr1, struct eospace *qeosp1, int nqe1,
+			   int norbs, int ndocc, int nactv, int ndyst0,
+			   int *dysnst0, int ndyst1, int *dysnst1, int ndets0,
+			   int ndets1, int sp1, int sp2)
 {
-#define BUFSIZE 1000000
-#define MAXSIZE 1000000
-    
-    int buflen = 0;         /* Buffer length */
-    
-    double **v0buff = NULL; /* N+1 electron ci buffer */
-    double *v0data  = NULL;
-    double **v1buff = NULL; /* N   electron ci buffer */
-    double *v1data  = NULL;
-    int **w0buff    = NULL; /* N+1 electron wf buffer */
-    int  *w0data    = NULL;
-    int **w1buff    = NULL; /* N   electron wf buffer */
-    int  *w1data    = NULL;
-    
-    int **ppo = NULL, *ppodata = NULL; /* (p0, p1, o-index) */
-    int nppo = 0; /* Number of ppo triples */
-    
-    int v0_lo[2] = {0, 0};
-    int v0_hi[2] = {0, 0};
-    int v0_ld[1] = {0};
-    int v0_rows = 0;
-    int v0_cols = 0;        /* Rows and columns of v0 buffer */
-    int v1_lo[2] = {0, 0};
-    int v1_hi[2] = {0, 0};
-    int v1_ld[1] = {0};
-    int v1_rows = 0;
-    int v1_cols = 0;
-    
-    int w0_lo[2] = {0, 0};
-    int w0_hi[2] = {0, 0};
-    int w0_ld[1] = {0};
-    int w1_lo[2] = {0, 0};
-    int w1_hi[2] = {0, 0};
-    int w1_ld[1] = {0};
-    int w1len = 0;
-    
-    int i0 = 0, i1 = 0;
-    int i1max = 0;
-    
-    int ninto = 0; /* Number of internal orbitals */
+#define MAXBUFFER 10000
+    /* Local V and W buffers */
+    double **v0 = NULL, *v0data = NULL;
+    int v0cols = 0, v0rows = 0;
+    double **v1 = NULL, *v1data = NULL;
+    int v1cols = 0, v1rows = 0;
+    int **w0 = NULL, *w0data = NULL;
+    int **w1 = NULL, *w1data = NULL;
+    /* GA dimensions for buffers */
+    int v0_lo[2] = {0, 0}, v0_hi[2] = {0, 0}, v0_ld[1] = {0};
+    int v1_lo[2] = {0, 0}, v1_hi[2] = {0, 0}, v1_ld[1] = {0};
+    int w0_lo[2] = {0, 0}, w0_hi[2] = {0, 0}, w0_ld[1] = {0};
+    int w1_lo[2] = {0, 0}, w1_hi[2] = {0, 0}, w1_ld[1] = {0};
 
-    int nstr0 = 106420; // HARDCODE
-    int nstr1 =  98218; // HARDCODE
+    int buflen;
+    int i, imax, j, jmax;
+    int nvirt;
+
+    nvirt = norbs - ndocc - nactv;
     
-    ninto = int_max(ninto0, ninto1);
-    if (mpi_proc_rank == mpi_root) {
-	printf(" Internal orbitals: %d\n", ninto);
-	fflush(stdout);
-    }
-    
-    /* Set up (p0, p1, o-index) triples */
-    if (mpi_proc_rank == mpi_rot) {
-	printf(" Building ppo triples...\n");
-    }
-    ppodata = allocate_mem_int_cont(&ppo, 3, MAXSIZE);
-    nppo = build_ppo_triples(ppo, str0, nstr0, str1, nstr1, ninto);
-    
-    
-    /* Determine which blocks of data are locally owned for the N+1
-     * electron vector. This will be the "static" buffer for which
-     * we compute the dyson orbital contributions. */
+    /* Compute dimensions of V0. Allocate array. Get buffer. */
     NGA_Distribution(v0_hndl, mpi_proc_rank, v0_lo, v0_hi);
-    v0_cols = v0_hi[0] - v0_lo[0] + 1;
-    v0_rows = v0_hi[1] - v0_lo[1] + 1;
-    v0_ld[0]= v0_rows;
-    /* Allocate local array */
-    v0data = allocate_mem_double_cont(&v0buff, v0_rows, v0_cols);
+    v0rows = v0_hi[1] - v0_lo[1] + 1;
+    v0cols = v0_hi[0] - v0_lo[0] + 1;
+    v0_ld[0]= v0rows;
+    v0data = allocate_mem_double_cont(&v0, v0rows, v0cols);
     NGA_Get(v0_hndl, v0_lo, v0_hi, v0data, v0_ld);
-    /* Allocate corresponding W0 array and get W0 data */
-    w0data = allocate_mem_int_cont(&w0buff, 3, v0_rows);
+    /* Get W0 wavefunction information */
     w0_lo[0] = v0_lo[1];
     w0_lo[1] = 0;
     w0_hi[0] = v0_hi[1];
     w0_hi[1] = 2;
-    w0_ld[0] = 3;
+    w0data = allocate_mem_int_cont(&w0, 3, v0rows);
     NGA_Get(w0_hndl, w0_lo, w0_hi, w0data, w0_ld);
-    
-    buflen = BUFSIZE; /* Set buffer length */
-    
+
+    buflen = MAXBUFFER; /* Set buffer length */
+
     /* Get state number for v1 by getting number of columns
      * on this process. (Array is distributed by row.) */
     NGA_Distribution(v1_hndl, mpi_proc_rank, v1_lo, v1_hi);
-    v1_cols = v1_hi[0] - v1_lo[0] + 1;
-    /* Set values for v1_lo and v1_hi */
+    v1cols = v1_hi[0] - v1_lo[0] + 1;
+    v1rows = buflen;
+    v1_ld[0] = v1rows;
     v1_lo[0] = 0;
-    v1_lo[1] = 0;
-    v1_hi[0] = v1_cols - 1;
-    v1_hi[1] = dlen1 - 1;
-    v1_rows = buflen;
-    v1_ld[0] = v1_rows;
-    /* Allocate local array buffer (buflen x v1_cols) */
-    v1data = allocate_mem_double_cont(&v1buff, v1_rows, v1_cols);
-    
-    /* Allocate W1 array */
-    w1data = allocate_mem_int_cont(&w1buff, 3, v1_rows);
+    v1_hi[0] = 0;
+    v1data = allocate_mem_double_cont(&v1, v1rows, v1cols);
     w1_lo[1] = 0;
     w1_hi[1] = 2;
-    w1_ld[0] = 3;
+    w1data = allocate_mem_int_cont(&w1, 3, v1rows);
     
     GA_Sync();
     
-    for (i1 = 0; i1 < dlen1; i1 += buflen) {
-	
-	i1max = int_min((i1 + buflen - 1), (dlen1 - 1));
-        
-	/* Get patch of V1 vectors and corresponding W1 info */
-	v1_lo[1] = i1;
-	v1_hi[1] = i1max;
-	v1_rows = v1_hi[1] - v1_lo[1] + 1;
+    for (i = 0; i < ndets1; i += buflen) {
+	imax = int_min((i + buflen - 1), (ndets1 - 1));
+	v1_lo[1] = i;
+	v1_hi[1] = imax;
+	v1rows = v1_hi[1] - v1_lo[1] + 1;
 	NGA_Get(v1_hndl, v1_lo, v1_hi, v1data, v1_ld);
-	w1_lo[0] = i1;
-	w1_hi[0] = i1max;
-	//w1len = i1max - i1 + 1;
+	w1_lo[0] = i;
+	w1_hi[0] = imax;
 	NGA_Get(w1_hndl, w1_lo, w1_hi, w1data, w1_ld);
-        
-	compute_det_contributions(w0buff,  v0buff, v0_rows,
-				  v0_cols, w1buff, v1buff,
-				  v1_rows, v1_cols, spindx1, spindx2,
-				  str0, str1, dysnst0, ndyst0,
-				  dysnst1, ndyst1, dyorb, ninto);
-	
+
+	compute_det_contributions2(w0, v0, v0rows, v0cols, w1, v1, v1rows,
+				   v1cols, pstr0, peosp0, qstr0, qeosp0,
+				   pstr1, peosp1, qstr1, qeosp1, ndocc,
+				   nactv, norbs, sp1, sp2, nvirt);
     }
-    
+
     GA_Sync();
-    deallocate_mem_cont_int(&w0buff, w0data);
-    deallocate_mem_cont_int(&w1buff, w1data);
-    deallocate_mem_cont(&v0buff, v0data);
-    deallocate_mem_cont(&v1buff, v1data);
+    deallocate_mem_cont_int(&w0, w0data);
+    deallocate_mem_cont_int(&w1, w1data);
+    deallocate_mem_cont(&v0, v0data);
+    deallocate_mem_cont(&v1, v1data);
+    return;
+}
+
+/*
+ * compute_det_contributions2: compute determinant contributions to dyson
+ * orbitals between two buffers v0 and v1.
+ */
+void compute_det_contributions2(int **w0, double **v0, int v0rows, int v0cols,
+				int **w1, double **v1, int v1rows, int v1cols,
+				struct occstr *str0, struct eospace *eosp0, int ne0,
+				struct occstr *str1, struct eospace *eosp1, int ne1,
+				int ndocc, int nactv, int norbs, int nelec,
+				int sp1, int sp2, int nvirt)
+{
+    int elecx[20];
+    struct occstr newstr;
+    int naddr, neosp1;
+    int neosp0;
+    int nstrd0, nstra0, nstrv0;
+    int i, j;
+    
+    for (i = 0; i < v0rows; i++) {
+
+	newstr = str0[w0[i][sp1]];
+	neosp0 = get_string_eospace(&newstr, ndocc, nactv, eosp0, ne0);
+	nstrd0 = eosp0[neosp].docc;
+	nstra0 = eosp0[neosp].actv;
+	nstrv0 = eosp0[neosp].virt;
+	/* Remove internal orbitals */
+	for (j = 0; j < (nstrd0 + nstra0); j++) {
+	    newstr.byte1 = newstr.byte1 - pow(2, (newstr.istr[j] - 1));
+	    neosp1 = get_string_eospace(&newstr, ndocc, nactv, eosp1, ne1);
+	    naddr = occstr2address(&newstr, eosp1[neosp1], ndocc, nactv, 
+				   nvirt, nelec, elecx);
+	    
+	    newstr.byte1 = newstr.byte1 + pow(2, (newstr.istr[j] - 1));
+	}
+	/* Remove external orbitals */
+	for (j = 0; j < nstrv0; j++) {
+	    newstr.virtx[j] = 0;
+	    if (nstrv == 2 && j == 0) {
+		newstr.virtx[0] = newstr.virtx[1];
+		newstr.virtx[1] = 0;
+	    }
+	    
+
+	}
+    }
     return;
 }
 
