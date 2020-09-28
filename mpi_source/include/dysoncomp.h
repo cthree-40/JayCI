@@ -31,18 +31,6 @@ void compute_dyson_orbital(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
 			   int ndets1, int sp1, int sp2);
 
 /*
- * compute_det_contributions2: compute determinant contributions to dyson
- * orbitals.
- */
-void compute_det_contributions2(int **w0, double **v0, int v0rows, int v0cols,
-				int **w1, double **v1, int v1rows, int v1cols,
- 				struct occstr *pstr0, struct eospace *peosp0,
-				struct occstr *qstr0, struct eospace *qeosp0,
-				struct occstr *pstr1, struct eospace *peosp1,
-				struct occstr *qstr1, struct eospace *qeosp1,
-				int ndocc, int nactv, int norbs);
-
-/*
  * compute_det_contributions: compute determinant contributions to dyson
  * orbitals.
  * Input:
@@ -72,5 +60,26 @@ void compute_det_contributions(int **w0, double **v0, int v0_rows, int v0_cols,
                                struct occstr *str0, struct occstr *str1,
                                int *dyst0, int ndyst0, int *dyst1, int ndyst1,
                                double **dyorb, int ninto);
+
+/*
+ * generate_strcontlist: generate contribution list for each string.
+ * Input:
+ *  str    = string list
+ *  nstr   = number of alpha/beta strings
+ *  eosp0  = electron orbital space list (N+1 electrons)
+ *  ne0    = number of electron orbital spaces (N+1 electrons)
+ *  ndocc  = number of docc orbitals
+ *  nactv  = number of actv orbitals
+ *  nvirt  = number of virt orbitals
+ *  nelec1 = number of N-electron alpha/beta electrons
+ *  eosp1  = electron orbital space list (N-electron)
+ *  ne1    = number of electron orbital spaces (N-electron)
+ * Output:
+ *  strcont = string contribution list
+ */
+void generate_strcontlist(struct occstr *str, int nstr, struct eospace *eosp0,
+			  int ne0, int ndocc, int nactv, int nvirt,
+			  int **strcont, int nelec1, struct eospace *eosp1,
+			  int ne1);
 
 #endif

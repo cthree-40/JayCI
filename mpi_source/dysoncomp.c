@@ -4,9 +4,11 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "mpi_utilities.h"
 #include "errorlib.h"
 #include "allocate_mem.h"
+#include "arrayutil.h"
 #include "ioutil.h"
 #include "binary.h"
 #include "bitutil.h"
@@ -169,10 +171,6 @@ void compute_dyson_orbital(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
 	w1_hi[0] = imax;
 	NGA_Get(w1_hndl, w1_lo, w1_hi, w1data, w1_ld);
 
-	compute_det_contributions2(w0, v0, v0rows, v0cols, w1, v1, v1rows,
-				   v1cols, pstr0, peosp0, qstr0, qeosp0,
-				   pstr1, peosp1, qstr1, qeosp1, ndocc,
-				   nactv, norbs, sp1, sp2, nvirt);
     }
 
     GA_Sync();
@@ -180,54 +178,6 @@ void compute_dyson_orbital(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
     deallocate_mem_cont_int(&w1, w1data);
     deallocate_mem_cont(&v0, v0data);
     deallocate_mem_cont(&v1, v1data);
-    return;
-}
-
-/*
- * compute_det_contributions2: compute determinant contributions to dyson
- * orbitals between two buffers v0 and v1.
- */
-void compute_det_contributions2(int **w0, double **v0, int v0rows, int v0cols,
-				int **w1, double **v1, int v1rows, int v1cols,
-				struct occstr *str0, struct eospace *eosp0, int ne0,
-				struct occstr *str1, struct eospace *eosp1, int ne1,
-				int ndocc, int nactv, int norbs, int nelec,
-				int sp1, int sp2, int nvirt)
-{
-    int elecx[20];
-    struct occstr newstr;
-    int naddr, neosp1;
-    int neosp0;
-    int nstrd0, nstra0, nstrv0;
-    int i, j;
-    
-    for (i = 0; i < v0rows; i++) {
-
-	newstr = str0[w0[i][sp1]];
-	neosp0 = get_string_eospace(&newstr, ndocc, nactv, eosp0, ne0);
-	nstrd0 = eosp0[neosp].docc;
-	nstra0 = eosp0[neosp].actv;
-	nstrv0 = eosp0[neosp].virt;
-	/* Remove internal orbitals */
-	for (j = 0; j < (nstrd0 + nstra0); j++) {
-	    newstr.byte1 = newstr.byte1 - pow(2, (newstr.istr[j] - 1));
-	    neosp1 = get_string_eospace(&newstr, ndocc, nactv, eosp1, ne1);
-	    naddr = occstr2address(&newstr, eosp1[neosp1], ndocc, nactv, 
-				   nvirt, nelec, elecx);
-	    
-	    newstr.byte1 = newstr.byte1 + pow(2, (newstr.istr[j] - 1));
-	}
-	/* Remove external orbitals */
-	for (j = 0; j < nstrv0; j++) {
-	    newstr.virtx[j] = 0;
-	    if (nstrv == 2 && j == 0) {
-		newstr.virtx[0] = newstr.virtx[1];
-		newstr.virtx[1] = 0;
-	    }
-	    
-
-	}
-    }
     return;
 }
 
@@ -303,6 +253,66 @@ void compute_det_contributions(int **w0, double **v0, int v0_rows, int v0_cols,
 		}
 	    }
         }
+    }
+    return;
+}
+
+/*
+ * generate_strcontlist: generate contribution list for each string.
+ * Input:
+ *  str    = string list
+ *  nstr   = number of alpha/beta strings
+ *  eosp0  = electron orbital space list (N+1 electrons)
+ *  ne0    = number of electron orbital spaces (N+1 electrons)
+ *  ndocc  = number of docc orbitals
+ *  nactv  = number of actv orbitals
+ *  nvirt  = number of virt orbitals
+ *  nelec1 = number of N-electron alpha/beta electrons
+ *  eosp1  = electron orbital space list (N-electron)
+ *  ne1    = number of electron orbital spaces (N-electron)
+ * Output:
+ *  strcont = string contribution list
+ */
+void generate_strcontlist(struct occstr *str, int nstr, struct eospace *eosp0,
+			  int ne0, int ndocc, int nactv, int nvirt,
+			  int **strcont, int nelec1, struct eospace *eosp1,
+			  int ne1)
+{
+    int elecx[20];           /* Scratch electron array */
+    struct occstr newstr;    /* New string */
+    int naddr = 0;           /* New string address */
+    int neospx = 0;          /* New string electron orbital space index */
+    int nelec0 = 0;          /* N + 1 electrons */
+    int cnt = 0;             
+    int i, j;
+    
+    nelec0 = nelec1 + 1;
+
+    /* Loop over strings */
+    for (i = 0; i < nstr; i++) {
+	cnt = 0; // Counter for new strings
+        /* Loop over internal orbital electrons, removing them */
+	for (j = 0; j < (nelec0 - str[i].nvrtx); j++) {
+	    newstr.byte1 = str[i].byte1 - pow(2, (str[i].istr[j] - 1));
+	    newstr.nvrtx = str[i].nvrtx;
+	    newstr.virtx[0] = str[i].virtx[0];
+	    newstr.virtx[1] = str[i].virtx[1];
+
+#ifdef DEBUGGING
+	    printf(" ORIG: ");
+	    print_occstring(str[i], nelec0, ndocc, nactv);
+	    printf(" NEW:  ");
+	    print_occstring(newstr, nelec1, ndocc, nactv);
+#endif
+	    neospx = get_string_eospace(&newstr, ndocc, nactv, eosp1, ne1);
+	    strcont[i][cnt] = occstr2address(&newstr, eosp1[neospx], ndocc,
+					     nactv, nvirt, nelec1, elecx);
+	    cnt++;
+	}
+	/* Loop over external orbital electrons, removing them */
+	for (j = 0; j < str[i].nvrtx; j++) {
+	    
+	}
     }
     return;
 }

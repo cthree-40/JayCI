@@ -47,6 +47,7 @@ int run_pdycicalc ()
         int nactv0;    /* Number of CAS  orbitals */
         int nfrzv0;    /* Number of frozen virtual orbitals */
         int ninto0;    /* Number of internal (DOCC+CAS) orbitals */
+	int nvirt0;    /* Number of external orbitals */
         int xlvl0;     /* CI excitation level */
         int norbs0;    /* Number of orbitals */
         int ciorbs0;   /* NUmber of ci orbitals */
@@ -112,6 +113,9 @@ int run_pdycicalc ()
         double **dyorb_gl = NULL;     /* GLOBAL dyson orbitals */
         double *dyorb_gl_data = NULL; /* GLOBAL dyson orbitals memory block */
 
+	int **strcont   = NULL;  /* String contributions to dyson orbital */
+	int *strcont1d  = NULL;  /* 1-d data */
+	
         double memusage = 0.0;  /* Estimated memory usage. */
 
         int i = 0;
@@ -146,6 +150,7 @@ int run_pdycicalc ()
         MPI_Bcast(&xlvl0,    1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&nstates0, 1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         ninto0 = ndocc0 + nactv0;
+	nvirt0 = norbs0 - nfrzc0 - nfrzv0 - ninto0;
         
         MPI_Bcast(&nelecs1,  1, MPI_INT, mpi_root, MPI_COMM_WORLD);
         MPI_Bcast(&norbs1,   1, MPI_INT, mpi_root, MPI_COMM_WORLD);
@@ -316,7 +321,14 @@ int run_pdycicalc ()
                        pegrps0, qeospace0, qegrps0);
         generate_wlist(w1_hndl, dtrm1_len, pq_space_pairs1, num_pq1, peospace1,
                        pegrps1, qeospace1, qegrps1);
-        
+
+	/* Generate list of N-electron strings that pair with N+1-electron
+	 * strings */
+	strcont1d = allocate_mem_int_cont(&strcont, cibelec0, qstr0_len);
+	generate_strcontlist(qstrings0, qstr0_len, qeospace0, qegrps0, ndocc0,
+			     nactv0, nvirt0, strcont, cibelec1, qeospace1,
+			     qegrps1);
+	   
         /* Compute dyson orbitals */
         /* If number of alpha/beta electrons are equal in both (N+1) and (N)
          * electron wavefunctions, then alpha/beta strings are IDENTICAL, and
@@ -551,7 +563,6 @@ void generate_det_triples (int ndeti, int **d_triplet, int pq_start,
         return;
 
 }
-
 
 /*
  * generate_wlist: generate the wavefunction list of triplets

@@ -114,7 +114,7 @@ endif
 # Debugging flags
 ifeq ($(findstring gfortran,$(FC)),)
 # intel compilers
-	DEBUG  := -g 
+	DEBUG  := -g -DDEBUGGING 
 	FDEBUG := -traceback
 else
 # gnu compilers
