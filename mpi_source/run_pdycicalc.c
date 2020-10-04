@@ -4,6 +4,7 @@
 #include "mpi_utilities.h"
 #include "errorlib.h"
 #include "allocate_mem.h"
+#include "arrayutil.h"
 #include "ioutil.h"
 #include "combinatorial.h"
 #include "abecalc.h"
@@ -310,6 +311,8 @@ int run_pdycicalc ()
         ndyorbs = ndyst0 * ndyst1;
         dyorb_lc_data = allocate_mem_double_cont(&dyorb_lc, norbs0, ndyorbs);
         dyorb_gl_data = allocate_mem_double_cont(&dyorb_gl, norbs0, ndyorbs);
+        init_dbl_2darray_0(dyorb_lc, norbs0, ndyorbs);
+        init_dbl_2darray_0(dyorb_gl, norbs0, ndyorbs);
         GA_Sync();
         
         /* Read civectors. */
@@ -324,11 +327,20 @@ int run_pdycicalc ()
 
 	/* Generate list of N-electron strings that pair with N+1-electron
 	 * strings */
-	strcont1d = allocate_mem_int_cont(&strcont, cibelec0, qstr0_len);
-	generate_strcontlist(qstrings0, qstr0_len, qeospace0, qegrps0, ndocc0,
-			     nactv0, nvirt0, strcont, cibelec1, qeospace1,
-			     qegrps1);
-	   
+        if (nelecs0 % 2 == 0) {
+            strcont1d = allocate_mem_int_cont(&strcont, cibelec0, qstr0_len);
+            generate_strcontlist(qstrings0, qstr0_len, qeospace0, qegrps0, ndocc0,
+                                 nactv0, nvirt0, strcont, cibelec1, qeospace1,
+                                 qegrps1);
+        } else {
+            strcont1d = allocate_mem_int_cont(&strcont, ciaelec0, pstr0_len);
+            generate_strcontlist(pstrings0, pstr0_len, peospace0, pegrps0, ndocc0,
+                                 nactv0, nvirt0, strcont, ciaelec1, peospace1,
+                                 pegrps1);
+        }
+
+        GA_Sync();
+        
         /* Compute dyson orbitals */
         /* If number of alpha/beta electrons are equal in both (N+1) and (N)
          * electron wavefunctions, then alpha/beta strings are IDENTICAL, and
@@ -349,14 +361,16 @@ int run_pdycicalc ()
 			fflush(stdout);
 		}
                 /* S/T (N+1) wavefunction, compare beta  strings. */
-		compute_dyson_orbital(v0_hndl, v1_hndl, w0_hndl, w1_hndl,
-				      pstrings0, peospace0, pegrps0,
-				      qstrings0, qeospace0, qegrps0,
-				      pstrings1, peospace1, pegrps1,
-				      qstrings1, qeospace1, qegrps1,
-				      ciorbs1, ndocc1, nactv1, ndyst0,
-				      dysnst0, ndyst1, dysnst1, dtrm0_len,
-				      dtrm1_len, 1, 0);
+		compute_dyson_orbital_b(v0_hndl, v1_hndl, w0_hndl, w1_hndl,
+                                        pstrings0, peospace0, pegrps0,
+                                        qstrings0, qeospace0, qegrps0,
+                                        pstrings1, peospace1, pegrps1,
+                                        qstrings1, qeospace1, qegrps1,
+                                        pq_space_pairs1, num_pq1,
+                                        ciorbs1, ndocc1, nactv1, ndyst0,
+                                        dysnst0, ndyst1, dysnst1, dtrm0_len,
+                                        dtrm1_len, strcont, cibelec0,
+                                        dyorb_lc);
 		
         } else {
                 if (mpi_proc_rank == mpi_root) {
@@ -365,14 +379,14 @@ int run_pdycicalc ()
 			fflush(stdout);
 		}
                 /* D   (N+1) wavefunction, compare alpha strings. */
-		compute_dyson_orbital(v0_hndl, v1_hndl, w0_hndl, w1_hndl,
-				      pstrings0, peospace0, pegrps0,
-				      qstrings0, qeospace0, qegrps0,
-				      pstrings1, peospace1, pegrps1,
-				      qstrings1, qeospace1, qegrps1,
-				      ciorbs1, ndocc1, nactv1, ndyst0,
-				      dysnst0, ndyst1, dysnst1, dtrm0_len,
-				      dtrm1_len, 0, 1);
+		//compute_dyson_orbital(v0_hndl, v1_hndl, w0_hndl, w1_hndl,
+		//		      pstrings0, peospace0, pegrps0,
+		//		      qstrings0, qeospace0, qegrps0,
+		//		      pstrings1, peospace1, pegrps1,
+		//		      qstrings1, qeospace1, qegrps1,
+		//		      ciorbs1, ndocc1, nactv1, ndyst0,
+		//		      dysnst0, ndyst1, dysnst1, dtrm0_len,
+		//		      dtrm1_len, 0, 1, strcont, ciaelec0);
         }
 
         /* Accumulate dyson orbitals from each process. */
@@ -389,6 +403,8 @@ int run_pdycicalc ()
                                             ndyst1);
         }
 
+        GA_Sync();
+        
         /* Deallocate pstrings and qstrings */
         free(pstrings0);
         free(pstrings1);
@@ -404,6 +420,8 @@ int run_pdycicalc ()
         /* Deallocate pqspace pairs */
         deallocate_mem_cont_int(&pq_space_pairs0, pqsp0data);
         deallocate_mem_cont_int(&pq_space_pairs1, pqsp1data);
+        /* Deallocate strcont lists */
+        deallocate_mem_cont_int(&strcont, strcont1d);
         return error;
 }
 

@@ -324,19 +324,19 @@ void print_determinant(struct det d, int aelec, int belec)
  * print_occstring: print occupation string
  *  byte1, virtx, nvrtx
  */
-void print_occstring(struct occstr ostr, int nelec, int ndocc, int nactv)
+void print_occstring(struct occstr *ostr, int nelec, int ndocc, int nactv)
 {
         int *string = NULL;
         int i = 0, j = 0;
         int ecnt = 0;
         string = malloc(sizeof(int) * nelec);
         init_int_array_0(string, nelec);
-        nonzerobits(ostr.byte1, (ndocc + nactv), string);
+        nonzerobits(ostr->byte1, (ndocc + nactv), string);
         for (i = 0; i < nelec; i++) {
                 if (string[i] > 0) ecnt++;
         }
         for (i = ecnt; i < nelec; i++) {
-                string[i] = ostr.virtx[j];
+                string[i] = ostr->virtx[j];
                 j++;
         }
         

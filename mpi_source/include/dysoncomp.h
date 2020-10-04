@@ -16,19 +16,21 @@ int build_ppo_triples(int **ppo, struct occstr *str0, int nstr0,
 int comparestrings_dyson(struct occstr str0, struct occstr str1, int ninto);
 
 /*
- * compute_dyson_orbital: compute the dyson orbital between electronic
- * states of N+1 and N electron wavefuntions by comparing alpha/beta strings.
+ * compute_dyson_orbital_b: compute the dyson orbital between electronic
+ * states of N+1 and N electron wavefuntions by comparing beta strings.
  * Input:
  *
  */
-void compute_dyson_orbital(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
-			   struct occstr *pstr0, struct eospace *peosp0, int npe0,
-			   struct occstr *qstr0, struct eospace *qeosp0, int nqe0,
-			   struct occstr *pstr1, struct eospace *peosp1, int npe1,
-			   struct occstr *qstr1, struct eospace *qeosp1, int nqe1,
-			   int norbs, int ndocc, int nactv, int dyst0,
-			   int *dysnst0, int dyst1, int *dysnst1, int ndets0,
-			   int ndets1, int sp1, int sp2);
+void compute_dyson_orbital_b(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
+                             struct occstr *pstr0, struct eospace *peosp0, int npe0,
+                             struct occstr *qstr0, struct eospace *qeosp0, int nqe0,
+                             struct occstr *pstr1, struct eospace *peosp1, int npe1,
+                             struct occstr *qstr1, struct eospace *qeosp1, int nqe1,
+                             int **pq1, int npq1,
+                             int norbs, int ndocc, int nactv, int dyst0,
+                             int *dysnst0, int dyst1, int *dysnst1, int ndets0,
+                             int ndets1, int **strcont, int nbelec0,
+                             double **dyorb);
 
 /*
  * compute_det_contributions: compute determinant contributions to dyson
@@ -81,5 +83,37 @@ void generate_strcontlist(struct occstr *str, int nstr, struct eospace *eosp0,
 			  int ne0, int ndocc, int nactv, int nvirt,
 			  int **strcont, int nelec1, struct eospace *eosp1,
 			  int ne1);
+
+/*
+ * string_info_to_determinant: compute the determinant index given
+ * the p and q string information.
+ * Input:
+ *  pval    = p string
+ *  qval    = q string
+ *  peosp   = alpha electron orbital spaces
+ *  pegrps  = number of alpha electron orbital spaces
+ *  qeosp   = beta  electron orbital spaces
+ *  qegrps  = number of beta  electron orbital spaces
+ *  pq      = (p,q)-space pairings
+ *  npq     = number of (p,q)-space pairings
+ * Output:
+ *  detindx = determinant index in expansion.
+ */
+int string_info_to_determinant(int pval, int qval, struct eospace *peosp,
+                               int pegrps, struct eospace *qeosp, int qegrps,
+                               int **pq, int npq);
+
+/*
+ * set_ga_det_indexes_spec: set the array of indices to gather from global array.
+ * Input:
+ *  jindx   = list of row numbers in vector V
+ *  num     = number of row numbers
+ *  cols    = number of columns of V
+ *  colindx = column indices
+ * Output:
+ *  vindx   = indices of global array V to gather
+ */
+void set_ga_det_indexes_spec(int *jindx, int num, int cols, int *colindx,
+                             int **vindx);
 
 #endif

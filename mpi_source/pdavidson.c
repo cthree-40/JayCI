@@ -811,9 +811,9 @@ void compute_cblock_Hfast(double **c, int ccols, int crows, int **wi, int w_hndl
         if (i == 1351 || i == 1447) {
             printf("|%3d> = |%5d,%5d>\n", i, ip, iq);
             printf("  Alpha string: ");
-            print_occstring(pstr[ip], aelec, ndocc, nactv);
+            print_occstring(&(pstr[ip]), aelec, ndocc, nactv);
             printf("   Beta string: ");
-            print_occstring(qstr[iq], belec, ndocc, nactv);
+            print_occstring(&(qstr[iq]), belec, ndocc, nactv);
             fflush(stdout);
         }
 #endif
@@ -1105,9 +1105,9 @@ void compute_cblock_Hfaster(double *c1d, int ccols, int crows, int **wi, int w_h
         if ((i + cstep) == (1643 - 1) || (i + cstep) == (1118 - 1)) {
             printf("|%3d> = |%5d,%5d>\n", (i + cstep), ip, iq);
             printf("  Alpha string: ");
-            print_occstring(pstr[ip], aelec, ndocc, nactv);
+            print_occstring(&(pstr[ip]), aelec, ndocc, nactv);
             printf("   Beta string: ");
-            print_occstring(qstr[iq], belec, ndocc, nactv);
+            print_occstring(&(qstr[iq]), belec, ndocc, nactv);
             fflush(stdout);
         }
 #endif
@@ -2428,9 +2428,9 @@ void evaluate_hdblock_ij2(int **wi, int idets, int **wj, int jdets,
             if (i == 212380 || i == 212475) {
                 printf("|%d> = |%d,%d>\n", i, wi[i][0],wi[i][1]);
                 printf("pstring :");
-                print_occstring(deti.astr, aelec, 3, 4);
+                print_occstring(&(deti.astr), aelec, 3, 4);
                 printf("qstring :");
-                print_occstring(deti.bstr, belec, 3, 4);
+                print_occstring(&(deti.bstr), belec, 3, 4);
             }
             /* Loop over determinants |j> */
             for (j = 0; j < jdets; j++) {

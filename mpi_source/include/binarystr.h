@@ -84,7 +84,7 @@ void print_determinant(struct det d, int aelec, int belec);
  * print_occstring: print occupation string
  *  byte1, virtx, nvrtx
  */
-void print_occstring(struct occstr ostr, int nelec, int ndocc, int nactv);
+void print_occstring(struct occstr *ostr, int nelec, int ndocc, int nactv);
 
 /*
  * init_detlist: initialize determinant list
