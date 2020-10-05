@@ -29,7 +29,7 @@ void compute_dyson_orbital_a(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
                              int **pq1, int npq1,
                              int norbs, int ndocc, int nactv, int ndyst0,
                              int *dysnst0, int ndyst1, int *dysnst1, int ndets0,
-                             int ndets1, int **strcont, int naelec0,
+                             int ndets1, int **strcont, int **orbcont, int naelec0,
                              double **dyorb);
 
 /*
@@ -46,7 +46,7 @@ void compute_dyson_orbital_b(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
                              int **pq1, int npq1,
                              int norbs, int ndocc, int nactv, int dyst0,
                              int *dysnst0, int dyst1, int *dysnst1, int ndets0,
-                             int ndets1, int **strcont, int nbelec0,
+                             int ndets1, int **strcont, int **orbcont, int nbelec0,
                              double **dyorb);
 
 /*
@@ -98,8 +98,8 @@ void compute_det_contributions(int **w0, double **v0, int v0_rows, int v0_cols,
  */
 void generate_strcontlist(struct occstr *str, int nstr, struct eospace *eosp0,
 			  int ne0, int ndocc, int nactv, int nvirt,
-			  int **strcont, int nelec1, struct eospace *eosp1,
-			  int ne1);
+			  int **strcont, int **orbcont, int nelec1,
+                          struct eospace *eosp1, int ne1);
 
 /*
  * string_info_to_determinant: compute the determinant index given

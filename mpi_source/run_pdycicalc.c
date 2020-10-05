@@ -116,6 +116,8 @@ int run_pdycicalc ()
 
 	int **strcont   = NULL;  /* String contributions to dyson orbital */
 	int *strcont1d  = NULL;  /* 1-d data */
+        int **orbcont   = NULL;  /* Orbital contribution for dyson orbital */
+        int *orbcont1d  = NULL;  /* 1-d data */
 	
         double memusage = 0.0;  /* Estimated memory usage. */
 
@@ -328,15 +330,17 @@ int run_pdycicalc ()
 	/* Generate list of N-electron strings that pair with N+1-electron
 	 * strings */
         if (nelecs0 % 2 == 0) {
-            strcont1d = allocate_mem_int_cont(&strcont, cibelec0, qstr0_len);
+            strcont1d = allocate_mem_int_cont(&strcont, (cibelec0 + 1), qstr0_len);
+            orbcont1d = allocate_mem_int_cont(&orbcont, (cibelec0 + 1), qstr0_len);
             generate_strcontlist(qstrings0, qstr0_len, qeospace0, qegrps0, ndocc0,
-                                 nactv0, nvirt0, strcont, cibelec1, qeospace1,
-                                 qegrps1);
+                                 nactv0, nvirt0, strcont, orbcont, cibelec1,
+                                 qeospace1, qegrps1);
         } else {
-            strcont1d = allocate_mem_int_cont(&strcont, ciaelec0, pstr0_len);
+            strcont1d = allocate_mem_int_cont(&strcont, (ciaelec0 + 1), pstr0_len);
+            orbcont1d = allocate_mem_int_cont(&orbcont, (ciaelec0 + 1), pstr0_len);
             generate_strcontlist(pstrings0, pstr0_len, peospace0, pegrps0, ndocc0,
-                                 nactv0, nvirt0, strcont, ciaelec1, peospace1,
-                                 pegrps1);
+                                 nactv0, nvirt0, strcont, orbcont, ciaelec1,
+                                 peospace1, pegrps1);
         }
 
         GA_Sync();
@@ -369,7 +373,7 @@ int run_pdycicalc ()
                                         pq_space_pairs1, num_pq1,
                                         ciorbs1, ndocc1, nactv1, ndyst0,
                                         dysnst0, ndyst1, dysnst1, dtrm0_len,
-                                        dtrm1_len, strcont, cibelec0,
+                                        dtrm1_len, strcont, orbcont, cibelec0,
                                         dyorb_lc);
 		
         } else {
@@ -387,7 +391,7 @@ int run_pdycicalc ()
                                         pq_space_pairs1, num_pq1,
                                         ciorbs1, ndocc1, nactv1, ndyst0,
                                         dysnst0, ndyst1, dysnst1, dtrm0_len,
-                                        dtrm1_len, strcont, ciaelec0,
+                                        dtrm1_len, strcont, orbcont, ciaelec0,
                                         dyorb_lc);
 
         }

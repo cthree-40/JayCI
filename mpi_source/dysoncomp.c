@@ -108,7 +108,7 @@ void compute_dyson_orbital_a(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
                              int **pq1, int npq1,
                              int norbs, int ndocc, int nactv, int ndyst0,
                              int *dysnst0, int ndyst1, int *dysnst1, int ndets0,
-                             int ndets1, int **strcont, int naelec0,
+                             int ndets1, int **strcont, int **orbcont, int naelec0,
                              double **dyorb)
 {
 #define MAXBUFFER 10000
@@ -168,12 +168,12 @@ void compute_dyson_orbital_a(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
         p0 = w0[i][0];
         q0 = w0[i][1];
         /* Loop over q' */
-        for (j = 0; j < naelec0; j++) {
+        for (j = 1; j < strcont[p0][0]; j++) {
             p1 = strcont[p0][j]; /* New string */
             q1 = q0; 
             j1indx[cnt] = string_info_to_determinant(p1, q1, peosp1, npe1,
                                                      qeosp1, nqe1, pq1, npq1);
-            o1indx[cnt] = pstr0[p0].istr[j] - 1;
+            o1indx[cnt] = orbcont[p0][j] - 1;
             j0indx[cnt] = i;
 
             cnt++;
@@ -224,7 +224,7 @@ void compute_dyson_orbital_b(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
                              int **pq1, int npq1,
                              int norbs, int ndocc, int nactv, int ndyst0,
                              int *dysnst0, int ndyst1, int *dysnst1, int ndets0,
-                             int ndets1, int **strcont, int nbelec0,
+                             int ndets1, int **strcont, int **orbcont, int nbelec0,
                              double **dyorb)
 {
 #define MAXBUFFER 10000
@@ -284,12 +284,12 @@ void compute_dyson_orbital_b(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
         p0 = w0[i][0];
         q0 = w0[i][1];
         /* Loop over q' */
-        for (j = 0; j < nbelec0; j++) {
+        for (j = 1; j < strcont[q0][0]; j++) {
             p1 = p0;
             q1 = strcont[q0][j]; /* New string */
             j1indx[cnt] = string_info_to_determinant(p1, q1, peosp1, npe1,
                                                      qeosp1, nqe1, pq1, npq1);
-            o1indx[cnt] = qstr0[q0].istr[j] - 1;
+            o1indx[cnt] = orbcont[q0][j] - 1;
             j0indx[cnt] = i;
 
             cnt++;
@@ -416,11 +416,12 @@ void compute_det_contributions(int **w0, double **v0, int v0_rows, int v0_cols,
  *  ne1    = number of electron orbital spaces (N-electron)
  * Output:
  *  strcont = string contribution list
+ *  orbcont = orbital contribution list
  */
 void generate_strcontlist(struct occstr *str, int nstr, struct eospace *eosp0,
 			  int ne0, int ndocc, int nactv, int nvirt,
-			  int **strcont, int nelec1, struct eospace *eosp1,
-			  int ne1)
+			  int **strcont, int **orbcont, int nelec1,
+                          struct eospace *eosp1, int ne1)
 {
     int elecx[20];           /* Scratch electron array */
     struct occstr newstr;    /* New string */
@@ -434,7 +435,7 @@ void generate_strcontlist(struct occstr *str, int nstr, struct eospace *eosp0,
 
     /* Loop over strings */
     for (i = 0; i < nstr; i++) {
-	cnt = 0; // Counter for new strings
+	cnt = 1; // Counter for new strings
         /* Loop over internal orbital electrons, removing them */
 	for (j = 0; j < (nelec0 - str[i].nvrtx); j++) {
 	    newstr.byte1 = str[i].byte1 - pow(2, (str[i].istr[j] - 1));
@@ -449,8 +450,10 @@ void generate_strcontlist(struct occstr *str, int nstr, struct eospace *eosp0,
 	    //print_occstring(&(newstr), nelec1, ndocc, nactv);
 #endif
 	    neospx = get_string_eospace(&newstr, ndocc, nactv, eosp1, ne1);
+            if (neospx < 0) continue;
 	    strcont[i][cnt] = occstr2address(&newstr, eosp1[neospx], ndocc,
 					     nactv, nvirt, nelec1, elecx);
+            orbcont[i][cnt] = str[i].istr[j];
 	    cnt++;
 	}
 	/* Loop over external orbital electrons, removing them */
@@ -471,11 +474,15 @@ void generate_strcontlist(struct occstr *str, int nstr, struct eospace *eosp0,
 	    //print_occstring(&(newstr), nelec1, ndocc, nactv);
 #endif
 	    neospx = get_string_eospace(&newstr, ndocc, nactv, eosp1, ne1);
-	    strcont[i][cnt] = occstr2address(&newstr, eosp1[neospx], ndocc,
+            if (neospx < 0) continue;
+            strcont[i][cnt] = occstr2address(&newstr, eosp1[neospx], ndocc,
 					     nactv, nvirt, nelec1, elecx);
-	    cnt++;
+            orbcont[i][cnt] = str[i].virtx[j];
+            cnt++;
             
 	}
+        strcont[i][0] = cnt;
+        orbcont[i][0] = cnt;
         //printf("Count: %d\n", cnt);
     }
     return;
