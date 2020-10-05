@@ -175,12 +175,8 @@ void compute_dyson_orbital_b(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
                                                      qeosp1, nqe1, pq1, npq1);
             o1indx[cnt] = qstr0[q0].istr[j] - 1;
             j0indx[cnt] = i;
+
             cnt++;
-#ifdef DEBUGGING
-            //print_occstring(&(qstr0[q0]), nbelec0, ndocc, nactv);
-            //print_occstring(&(qstr1[q1]), (nbelec0 - 1), ndocc, nactv);
-            //printf(" | %d >, orbital = %d\n", j1indx[cnt - 1], o1indx[cnt - 1]);
-#endif
         }
     }
 
@@ -196,7 +192,7 @@ void compute_dyson_orbital_b(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
         for (j = 0; j < ndyst0; j++) {
             for (k = 0; k < ndyst1; k++) {
                 dyorb[j * ndyst1 + k][o1indx[i]] += v0[j][j0indx[i]] *
-                    v1[k][j1indx[i]];
+                    v1[k][i];
             }
         }
     }
