@@ -95,6 +95,122 @@ int comparestrings_dyson(struct occstr str0, struct occstr str1, int ninto)
 }
 
 /*
+ * compute_dyson_orbital_a: compute the dyson orbital between electronic
+ * states of N+1 and N electron wavefuntions by comparing alpha strings.
+ * Input:
+ *
+ */
+void compute_dyson_orbital_a(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
+                             struct occstr *pstr0, struct eospace *peosp0, int npe0,
+                             struct occstr *qstr0, struct eospace *qeosp0, int nqe0,
+                             struct occstr *pstr1, struct eospace *peosp1, int npe1,
+                             struct occstr *qstr1, struct eospace *qeosp1, int nqe1,
+                             int **pq1, int npq1,
+                             int norbs, int ndocc, int nactv, int ndyst0,
+                             int *dysnst0, int ndyst1, int *dysnst1, int ndets0,
+                             int ndets1, int **strcont, int naelec0,
+                             double **dyorb)
+{
+#define MAXBUFFER 10000
+    /* (N+1) and (N) Vector arrays */
+    double **v0 = NULL,  *v01d = NULL; 
+    double **v1 = NULL,  *v11d = NULL; 
+    int v0_lo[2], v0_hi[2], v0_ld[1];
+    int v1_lo[2], v1_hi[2], v1_ld[1];
+    int v0_rows, v0_cols;
+    int v1_rows, v1_cols;
+    /* (N+1) and (N) wavefunction arrays */
+    int **w0 = NULL, *w01d = NULL;
+    int **w1 = NULL, *w11d = NULL;
+    int w0_lo[2], w0_hi[2], w0_ld[1];
+    int w1_lo[2], w1_hi[2], w1_ld[1];
+    /* Local variables */
+    int p0, q0; /* w0 values */
+    int p1, q1; /* w1 values */
+    int *j0indx = NULL;  /* Determinant index of |p0,q0> */
+    int *j1indx = NULL;  /* Determinant index of |p1,q1> */
+    int *o1indx = NULL;  /* Orbital difference of <p0,q0|p1,q1> */
+    int nj1 = 0;
+    int **vindx = NULL, *vindx1d = NULL;
+    int i, j, k;
+    int cnt;
+    
+    /* Get local distribution of V0. Allocate array and read in values. */
+    NGA_Distribution(v0_hndl, mpi_proc_rank, v0_lo, v0_hi);
+    v0_rows = v0_hi[1] - v0_lo[1] + 1;
+    v0_cols = v0_hi[0] - v0_lo[0] + 1;
+    v0_ld[0]= v0_rows;
+    v01d = allocate_mem_double_cont(&v0, v0_rows, v0_cols);
+    NGA_Get(v0_hndl, v0_lo, v0_hi, v01d, v0_ld);
+    /* Get corresponding wavefunction information */
+    w01d = allocate_mem_int_cont(&w0, 3, v0_rows);
+    w0_lo[0] = v0_lo[1];
+    w0_lo[1] = 0;
+    w0_hi[0] = v0_hi[1];
+    w0_hi[1] = 2;
+    w0_ld[0] = 3;
+    NGA_Get(w0_hndl, w0_lo, w0_hi, w01d, w0_ld); 
+
+    /* Allocate J index array and j-index array to grab V1 values from
+     * global array. */
+    nj1 = v0_rows * naelec0;
+    j0indx = malloc(sizeof(int) * nj1);
+    j1indx = malloc(sizeof(int) * nj1);
+    o1indx = malloc(sizeof(int) * nj1);
+    vindx1d = allocate_mem_int_cont(&vindx, 2, (ndyst1 * nj1));
+
+    /* Allocate local buffer of V1 */
+    v11d = allocate_mem_double_cont(&v1, nj1, ndyst1);
+    
+    /* Loop over w0 = (p,q), finding q'/p' in w1 */
+    cnt = 0;
+    for (i = 0; i < v0_rows; i++) {
+        p0 = w0[i][0];
+        q0 = w0[i][1];
+        /* Loop over q' */
+        for (j = 0; j < naelec0; j++) {
+            p1 = strcont[p0][j]; /* New string */
+            q1 = q0; 
+            j1indx[cnt] = string_info_to_determinant(p1, q1, peosp1, npe1,
+                                                     qeosp1, nqe1, pq1, npq1);
+            o1indx[cnt] = pstr0[p0].istr[j] - 1;
+            j0indx[cnt] = i;
+
+            cnt++;
+        }
+    }
+
+    /* Get indexes for all columns of J that we need */
+    set_ga_det_indexes_spec(j1indx, cnt, ndyst1, dysnst1, vindx);
+
+    /* Get V1 elements */
+    NGA_Gather(v1_hndl, v11d, vindx, (cnt * ndyst1));
+
+    /* Loop over contributions */
+    for (i = 0; i < cnt; i++) {
+
+        for (j = 0; j < ndyst0; j++) {
+            for (k = 0; k < ndyst1; k++) {
+                dyorb[j * ndyst1 + k][o1indx[i]] += v0[j][j0indx[i]] *
+                    v1[k][i];
+            }
+        }
+    }
+    
+               
+    /* Deallocate arrays */
+    deallocate_mem_cont(&v0, v01d);
+    deallocate_mem_cont(&v1, v11d);
+    deallocate_mem_cont_int(&w0, w01d);
+    deallocate_mem_cont_int(&vindx, vindx1d);
+    free(j0indx);
+    free(j1indx);
+    free(o1indx);
+    return;
+}
+
+
+/*
  * compute_dyson_orbital_b: compute the dyson orbital between electronic
  * states of N+1 and N electron wavefuntions by comparing beta strings.
  * Input:

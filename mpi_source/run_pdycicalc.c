@@ -379,14 +379,17 @@ int run_pdycicalc ()
 			fflush(stdout);
 		}
                 /* D   (N+1) wavefunction, compare alpha strings. */
-		//compute_dyson_orbital(v0_hndl, v1_hndl, w0_hndl, w1_hndl,
-		//		      pstrings0, peospace0, pegrps0,
-		//		      qstrings0, qeospace0, qegrps0,
-		//		      pstrings1, peospace1, pegrps1,
-		//		      qstrings1, qeospace1, qegrps1,
-		//		      ciorbs1, ndocc1, nactv1, ndyst0,
-		//		      dysnst0, ndyst1, dysnst1, dtrm0_len,
-		//		      dtrm1_len, 0, 1, strcont, ciaelec0);
+		compute_dyson_orbital_a(v0_hndl, v1_hndl, w0_hndl, w1_hndl,
+                                        pstrings0, peospace0, pegrps0,
+                                        qstrings0, qeospace0, qegrps0,
+                                        pstrings1, peospace1, pegrps1,
+                                        qstrings1, qeospace1, qegrps1,
+                                        pq_space_pairs1, num_pq1,
+                                        ciorbs1, ndocc1, nactv1, ndyst0,
+                                        dysnst0, ndyst1, dysnst1, dtrm0_len,
+                                        dtrm1_len, strcont, ciaelec0,
+                                        dyorb_lc);
+
         }
 
         /* Accumulate dyson orbitals from each process. */

@@ -16,6 +16,23 @@ int build_ppo_triples(int **ppo, struct occstr *str0, int nstr0,
 int comparestrings_dyson(struct occstr str0, struct occstr str1, int ninto);
 
 /*
+ * compute_dyson_orbital_a: compute the dyson orbital between electronic
+ * states of N+1 and N electron wavefuntions by comparing alpha strings.
+ * Input:
+ *
+ */
+void compute_dyson_orbital_a(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
+                             struct occstr *pstr0, struct eospace *peosp0, int npe0,
+                             struct occstr *qstr0, struct eospace *qeosp0, int nqe0,
+                             struct occstr *pstr1, struct eospace *peosp1, int npe1,
+                             struct occstr *qstr1, struct eospace *qeosp1, int nqe1,
+                             int **pq1, int npq1,
+                             int norbs, int ndocc, int nactv, int ndyst0,
+                             int *dysnst0, int ndyst1, int *dysnst1, int ndets0,
+                             int ndets1, int **strcont, int naelec0,
+                             double **dyorb);
+
+/*
  * compute_dyson_orbital_b: compute the dyson orbital between electronic
  * states of N+1 and N electron wavefuntions by comparing beta strings.
  * Input:
