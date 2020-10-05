@@ -4083,7 +4083,7 @@ int get_string_eospace(struct occstr *str, int ndocc, int nactv,
             break;
         }
     }
-    if (i == egrps) spindx = -1; // No space found 
+    if (i == egrps) spindx = -1;
     return spindx;
 }
     
