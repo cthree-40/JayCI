@@ -256,26 +256,16 @@ int run_pdycicalc ()
                             "Error during wavefunction generation.");
         GA_Sync();
         if (mpi_proc_rank == mpi_root) {
-                printf("Wavefunction 1:\n");
-                printf(" Determinants   = %15d\n", dtrm1_len);
-                printf("  Alpha strings = %15d\n", pstr1_len);
-                printf("  Beta  strings = %15d\n", qstr1_len);
-		memusage += ((pstr1_len + qstr1_len) * (8 + 4 + 4 + 4) +
-                             (pegrps1 * qegrps1) * 2 * 4 +
-                             (pegrps1 + qegrps1) * (4 + 4 + 4 + 4 + 4))
-			/ 1048576;
+            printf("Wavefunction 1:\n");
+            printf(" Determinants   = %15d\n", dtrm1_len);
+            printf("  Alpha strings = %15d\n", pstr1_len);
+            printf("  Beta  strings = %15d\n", qstr1_len);
+            memusage += ((pstr1_len + qstr1_len) * (8 + 4 + 4 + 4) +
+                         (pegrps1 * qegrps1) * 2 * 4 +
+                         (pegrps1 + qegrps1) * (4 + 4 + 4 + 4 + 4))
+                / 1048576;
 	}
 
-        if (mpi_proc_rank == mpi_root) {
-                if (memusage < 1.0) {
-                        printf("\nEstimated local memory usage: %10.2f KB\n",
-                               memusage * 1024);
-                } else {
-                        printf("\nEstimated local memory usage: %10.2f MB\n",
-                               memusage);
-                }
-        }
-        
         /* Allocate GLOBAL arrays: W0, W1, V0, V1 */
         /* WX arrays are 3 x ndet arrays with (p, q, cas) where p is the
          * alpha string index, q is the beta string index, and cas is the
@@ -341,6 +331,22 @@ int run_pdycicalc ()
             generate_strcontlist(pstrings0, pstr0_len, peospace0, pegrps0, ndocc0,
                                  nactv0, nvirt0, strcont, orbcont, ciaelec1,
                                  peospace1, pegrps1);
+        }
+
+        if (mpi_proc_rank == mpi_root) {
+            if (nelecs0 % 2 == 0) {
+                memusage += 2 * (cibelec0 + 1) * qstr0_len * 4 / 1048576;
+            } else {
+                memusage += 2 * (ciaelec0 + 1) * pstr0_len * 4 / 1048576;
+            }
+            
+            if (memusage < 1.0) {
+                printf("\nEstimated local memory usage: %10.2f KB\n",
+                       memusage * 1024);
+            } else {
+                printf("\nEstimated local memory usage: %10.2f MB\n",
+                       memusage);
+            }
         }
 
         GA_Sync();
