@@ -1,6 +1,7 @@
 // File: run_pdycical.c
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "mpi_utilities.h"
 #include "errorlib.h"
 #include "allocate_mem.h"
@@ -85,6 +86,8 @@ int run_pdycicalc ()
         int pstr1_len; /* Number of alpha strings */
         int qstr1_len; /* Number of beta  strings */
 
+	double dysprefact; /* sqrt(N) */
+	
         struct occstr  *pstrings1;
         struct occstr  *qstrings1;
         struct eospace *peospace1;
@@ -123,6 +126,9 @@ int run_pdycicalc ()
 
         int i = 0;
 
+
+	
+	
         /* Read wavefunction input. */
         if (mpi_proc_rank == mpi_root) {
                 readwf0input(&nelecs0, &norbs0, &nfrzc0, &ndocc0, &nactv0,
@@ -404,11 +410,18 @@ int run_pdycicalc ()
 
         /* Accumulate dyson orbitals from each process. */
         GA_Sync();
+	dysprefact = sqrt((double) nelecs1);
+	/* Multiply dyson orbitals by sqrt[N] */
+	for (i = 0; i < (ndyorbs * norbs0); i++) {
+	    dyorb_lc_data[i] = dysprefact * dyorb_lc_data[i];
+	}
+
         MPI_Allreduce(dyorb_lc_data, dyorb_gl_data, (ndyorbs * norbs0),
                       MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
         if (mpi_proc_rank == mpi_root) {
                 printf("Finished computing %d dyson orbitals.\n", ndyorbs);
         }
+
         /* Print dyson orbitals to file */
         if (mpi_proc_rank == mpi_root) {
                 print_dysonorbitals_to_file("dysonorb.dat", ndyorbs, norbs0,

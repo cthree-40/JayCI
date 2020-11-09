@@ -167,13 +167,14 @@ void compute_dyson_orbital_a(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
     for (i = 0; i < v0_rows; i++) {
         p0 = w0[i][0];
         q0 = w0[i][1];
-        /* Loop over q' */
+        /* Loop over p' */
         for (j = 1; j < strcont[p0][0]; j++) {
             p1 = strcont[p0][j]; /* New string */
             q1 = q0; 
             j1indx[cnt] = string_info_to_determinant(p1, q1, peosp1, npe1,
                                                      qeosp1, nqe1, pq1, npq1);
-            o1indx[cnt] = orbcont[p0][j] - 1;
+	    if (j1indx[cnt] < 0) continue; // No increment of cnt
+	    o1indx[cnt] = orbcont[p0][j] - 1;
             j0indx[cnt] = i;
 
             cnt++;
@@ -289,6 +290,7 @@ void compute_dyson_orbital_b(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
             q1 = strcont[q0][j]; /* New string */
             j1indx[cnt] = string_info_to_determinant(p1, q1, peosp1, npe1,
                                                      qeosp1, nqe1, pq1, npq1);
+	    if (j1indx[cnt] < 0) continue; // No increment of cnt
             o1indx[cnt] = orbcont[q0][j] - 1;
             j0indx[cnt] = i;
 
@@ -308,7 +310,7 @@ void compute_dyson_orbital_b(int v0_hndl, int v1_hndl, int w0_hndl, int w1_hndl,
         for (j = 0; j < ndyst0; j++) {
             for (k = 0; k < ndyst1; k++) {
                 dyorb[j * ndyst1 + k][o1indx[i]] += v0[j][j0indx[i]] *
-                    v1[k][i];
+                    v11d[k * cnt + i];
             }
         }
     }
@@ -524,6 +526,8 @@ int string_info_to_determinant(int pval, int qval, struct eospace *peosp,
                 if (pq[i][0] == iloc && pq[i][1] == jloc) break;
         }
         iloc = i;
+	/* If (p,q) is not a valid pairing return -iloc */
+	if (iloc == npq) return (-iloc);
         /* p,q pairing is found: i */
         for (i = 0; i < iloc; i++) {
                 cntr = cntr + peosp[(pq[i][0])].nstr * qeosp[(pq[i][1])].nstr;
