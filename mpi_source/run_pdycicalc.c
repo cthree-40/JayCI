@@ -675,39 +675,39 @@ void print_dysonorbitals_to_file(char *filename, int ndyorbs, int orbs,
                                  double **dyorbs, int *dysnst0, int ndyst0,
                                  int *dysnst1, int ndyst1)
 {
-        FILE* fptr = NULL; /* File pointer */
-        int i, j;
-
-        fptr = fopen(filename, "w");
-        if (fptr == NULL) {
-                printf("Could not open file: %s\n", filename);
-                return;
-        }
-        /* Print dyson orbital information first */
-        /*
-         * 1st line: # of... dyson orbitals, anion states, neutral states
-         * 2nd line: # of molecular orbitals
-         * 3rd line: Anion states
-         * 4th line: Neutral states
-         */
-        fprintf(fptr, " %d %d %d\n", ndyorbs, ndyst0, ndyst1);
-        fprintf(fptr, " %d\n", orbs);
-        for (i = 0; i < ndyst0; i++) {
-                fprintf(fptr, " %d", (dysnst0[i] + 1));
-        }
-        fprintf(fptr, "\n");
-        for (i = 0; i < ndyst1; i++) {
-                fprintf(fptr, " %d", (dysnst1[i] + 1));
-        }
-        fprintf(fptr, "\n");
-        for (i = 0; i < ndyorbs; i++) {
-                for (j = 0; j < orbs; j++) {
-                        fprintf(fptr, "%15.8lf\n", dyorbs[i][j]);
-                }
-                fprintf(fptr,"\n");
-        }
-
-        fclose(fptr);
-        
-        return;
+    FILE* fptr = NULL; /* File pointer */
+    int i, j;
+    
+    fptr = fopen(filename, "w");
+    if (fptr == NULL) {
+	printf("Could not open file: %s\n", filename);
+	return;
+    }
+    /* Print dyson orbital information first */
+    /*
+     * 1st line: # of... dyson orbitals, anion states, neutral states
+     * 2nd line: # of molecular orbitals
+     * 3rd line: Anion states
+     * 4th line: Neutral states
+     */
+    fprintf(fptr, " %d %d %d\n", ndyorbs, ndyst0, ndyst1);
+    fprintf(fptr, " %d\n", orbs);
+    for (i = 0; i < ndyst0; i++) {
+	fprintf(fptr, " %d", (dysnst0[i] + 1));
+    }
+    fprintf(fptr, "\n");
+    for (i = 0; i < ndyst1; i++) {
+	fprintf(fptr, " %d", (dysnst1[i] + 1));
+    }
+    fprintf(fptr, "\n");
+    for (i = 0; i < ndyorbs; i++) {
+	for (j = 0; j < orbs; j++) {
+	    fprintf(fptr, "%15.8lf\n", dyorbs[i][j]);
+	}
+	fprintf(fptr,"\n");
+    }
+    
+    fclose(fptr);
+    
+    return;
 }
