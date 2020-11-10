@@ -88,9 +88,9 @@ void analyze_dyson_orbitals(int ndyo, int norbs, double **dyson)
     for (i = 0; i < ndyo; i++) {
 	dnorms[i] = compute_vector_norm(dyson[i], norbs);
     }
-    printf(" Norms: ");
+    printf(" Norms (Norms^2): ");
     for (i = 0; i < ndyo; i++) {
-	printf(" %8.5lf", dnorms[i]);
+	printf(" %8.5lf (%8.5lf)", dnorms[i], (dnorms[i] * dnorms[i]));
     }
     printf("\n");
 
