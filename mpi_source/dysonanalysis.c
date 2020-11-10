@@ -133,7 +133,7 @@ void get_maxcoeff_info(double *dyorb, int norbs, double *maxval, int *indx)
     curr_idx = 0;
     curr_val = dyorb[0];
     for (i = 1; i < norbs; i++) {
-	if (curr_val < dyorb[i]) {
+	if ((curr_val * curr_val) < (dyorb[i] * dyorb[i])) {
 	    curr_val = dyorb[i];
 	    curr_idx = i;
 	}
