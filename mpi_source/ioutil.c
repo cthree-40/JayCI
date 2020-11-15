@@ -437,3 +437,25 @@ void readmointegrals(double *moints1, double *moints2, int itype,
      *fcenergy = energy[1];
      return;
 }
+
+/*
+ * substring: gets substring from string and returns pointer to said
+ * substring.
+ */
+char *substring(char *string, int position, int length)
+{
+        char *pointer;
+        int c;
+
+        pointer = malloc(length+1);
+        if (pointer == NULL) {
+                printf("Unable to allocate memory.\n");
+                exit(1);
+        }
+        for (c = 0 ; c < length ; c++) {
+                *(pointer+c) = *(string+position);
+                string++;
+        }
+        *(pointer+c) = '\0';
+        return pointer;
+}

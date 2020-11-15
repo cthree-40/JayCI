@@ -158,4 +158,10 @@ void readmointegrals(double *moints1, double *moints2, int itype,
 		     int orbitals, char *restrict moflname, int m1len,
 		     int m2len, double *nuc_rep, double *fcenergy);
 
+/*
+ * substring: gets substring from string and returns pointer to said
+ * substring.
+ */
+char *substring(char *string, int position, int length);
+
 #endif
