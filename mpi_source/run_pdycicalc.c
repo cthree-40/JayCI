@@ -410,7 +410,7 @@ int run_pdycicalc ()
 
         /* Accumulate dyson orbitals from each process. */
         GA_Sync();
-	dysprefact = sqrt((double) nelecs1);
+	dysprefact = sqrt((double) nelecs0);
 	/* Multiply dyson orbitals by sqrt[N] */
 	for (i = 0; i < (ndyorbs * norbs0); i++) {
 	    dyorb_lc_data[i] = dysprefact * dyorb_lc_data[i];
